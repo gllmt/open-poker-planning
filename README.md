@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Free Planning Poker (Next.js + Supabase)
 
-## Getting Started
+Real-time planning poker built with **Next.js App Router** and **Supabase Postgres + Realtime**.
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1) Create a Supabase project, then run the SQL in `supabase/schema.sql`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Create `.env.local` from `.env.example`:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (browser, used only for Realtime broadcast)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only, used by Route Handlers)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Dev: `pnpm dev`
+- Lint: `pnpm lint`
+- Build: `pnpm build`
+- Run production: `pnpm start`
 
-## Learn More
+## How It Works (Security)
 
-To learn more about Next.js, take a look at the following resources:
+- No login: access is **token-based**.
+- DB is **private** (RLS enabled, no public policies); clients never query Postgres directly.
+- All reads/writes go through `app/api/**` using the Supabase **Service Role** key.
+- Realtime uses a Supabase **broadcast channel** to notify clients to refetch state; broadcasts contain no sensitive data.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usage Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Creating a game returns an **invite token**; share `/join/<gameId>?token=...`.
+- Admin/player tokens are stored in **HttpOnly cookies** scoped per game.
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploy on Vercel and set the same environment variables in the Vercel project settings.
