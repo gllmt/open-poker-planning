@@ -75,7 +75,7 @@ export function CreateGame() {
 
   return (
     <form onSubmit={handleSubmit} className='w-full flex justify-center'>
-      <div className='w-full max-w-lg border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-6 mt-6'>
+      <div className='w-full max-w-lg border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-6'>
         <h2 className='text-2xl font-semibold mb-4 text-center'>Create new session</h2>
 
         <div className='flex flex-col gap-4'>

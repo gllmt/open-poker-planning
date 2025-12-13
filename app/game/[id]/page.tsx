@@ -1,10 +1,10 @@
 import { Poker } from '@/components/poker/poker';
 
-export default function GamePage({ params }: { params: { id: string } }) {
+export default async function GamePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <div className='px-2'>
-      <Poker gameId={params.id} />
+      <Poker gameId={id} />
     </div>
   );
 }
-
