@@ -25,9 +25,41 @@ export function GameController({ game, players, currentPlayerId }: { game: Game;
       window.alert('No invite token available on this device. Use the one from the original invite link.');
       return;
     }
-    await navigator.clipboard.writeText(`${window.location.origin}/join/${game.id}?token=${joinToken}`);
-    setShowCopiedMessage(true);
-    setTimeout(() => setShowCopiedMessage(false), 5000);
+
+    const inviteLink = `${window.location.origin}/join/${game.id}?token=${joinToken}`;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(inviteLink);
+        setShowCopiedMessage(true);
+        setTimeout(() => setShowCopiedMessage(false), 5000);
+        return;
+      }
+    } catch {}
+
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = inviteLink;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.top = '0';
+      textarea.style.left = '0';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(textarea);
+
+      if (ok) {
+        setShowCopiedMessage(true);
+        setTimeout(() => setShowCopiedMessage(false), 5000);
+        return;
+      }
+    } catch {}
+
+    window.prompt('Copy this invite link:', inviteLink);
   };
 
   const onAutoReveal = (value: boolean) => setAutoReveal(game.id, value, currentPlayerId);
@@ -232,4 +264,3 @@ function getAverage(game: Game, players: Player[]): number {
   if (!count) return 0;
   return Math.round((values / count) * 100) / 100;
 }
-
