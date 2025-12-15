@@ -9,10 +9,14 @@ export function GameArea({
   game,
   players,
   currentPlayerId,
+  onVote,
+  voteError,
 }: {
   game: Game;
   players: Player[];
   currentPlayerId: string;
+  onVote: (value: number, emoji?: string) => void;
+  voteError?: string | null;
 }) {
   return (
     <>
@@ -21,9 +25,8 @@ export function GameArea({
         <GameController game={game} players={players} currentPlayerId={currentPlayerId} />
       </div>
       <div className='text-center flex justify-center'>
-        <CardPicker game={game} players={players} currentPlayerId={currentPlayerId} />
+        <CardPicker game={game} players={players} currentPlayerId={currentPlayerId} onVote={onVote} error={voteError} />
       </div>
     </>
   );
 }
-

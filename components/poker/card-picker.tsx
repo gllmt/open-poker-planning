@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 
-import { vote } from '@/lib/api/games';
 import { Game } from '@/types/game';
 import { Player } from '@/types/player';
 import { Status } from '@/types/status';
@@ -11,18 +10,31 @@ import type { CardConfig } from '@/types/cards';
 
 import { getCards, getRandomEmoji } from './card-configs';
 
-export function CardPicker({ game, players, currentPlayerId }: { game: Game; players: Player[]; currentPlayerId: string }) {
+export function CardPicker({
+  game,
+  players,
+  currentPlayerId,
+  onVote,
+  error,
+}: {
+  game: Game;
+  players: Player[];
+  currentPlayerId: string;
+  onVote: (value: number, emoji?: string) => void;
+  error?: string | null;
+}) {
   const randomEmoji = useMemo(() => {
     const seed = `${game.id}:${game.updatedAt || ''}:${currentPlayerId}:${game.gameStatus}`;
     return pickEmoji(seed);
   }, [game.id, game.updatedAt, currentPlayerId, game.gameStatus]);
 
   const cards = game.cards?.length ? game.cards : getCards(game.gameType);
-  const currentValue = players.find((p) => p.id === currentPlayerId)?.value;
+  const currentPlayer = players.find((p) => p.id === currentPlayerId);
+  const currentValue = currentPlayer?.status === Status.Finished ? currentPlayer.value : undefined;
 
-  const play = async (card: CardConfig) => {
+  const play = (card: CardConfig) => {
     if (game.gameStatus === Status.Finished) return;
-    await vote(game.id, currentPlayerId, card.value, card.value === -1 ? randomEmoji : undefined);
+    onVote(card.value, card.value === -1 ? randomEmoji : undefined);
   };
 
   return (
@@ -32,6 +44,7 @@ export function CardPicker({ game, players, currentPlayerId }: { game: Game; pla
           ? 'Click on the card to vote'
           : 'Session not ready for voting! Wait for moderator to start'}
       </div>
+      {error && <div className='text-center text-red-600 text-xs -mt-2 mb-2'>{error}</div>}
       <div className='flex flex-wrap justify-center gap-6 py-4'>
         {cards.map((card) => {
           const isSelected = currentValue === card.value;
@@ -49,7 +62,10 @@ export function CardPicker({ game, players, currentPlayerId }: { game: Game; pla
                 ${game.gameStatus === Status.Finished ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}
               `}
               style={{ backgroundColor: card.color }}
-              onClick={() => play(card)}
+              onClick={() => {
+                if (isSelected) return;
+                play(card);
+              }}
             >
               <div className='flex flex-col justify-between h-full w-full p-1'>
                 {card.value >= 0 && (

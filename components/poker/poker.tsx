@@ -1,16 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { fetchGameState } from '@/lib/api/games';
+import { fetchGameState, vote } from '@/lib/api/games';
 import { getCurrentPlayerId, getPlayerGamesFromCache, upsertPlayerGame } from '@/lib/browser-storage';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Game } from '@/types/game';
 import { Player } from '@/types/player';
+import { Status } from '@/types/status';
 import { Loading } from '@/components/ui/loading';
 
 import { GameArea } from './game-area';
+
+type PendingVote = {
+  value: number;
+  emoji?: string;
+};
 
 export function Poker({ gameId }: { gameId: string }) {
   const router = useRouter();
@@ -20,36 +26,67 @@ export function Poker({ gameId }: { gameId: string }) {
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | undefined>(undefined);
+  const [voteError, setVoteError] = useState<string | null>(null);
+
+  const pendingVoteRef = useRef<PendingVote | null>(null);
+  const voteDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voteRequestIdRef = useRef(0);
+  const refreshRequestIdRef = useRef(0);
+
+  const clearPendingVote = useCallback(() => {
+    pendingVoteRef.current = null;
+  }, []);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestIdRef.current;
     const playerId = getCurrentPlayerId(gameId);
     if (!playerId) {
-      router.push(`/join/${gameId}`);
+      if (refreshRequestIdRef.current === requestId) router.push(`/join/${gameId}`);
       return;
     }
 
     setCurrentPlayerId(playerId);
 
     try {
-      const { game, players } = await fetchGameState({ gameId, playerId });
-      setGame(game);
-      setPlayers(players);
+      const { game: serverGame, players: serverPlayers } = await fetchGameState({ gameId, playerId });
+      if (refreshRequestIdRef.current !== requestId) return;
+      let nextPlayers = serverPlayers;
+      const pendingVote = pendingVoteRef.current;
+
+      if (pendingVote) {
+        const me = nextPlayers.find((p) => p.id === playerId);
+        const synced =
+          me?.status === Status.Finished &&
+          me.value === pendingVote.value &&
+          (pendingVote.value !== -1 || me.emoji === pendingVote.emoji);
+
+        if (synced) {
+          pendingVoteRef.current = null;
+        } else {
+          nextPlayers = nextPlayers.map((p) =>
+            p.id === playerId ? { ...p, value: pendingVote.value, emoji: pendingVote.emoji, status: Status.Finished } : p,
+          );
+        }
+      }
+
+      setGame(serverGame);
+      setPlayers(nextPlayers);
 
       // Keep recent games metadata up-to-date
       const cached = getPlayerGamesFromCache().find((g) => g.id === gameId);
       upsertPlayerGame({
-        id: game.id,
-        name: game.name,
-        createdBy: game.createdBy,
-        createdById: game.createdById,
+        id: serverGame.id,
+        name: serverGame.name,
+        createdBy: serverGame.createdBy,
+        createdById: serverGame.createdById,
         playerId,
         joinToken: cached?.joinToken,
-        isAllowMembersToManageSession: game.isAllowMembersToManageSession,
+        isAllowMembersToManageSession: serverGame.isAllowMembersToManageSession,
       });
     } catch {
-      router.push(`/join/${gameId}`);
+      if (refreshRequestIdRef.current === requestId) router.push(`/join/${gameId}`);
     } finally {
-      setLoading(false);
+      if (refreshRequestIdRef.current === requestId) setLoading(false);
     }
   }, [gameId, router]);
 
@@ -62,7 +99,11 @@ export function Poker({ gameId }: { gameId: string }) {
       config: { broadcast: { ack: false, self: true } },
     });
 
-    channel.on('broadcast', { event: 'game_changed' }, () => {
+    channel.on('broadcast', { event: 'game_changed' }, ({ payload }) => {
+      const payloadType = (payload as { type?: unknown } | null)?.type;
+      if (payloadType === 'reset') {
+        clearPendingVote();
+      }
       refresh();
     });
 
@@ -71,13 +112,19 @@ export function Poker({ gameId }: { gameId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, gameId, refresh]);
+  }, [supabase, gameId, refresh, clearPendingVote]);
 
   useEffect(() => {
     if (!players || !currentPlayerId) return;
     const stillInGame = players.some((p) => p.id === currentPlayerId);
     if (!stillInGame) router.push(`/join/${gameId}`);
   }, [players, currentPlayerId, router, gameId]);
+
+  useEffect(() => {
+    return () => {
+      if (voteDebounceTimeoutRef.current) clearTimeout(voteDebounceTimeoutRef.current);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -95,6 +142,34 @@ export function Poker({ gameId }: { gameId: string }) {
     );
   }
 
-  return <GameArea game={game} players={players} currentPlayerId={currentPlayerId} />;
-}
+  const onVote = (value: number, emoji?: string) => {
+    if (game.gameStatus === Status.Finished) return;
 
+    pendingVoteRef.current = { value, emoji };
+    setVoteError(null);
+
+    setPlayers((prev) => {
+      if (!prev) return prev;
+      return prev.map((p) => (p.id === currentPlayerId ? { ...p, value, emoji, status: Status.Finished } : p));
+    });
+
+    if (voteDebounceTimeoutRef.current) clearTimeout(voteDebounceTimeoutRef.current);
+
+    const requestId = ++voteRequestIdRef.current;
+    const playerId = currentPlayerId;
+
+    voteDebounceTimeoutRef.current = setTimeout(() => {
+      const pendingVote = pendingVoteRef.current;
+      if (!pendingVote || !playerId) return;
+
+      vote(gameId, playerId, pendingVote.value, pendingVote.emoji).catch((e) => {
+        if (voteRequestIdRef.current !== requestId) return;
+        pendingVoteRef.current = null;
+        setVoteError(e instanceof Error ? e.message : 'Failed to vote');
+        refresh().catch(() => {});
+      });
+    }, 150);
+  };
+
+  return <GameArea game={game} players={players} currentPlayerId={currentPlayerId} onVote={onVote} voteError={voteError} />;
+}
