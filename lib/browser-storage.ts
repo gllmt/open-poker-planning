@@ -1,4 +1,4 @@
-import { PlayerGame } from '@/types/player';
+import type { PlayerGame } from '@/types/player';
 
 const PLAYER_GAMES_KEY = 'playerGames';
 const RECENT_PLAYER_NAME_KEY = 'recentPlayerName';
@@ -64,6 +64,7 @@ export function upsertPlayerGame(game: PlayerGame) {
 }
 
 export function removePlayerGame(gameId: string) {
-  updatePlayerGamesInCache(getPlayerGamesFromCache().filter((g) => g.id !== gameId));
+  updatePlayerGamesInCache(
+    getPlayerGamesFromCache().filter((g) => g.id !== gameId)
+  );
 }
-

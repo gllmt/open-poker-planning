@@ -3,4 +3,3 @@ export interface CardConfig {
   displayValue: string;
   color: string;
 }
-

@@ -1,7 +1,7 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { fetchGameState, joinGame } from '@/lib/api/games';
 import {
@@ -15,7 +15,10 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const initialToken = useMemo(() => searchParams.get('token') || '', [searchParams]);
+  const initialToken = useMemo(
+    () => searchParams.get('token') || '',
+    [searchParams]
+  );
 
   const [joinGameId, setJoinGameId] = useState(initialGameId || '');
   const [inviteToken, setInviteToken] = useState(initialToken);
@@ -65,54 +68,74 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
   };
 
   return (
-    <div className='w-full'>
-      <form onSubmit={handleSubmit} className='w-full flex justify-center'>
-        <div className='w-full max-w-lg border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-6'>
-          <h2 className='text-2xl font-bold mb-4 text-center'>Join a Session</h2>
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="w-full flex justify-center">
+        <div className="w-full max-w-lg border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold mb-4 text-center">
+            Join a Session
+          </h2>
 
-          <div className='flex flex-col gap-4'>
+          <div className="flex flex-col gap-4">
             <div>
-              <label className='block text-sm font-medium mb-1'>Session ID</label>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="sessionId"
+              >
+                Session ID
+              </label>
               <input
+                id="sessionId"
                 required
-                type='text'
-                className='w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900'
-                placeholder='UUID…'
+                type="text"
+                className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900"
+                placeholder="UUID…"
                 value={joinGameId}
                 onChange={(e) => setJoinGameId(e.target.value)}
               />
             </div>
 
             <div>
-              <label className='block text-sm font-medium mb-1'>Invite token</label>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="inviteToken"
+              >
+                Invite token
+              </label>
               <input
+                id="inviteToken"
                 required
-                type='text'
-                className='w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900'
-                placeholder='Paste the token from the invite link'
+                type="text"
+                className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900"
+                placeholder="Paste the token from the invite link"
                 value={inviteToken}
                 onChange={(e) => setInviteToken(e.target.value)}
               />
             </div>
 
             <div>
-              <label className='block text-sm font-medium mb-1'>Your Name</label>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="playerName"
+              >
+                Your Name
+              </label>
               <input
+                id="playerName"
                 required
-                type='text'
-                className='w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900'
-                placeholder='Enter your name'
+                type="text"
+                className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900"
+                placeholder="Enter your name"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
               />
             </div>
 
-            {error && <p className='text-red-600 text-xs mt-1'>{error}</p>}
+            {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
           </div>
 
-          <div className='flex justify-end mt-6'>
+          <div className="flex justify-end mt-6">
             <button
-              type='submit'
+              type="submit"
               className={`bg-blue-600 text-white px-6 py-2 rounded font-semibold shadow hover:bg-blue-700 transition ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}

@@ -25,21 +25,42 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    var(--font-geist-sans),
-    -apple-system, BlinkMacSystemFont, "Twemoji Country Flags", "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Twemoji Country Flags", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
 }
 
-.google_ad_responsive { width: 320px; height: 100px; }
-@media(min-width: 500px) { .google_ad_responsive { width: 468px; height: 60px; } }
-@media(min-width: 800px) { .google_ad_responsive { width: 728px; height: 90px; } }
+.google_ad_responsive {
+  width: 320px;
+  height: 100px;
+}
+@media (min-width: 500px) {
+  .google_ad_responsive {
+    width: 468px;
+    height: 60px;
+  }
+}
+@media (min-width: 800px) {
+  .google_ad_responsive {
+    width: 728px;
+    height: 90px;
+  }
+}
 
 @keyframes fade-in-down {
-  0% { opacity: 0; transform: translateY(-40px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-fade-in-down { animation: fade-in-down 1s ease-out; }
+.animate-fade-in-down {
+  animation: fade-in-down 1s ease-out;
+}
 
 .poker-spinner-heads {
   transform-origin: 16px 16px;
@@ -47,7 +68,9 @@ body {
 }
 
 @keyframes poker-spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @layer components {

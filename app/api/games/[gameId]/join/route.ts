@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
@@ -11,7 +11,10 @@ type JoinBody = {
   token: string;
 };
 
-export async function POST(request: NextRequest, context: { params: Promise<{ gameId: string }> }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ gameId: string }> }
+) {
   const { gameId } = await context.params;
   const body = (await request.json().catch(() => null)) as JoinBody | null;
   if (!body?.playerName || !body?.token) {
@@ -29,8 +32,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
     return NextResponse.json({ error: 'Game not found' }, { status: 404 });
   }
 
-  if (!tokenMatchesHash(body.token, (game as { join_token_hash: string }).join_token_hash)) {
-    return NextResponse.json({ error: 'Invalid invite token' }, { status: 403 });
+  if (
+    !tokenMatchesHash(
+      body.token,
+      (game as { join_token_hash: string }).join_token_hash
+    )
+  ) {
+    return NextResponse.json(
+      { error: 'Invalid invite token' },
+      { status: 403 }
+    );
   }
 
   const playerId = crypto.randomUUID();
@@ -57,9 +68,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
     {
       playerId,
     },
-    { status: 201 },
+    { status: 201 }
   );
 
-  response.cookies.set(cookieNames.playerToken(gameId), playerToken, cookieOptions);
+  response.cookies.set(
+    cookieNames.playerToken(gameId),
+    playerToken,
+    cookieOptions
+  );
   return response;
 }

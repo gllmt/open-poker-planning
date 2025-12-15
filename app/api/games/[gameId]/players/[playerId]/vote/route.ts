@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -13,7 +13,7 @@ type VoteBody = {
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ gameId: string; playerId: string }> },
+  context: { params: Promise<{ gameId: string; playerId: string }> }
 ) {
   const { gameId, playerId } = await context.params;
   const body = (await request.json().catch(() => null)) as VoteBody | null;
@@ -23,7 +23,8 @@ export async function POST(
 
   const cookieStore = await cookies();
   const playerToken = cookieStore.get(cookieNames.playerToken(gameId))?.value;
-  if (!playerToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!playerToken)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const supabase = createSupabaseAdminClient();
 
@@ -34,7 +35,11 @@ export async function POST(
     .eq('id', playerId)
     .maybeSingle();
 
-  if (playerError || !player?.player_token_hash || !tokenMatchesHash(playerToken, player.player_token_hash)) {
+  if (
+    playerError ||
+    !player?.player_token_hash ||
+    !tokenMatchesHash(playerToken, player.player_token_hash)
+  ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -84,7 +89,10 @@ export async function POST(
     .eq('id', gameId);
 
   if (statusError) {
-    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update status' },
+      { status: 500 }
+    );
   }
 
   await broadcastGameChanged(gameId, { type: 'vote' }).catch(() => {});

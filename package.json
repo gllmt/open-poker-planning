@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:biome": "biome lint .",
+    "biome:check": "biome check .",
+    "biome:fix": "biome check . --write",
+    "format": "biome format . --write",
+    "format:check": "biome format ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.87.1",
@@ -15,8 +20,9 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^25.0.1",
+    "@types/node": "^25.0.2",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",

@@ -1,32 +1,37 @@
-import { PropsWithChildren } from 'react';
+import type { PropsWithChildren } from 'react';
 
 export function CircularProgressBar({
   strokeWidth = 8,
   sqSize = 160,
   percentage,
   children,
-}: PropsWithChildren<{ strokeWidth?: number; sqSize?: number; percentage: number }>) {
+}: PropsWithChildren<{
+  strokeWidth?: number;
+  sqSize?: number;
+  percentage: number;
+}>) {
   const radius = (sqSize - strokeWidth) / 2;
   const viewBox = `0 0 ${sqSize} ${sqSize}`;
   const dashArray = radius * Math.PI * 2;
   const dashOffset = dashArray - (dashArray * (percentage || 0)) / 100;
 
   return (
-    <div className='relative h-fit bg-white dark:bg-gray-800'>
+    <div className="relative h-fit bg-white dark:bg-gray-800">
       <svg width={sqSize} height={sqSize} viewBox={viewBox}>
+        <title>Timer progress</title>
         <circle
-          className='fill-none stroke-gray-200 dark:stroke-gray-700'
+          className="fill-none stroke-gray-200 dark:stroke-gray-700"
           cx={sqSize / 2}
           cy={sqSize / 2}
           r={radius}
           strokeWidth={`${strokeWidth}px`}
         />
         <circle
-          className='fill-none stroke-blue-400 transition-all delay-200 ease-in'
+          className="fill-none stroke-blue-400 transition-all delay-200 ease-in"
           cx={sqSize / 2}
           cy={sqSize / 2}
           r={radius}
-          strokeLinecap='round'
+          strokeLinecap="round"
           strokeWidth={`${strokeWidth}px`}
           transform={`rotate(-90 ${sqSize / 2} ${sqSize / 2})`}
           style={{
@@ -35,8 +40,9 @@ export function CircularProgressBar({
           }}
         />
       </svg>
-      <div className='flex w-full h-full justify-center items-center left-0 top-0 absolute'>{children}</div>
+      <div className="flex w-full h-full justify-center items-center left-0 top-0 absolute">
+        {children}
+      </div>
     </div>
   );
 }
-

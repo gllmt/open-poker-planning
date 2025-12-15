@@ -4,7 +4,10 @@ import { createSupabaseAdminClient } from './admin';
 
 type BroadcastPayload = Record<string, unknown>;
 
-export async function broadcastGameChanged(gameId: string, payload: BroadcastPayload = {}) {
+export async function broadcastGameChanged(
+  gameId: string,
+  payload: BroadcastPayload = {}
+) {
   const supabase = createSupabaseAdminClient();
 
   const channel = supabase.channel(`game:${gameId}`, {
@@ -12,7 +15,10 @@ export async function broadcastGameChanged(gameId: string, payload: BroadcastPay
   });
 
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Realtime subscribe timeout')), 2000);
+    const timeout = setTimeout(
+      () => reject(new Error('Realtime subscribe timeout')),
+      2000
+    );
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         clearTimeout(timeout);
@@ -34,4 +40,3 @@ export async function broadcastGameChanged(gameId: string, payload: BroadcastPay
   await channel.unsubscribe();
   supabase.removeChannel(channel);
 }
-

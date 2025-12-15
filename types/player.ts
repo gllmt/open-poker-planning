@@ -1,4 +1,4 @@
-import { Status } from './status';
+import type { Status } from './status';
 
 export interface Player {
   id: string;
@@ -17,4 +17,3 @@ export interface PlayerGame {
   joinToken?: string;
   isAllowMembersToManageSession?: boolean;
 }
-

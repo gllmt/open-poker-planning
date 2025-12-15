@@ -14,8 +14,15 @@ type CreateGameBody = {
 };
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as CreateGameBody | null;
-  if (!body?.name || !body?.createdBy || !body?.gameType || !Array.isArray(body.cards)) {
+  const body = (await request
+    .json()
+    .catch(() => null)) as CreateGameBody | null;
+  if (
+    !body?.name ||
+    !body?.createdBy ||
+    !body?.gameType ||
+    !Array.isArray(body.cards)
+  ) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
@@ -39,7 +46,9 @@ export async function POST(request: Request) {
     cards: body.cards,
     created_by: body.createdBy,
     created_by_id: createdById,
-    is_allow_members_to_manage_session: Boolean(body.isAllowMembersToManageSession),
+    is_allow_members_to_manage_session: Boolean(
+      body.isAllowMembersToManageSession
+    ),
     story_name: null,
     auto_reveal: false,
     game_status: 'Started',
@@ -49,7 +58,10 @@ export async function POST(request: Request) {
   });
 
   if (gameError) {
-    return NextResponse.json({ error: 'Failed to create game' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create game' },
+      { status: 500 }
+    );
   }
 
   const { error: playerError } = await supabase.from('players').insert({
@@ -65,7 +77,10 @@ export async function POST(request: Request) {
   if (playerError) {
     // Best-effort cleanup
     await supabase.from('games').delete().eq('id', gameId);
-    return NextResponse.json({ error: 'Failed to create player' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create player' },
+      { status: 500 }
+    );
   }
 
   await broadcastGameChanged(gameId, { type: 'created' }).catch(() => {});
@@ -76,10 +91,18 @@ export async function POST(request: Request) {
       joinToken,
       playerId: createdById,
     },
-    { status: 201 },
+    { status: 201 }
   );
 
-  response.cookies.set(cookieNames.adminToken(gameId), adminToken, cookieOptions);
-  response.cookies.set(cookieNames.playerToken(gameId), playerToken, cookieOptions);
+  response.cookies.set(
+    cookieNames.adminToken(gameId),
+    adminToken,
+    cookieOptions
+  );
+  response.cookies.set(
+    cookieNames.playerToken(gameId),
+    playerToken,
+    cookieOptions
+  );
   return response;
 }

@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -8,7 +8,10 @@ import { broadcastGameChanged } from '@/lib/supabase/broadcast';
 
 type ResetBody = { callerPlayerId?: string };
 
-export async function POST(request: NextRequest, context: { params: Promise<{ gameId: string }> }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ gameId: string }> }
+) {
   const { gameId } = await context.params;
   const body = (await request.json().catch(() => ({}))) as ResetBody;
 
@@ -25,7 +28,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
   }
 
   const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
-  const isAdmin = adminToken && tokenMatchesHash(adminToken, game.admin_token_hash);
+  const isAdmin =
+    adminToken && tokenMatchesHash(adminToken, game.admin_token_hash);
 
   if (!isAdmin) {
     if (!game.is_allow_members_to_manage_session || !body.callerPlayerId) {
@@ -33,7 +37,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
     }
 
     const playerToken = cookieStore.get(cookieNames.playerToken(gameId))?.value;
-    if (!playerToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!playerToken)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { data: player, error } = await supabase
       .from('players')
@@ -42,7 +47,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
       .eq('id', body.callerPlayerId)
       .maybeSingle();
 
-    if (error || !player?.player_token_hash || !tokenMatchesHash(playerToken, player.player_token_hash)) {
+    if (
+      error ||
+      !player?.player_token_hash ||
+      !tokenMatchesHash(playerToken, player.player_token_hash)
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
@@ -53,7 +62,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
     .eq('id', gameId);
 
   if (gameUpdateError) {
-    return NextResponse.json({ error: 'Failed to reset game' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to reset game' },
+      { status: 500 }
+    );
   }
 
   const { error: playersUpdateError } = await supabase
@@ -62,7 +74,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ga
     .eq('game_id', gameId);
 
   if (playersUpdateError) {
-    return NextResponse.json({ error: 'Failed to reset players' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to reset players' },
+      { status: 500 }
+    );
   }
 
   await broadcastGameChanged(gameId, { type: 'reset' }).catch(() => {});

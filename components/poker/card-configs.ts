@@ -1,4 +1,4 @@
-import { CardConfig } from '@/types/cards';
+import type { CardConfig } from '@/types/cards';
 import { GameType } from '@/types/game';
 
 export const fibonacciCards: CardConfig[] = [
@@ -93,7 +93,25 @@ export const getCards = (gameType: GameType | undefined): CardConfig[] => {
 };
 
 export const getRandomEmoji = () => {
-  const emojis = ['☕', '🥤', '🍹', '🍸', '🍧', '🍨', '🍩', '🍎', '🧁', '🍪', '🍿', '🌮', '🍦', '🍉', '🍐', '🍰', '🍫'];
+  const emojis = [
+    '☕',
+    '🥤',
+    '🍹',
+    '🍸',
+    '🍧',
+    '🍨',
+    '🍩',
+    '🍎',
+    '🧁',
+    '🍪',
+    '🍿',
+    '🌮',
+    '🍦',
+    '🍉',
+    '🍐',
+    '🍰',
+    '🍫',
+  ];
   return emojis[Math.floor(Math.random() * emojis.length)];
 };
 
@@ -103,6 +121,7 @@ export const getCustomCards = (values: string[]) => {
     if (customCards[index]) customCards[index].displayValue = value;
   });
 
-  return customCards.filter((card) => card.displayValue !== undefined && card.displayValue.trim() !== '');
+  return customCards.filter(
+    (card) => card.displayValue !== undefined && card.displayValue.trim() !== ''
+  );
 };
-

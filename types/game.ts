@@ -1,5 +1,5 @@
-import { CardConfig } from './cards';
-import { Status } from './status';
+import type { CardConfig } from './cards';
+import type { Status } from './status';
 
 export interface TimerProps {
   currentSeconds?: number;
@@ -40,4 +40,3 @@ export enum GameType {
   TShirtAndNumber = 'TShirtAndNumber',
   Custom = 'Custom',
 }
-

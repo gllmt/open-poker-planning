@@ -14,10 +14,10 @@ export function ThemeControl() {
 
   return (
     <button
-      type='button'
-      className='button-ghost'
+      type="button"
+      className="button-ghost"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      aria-label='Toggle theme'
+      aria-label="Toggle theme"
     >
       {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
     </button>

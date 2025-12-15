@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -18,10 +18,12 @@ type GameAuthRow = {
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ gameId: string }> },
+  context: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await context.params;
-  const body = (await request.json().catch(() => null)) as AutoRevealBody | null;
+  const body = (await request
+    .json()
+    .catch(() => null)) as AutoRevealBody | null;
   if (!body || typeof body.autoReveal !== 'boolean') {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
@@ -40,7 +42,8 @@ export async function POST(
 
   const authGame = game as GameAuthRow;
   const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
-  const isAdmin = adminToken && tokenMatchesHash(adminToken, authGame.admin_token_hash);
+  const isAdmin =
+    adminToken && tokenMatchesHash(adminToken, authGame.admin_token_hash);
 
   if (!isAdmin) {
     if (!authGame.is_allow_members_to_manage_session || !body.callerPlayerId) {
@@ -48,7 +51,8 @@ export async function POST(
     }
 
     const playerToken = cookieStore.get(cookieNames.playerToken(gameId))?.value;
-    if (!playerToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!playerToken)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { data: player, error } = await supabase
       .from('players')
@@ -57,7 +61,11 @@ export async function POST(
       .eq('id', body.callerPlayerId)
       .maybeSingle();
 
-    if (error || !player?.player_token_hash || !tokenMatchesHash(playerToken, player.player_token_hash)) {
+    if (
+      error ||
+      !player?.player_token_hash ||
+      !tokenMatchesHash(playerToken, player.player_token_hash)
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
@@ -68,9 +76,14 @@ export async function POST(
     .eq('id', gameId);
 
   if (updateError) {
-    return NextResponse.json({ error: 'Failed to update autoReveal' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update autoReveal' },
+      { status: 500 }
+    );
   }
 
-  await broadcastGameChanged(gameId, { type: 'auto_reveal_updated' }).catch(() => {});
+  await broadcastGameChanged(gameId, { type: 'auto_reveal_updated' }).catch(
+    () => {}
+  );
   return NextResponse.json({ ok: true });
 }

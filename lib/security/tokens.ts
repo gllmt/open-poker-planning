@@ -16,4 +16,3 @@ export function safeEqual(a: string, b: string): boolean {
   if (aBuf.length !== bBuf.length) return false;
   return timingSafeEqual(aBuf, bBuf);
 }
-

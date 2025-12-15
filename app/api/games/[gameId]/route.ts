@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -66,10 +66,15 @@ function sanitizePlayer(player: PlayerRow) {
   };
 }
 
-async function authorizeRead(request: Request, game: GameRow, cookieStore: CookieStore): Promise<boolean> {
+async function authorizeRead(
+  request: Request,
+  game: GameRow,
+  cookieStore: CookieStore
+): Promise<boolean> {
   const url = new URL(request.url);
   const joinToken = url.searchParams.get('token');
-  if (joinToken && tokenMatchesHash(joinToken, game.join_token_hash)) return true;
+  if (joinToken && tokenMatchesHash(joinToken, game.join_token_hash))
+    return true;
 
   const playerId = url.searchParams.get('playerId');
   if (!playerId) return false;
@@ -89,7 +94,10 @@ async function authorizeRead(request: Request, game: GameRow, cookieStore: Cooki
   return tokenMatchesHash(playerToken, player.player_token_hash);
 }
 
-export async function GET(request: NextRequest, context: { params: Promise<{ gameId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ gameId: string }> }
+) {
   const { gameId } = await context.params;
   const supabase = createSupabaseAdminClient();
 
@@ -115,7 +123,10 @@ export async function GET(request: NextRequest, context: { params: Promise<{ gam
     .eq('game_id', gameId);
 
   if (playersError) {
-    return NextResponse.json({ error: 'Failed to load players' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to load players' },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
@@ -128,12 +139,18 @@ async function authorizeManage(
   request: Request,
   game: GameRow,
   cookieStore: CookieStore,
-  opts: { requireAdminIfNotAllowMembers?: boolean } = { requireAdminIfNotAllowMembers: true },
+  opts: { requireAdminIfNotAllowMembers?: boolean } = {
+    requireAdminIfNotAllowMembers: true,
+  }
 ): Promise<boolean> {
   const adminToken = cookieStore.get(cookieNames.adminToken(game.id))?.value;
-  if (adminToken && tokenMatchesHash(adminToken, game.admin_token_hash)) return true;
+  if (adminToken && tokenMatchesHash(adminToken, game.admin_token_hash))
+    return true;
 
-  if (!game.is_allow_members_to_manage_session && opts.requireAdminIfNotAllowMembers) {
+  if (
+    !game.is_allow_members_to_manage_session &&
+    opts.requireAdminIfNotAllowMembers
+  ) {
     return false;
   }
 
@@ -156,7 +173,10 @@ async function authorizeManage(
   return tokenMatchesHash(playerToken, player.player_token_hash);
 }
 
-export async function DELETE(request: NextRequest, context: { params: Promise<{ gameId: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ gameId: string }> }
+) {
   const { gameId } = await context.params;
   const supabase = createSupabaseAdminClient();
 
@@ -171,14 +191,24 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   }
 
   const cookieStore = await cookies();
-  const authorized = await authorizeManage(request, game as GameRow, cookieStore);
+  const authorized = await authorizeManage(
+    request,
+    game as GameRow,
+    cookieStore
+  );
   if (!authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { error: deleteError } = await supabase.from('games').delete().eq('id', gameId);
+  const { error: deleteError } = await supabase
+    .from('games')
+    .delete()
+    .eq('id', gameId);
   if (deleteError) {
-    return NextResponse.json({ error: 'Failed to delete game' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete game' },
+      { status: 500 }
+    );
   }
 
   await broadcastGameChanged(gameId, { type: 'deleted' }).catch(() => {});

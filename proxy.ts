@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { type NextRequest, NextResponse } from 'next/server';
 
 const ACCESS_COOKIE_NAME = 'pp_site_access';
 const ACCESS_COOKIE_VERSION = 'v1';
@@ -61,6 +61,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+  ],
 };
-
