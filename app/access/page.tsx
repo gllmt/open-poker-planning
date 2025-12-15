@@ -50,7 +50,11 @@ export default async function AccessPage({
             </Link>
           </div>
         ) : (
-          <form action={submitAccessCode} className="mt-6 space-y-4">
+          <form
+            action={submitAccessCode}
+            className="mt-6 space-y-4"
+            suppressHydrationWarning
+          >
             <input type="hidden" name="next" value={nextPath} />
 
             <div>
@@ -62,6 +66,7 @@ export default async function AccessPage({
                 name="code"
                 type="password"
                 required
+                suppressHydrationWarning
                 className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-950"
                 placeholder="Enter code"
               />
