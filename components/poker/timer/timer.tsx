@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { TimerProps as GameTimerProps } from '@/types/game';
 
 import { TimerProgress } from './timer-progress-popup';
@@ -47,7 +48,7 @@ export function Timer({
   return (
     <>
       {isMod && (
-        <button
+        <Button
           onClick={() =>
             onTimerStateUpdate({
               currentSeconds: 0,
@@ -58,15 +59,17 @@ export function Timer({
             })
           }
           title="Timer"
-          className="cursor-pointer"
+          aria-label="Timer"
           type="button"
+          size="icon"
+          variant="ghost"
         >
           <span
-            className={`${timerVisible ? 'text-green-500' : 'text-gray-500'}`}
+            className={`${timerVisible ? 'text-primary' : 'text-muted-foreground'}`}
           >
             ⏱️
           </span>
-        </button>
+        </Button>
       )}
 
       {timerVisible && (

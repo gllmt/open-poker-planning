@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${notoSans.variable} antialiased`}>
-        <div className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
+        <div className="bg-background text-foreground min-h-screen">
           <Toolbar />
           {children}
         </div>

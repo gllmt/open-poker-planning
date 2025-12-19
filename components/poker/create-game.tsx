@@ -3,6 +3,16 @@
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { createGame } from '@/lib/api/games';
 import {
   getRecentPlayerName,
@@ -86,115 +96,111 @@ export function CreateGame() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full flex justify-center">
-      <div className="w-full max-w-lg dark:bg-gray-900 bg-white rounded-[18px] shadow-[0_4px_16px_#00000029] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] p-6">
-        <h2 className="text-2xl font-semibold mb-4 text-center">
-          Create new session
-        </h2>
+      <Card className="w-full max-w-lg">
+        <CardHeader className="text-center">
+          <CardTitle>Create new session</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup className="gap-5">
+            <Field>
+              <FieldLabel htmlFor="gameName">Session name</FieldLabel>
+              <Input
+                id="gameName"
+                required
+                type="text"
+                value={gameName}
+                onChange={(event) => setGameName(event.target.value)}
+              />
+            </Field>
 
-        <div className="flex flex-col gap-4">
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              htmlFor="gameName"
-            >
-              Session name
-            </label>
-            <input
-              id="gameName"
-              required
-              type="text"
-              className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900"
-              value={gameName}
-              onChange={(event) => setGameName(event.target.value)}
-            />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="createdBy">Your name</FieldLabel>
+              <Input
+                id="createdBy"
+                required
+                type="text"
+                value={createdBy}
+                onChange={(event) => setCreatedBy(event.target.value)}
+              />
+            </Field>
 
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              htmlFor="createdBy"
-            >
-              Your name
-            </label>
-            <input
-              id="createdBy"
-              required
-              type="text"
-              className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900"
-              value={createdBy}
-              onChange={(event) => setCreatedBy(event.target.value)}
-            />
-          </div>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">
+                Session sizing type
+              </legend>
+              <div className="flex flex-col gap-2">
+                {[
+                  { type: GameType.Fibonacci, label: 'Fibonacci' },
+                  { type: GameType.ShortFibonacci, label: 'Short Fibonacci' },
+                  { type: GameType.TShirt, label: 'T-Shirt' },
+                  {
+                    type: GameType.TShirtAndNumber,
+                    label: 'T-Shirt & Numbers',
+                  },
+                  { type: GameType.Custom, label: 'Custom' },
+                ].map(({ type, label }) => (
+                  <label key={type} className="flex items-center gap-2 text-sm">
+                    <span className="relative flex size-4 items-center justify-center">
+                      <input
+                        type="radio"
+                        className="peer sr-only"
+                        name="gameType"
+                        value={type}
+                        checked={gameType === type}
+                        onChange={() => setGameType(type)}
+                      />
+                      <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition" />
+                      <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full opacity-0 transition peer-checked:opacity-100" />
+                    </span>
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-          <fieldset>
-            <legend className="block text-sm font-medium mb-2">
-              Session sizing type
-            </legend>
-            <div className="flex flex-col gap-2">
-              {[
-                { type: GameType.Fibonacci, label: 'Fibonacci' },
-                { type: GameType.ShortFibonacci, label: 'Short Fibonacci' },
-                { type: GameType.TShirt, label: 'T-Shirt' },
-                { type: GameType.TShirtAndNumber, label: 'T-Shirt & Numbers' },
-                { type: GameType.Custom, label: 'Custom' },
-              ].map(({ type, label }) => (
-                <label key={type} className="inline-flex items-center">
-                  <input
-                    type="radio"
-                    className="form-radio text-blue-600"
-                    name="gameType"
-                    value={type}
-                    checked={gameType === type}
-                    onChange={() => setGameType(type)}
+            {gameType === GameType.Custom && (
+              <div className="flex flex-wrap gap-2">
+                {customOptions.map((option, index) => (
+                  <Input
+                    key={index}
+                    type="text"
+                    maxLength={3}
+                    className="h-8 w-12 px-2 text-center text-xs"
+                    value={option}
+                    onChange={(event) =>
+                      handleCustomOptionChange(index, event.target.value)
+                    }
                   />
-                  <span className="ml-2">{label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+                ))}
+              </div>
+            )}
 
-          {gameType === GameType.Custom && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {customOptions.map((option, index) => (
+            <label className="flex items-center gap-2 text-sm">
+              <span className="relative flex size-4 items-center justify-center">
                 <input
-                  key={index}
-                  type="text"
-                  maxLength={3}
-                  className="w-12 border rounded px-2 py-1 text-xs text-center focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900"
-                  value={option}
-                  onChange={(event) =>
-                    handleCustomOptionChange(index, event.target.value)
-                  }
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={allowMembersToManageSession}
+                  onChange={() => setAllowMembersToManageSession((v) => !v)}
                 />
-              ))}
-            </div>
-          )}
+                <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-sm border transition" />
+                <span className="text-primary-foreground pointer-events-none absolute text-[10px] font-semibold leading-none opacity-0 transition peer-checked:opacity-100">
+                  ✓
+                </span>
+              </span>
+              <span>Allow members to manage session</span>
+            </label>
 
-          <label className="inline-flex items-center mt-2">
-            <input
-              type="checkbox"
-              className="form-checkbox text-blue-600"
-              checked={allowMembersToManageSession}
-              onChange={() => setAllowMembersToManageSession((v) => !v)}
-            />
-            <span className="ml-2">Allow members to manage session</span>
-          </label>
+            {error && <p className="text-destructive text-xs">{error}</p>}
+          </FieldGroup>
+        </CardContent>
 
-          {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
-        </div>
-
-        <div className="flex justify-end mt-6">
-          <button
-            type="submit"
-            className={`px-[15px] py-[7px] rounded-[980px] bg-[#0071e3] text-white border border-transparent shadow-[2px_6px_14px_#0000001f] transition-all duration-300 ease-[cubic-bezier(0,0,0.5,1)] will-change-transform hover:bg-[#1a7ff0] hover:shadow-[2px_10px_22px_#00000033] hover:scale-[1.035] cursor-pointer ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            disabled={loading}
-          >
+        <CardFooter className="justify-end">
+          <Button type="submit" disabled={loading}>
             {loading ? 'Creating…' : 'Create'}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </form>
   );
 }

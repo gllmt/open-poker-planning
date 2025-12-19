@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
+import { Button } from '@/components/ui/button';
 import { getTheme, setTheme as persistTheme } from '@/lib/browser-storage';
 
 export function ThemeControl() {
@@ -13,13 +13,14 @@ export function ThemeControl() {
   }, [theme]);
 
   return (
-    <button
+    <Button
       type="button"
-      className="cursor-pointer"
+      variant="ghost"
+      size="sm"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? 'Light' : 'Dark'}
-    </button>
+    </Button>
   );
 }

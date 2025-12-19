@@ -14,9 +14,7 @@ export default async function JoinGamePage({
         <div className="w-full max-w-xl animate-fade-in-down">
           <Suspense
             fallback={
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Loading…
-              </div>
+              <div className="text-muted-foreground text-sm">Loading…</div>
             }
           >
             <JoinGame initialGameId={id} />

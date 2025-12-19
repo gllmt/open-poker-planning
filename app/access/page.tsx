@@ -1,5 +1,13 @@
 import Link from 'next/link';
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+
 import { submitAccessCode } from './actions';
 
 function readSearchParam(
@@ -29,67 +37,69 @@ export default async function AccessPage({
   const showError = readSearchParam(resolvedSearchParams?.error) === '1';
 
   return (
-    <div className="min-h-[calc(100vh-48px)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-6 bg-white dark:bg-gray-900">
-        <h1 className="text-2xl font-semibold text-center">Access required</h1>
-        <p className="text-sm text-center text-gray-600 dark:text-gray-300 mt-2">
-          Enter the access code to continue.
-        </p>
+    <div className="flex items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle>Access required</CardTitle>
+          <CardDescription>Enter the access code to continue.</CardDescription>
+        </CardHeader>
 
-        {!gateEnabled ? (
-          <div className="mt-6 text-sm text-gray-700 dark:text-gray-300">
-            <p className="mb-3">
-              The access gate is disabled (missing server env var
-              `SITE_ACCESS_CODE`).
-            </p>
-            <Link
-              className="text-blue-600 dark:text-blue-400 underline"
-              href={nextPath}
-            >
-              Continue
-            </Link>
-          </div>
-        ) : (
-          <form
-            action={submitAccessCode}
-            className="mt-6 space-y-4"
-            suppressHydrationWarning
-          >
-            <input type="hidden" name="next" value={nextPath} />
-
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="code">
-                Access code
-              </label>
-              <input
-                id="code"
-                name="code"
-                type="password"
-                required
-                suppressHydrationWarning
-                className="w-full border border-gray-400 dark:border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-950"
-                placeholder="Enter code"
-              />
-              {showError && (
-                <p className="text-red-600 text-xs mt-2">Invalid code.</p>
-              )}
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded font-semibold shadow hover:bg-blue-700 transition"
+        <CardContent>
+          {!gateEnabled ? (
+            <div className="text-muted-foreground text-sm">
+              <p className="mb-3">
+                The access gate is disabled (missing server env var
+                `SITE_ACCESS_CODE`).
+              </p>
+              <Link
+                className="text-primary underline underline-offset-4"
+                href={nextPath}
               >
                 Continue
-              </button>
+              </Link>
             </div>
-          </form>
-        )}
+          ) : (
+            <form
+              action={submitAccessCode}
+              className="space-y-4"
+              suppressHydrationWarning
+            >
+              <input type="hidden" name="next" value={nextPath} />
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium" htmlFor="code">
+                  Access code
+                </label>
+                <input
+                  id="code"
+                  name="code"
+                  type="password"
+                  required
+                  suppressHydrationWarning
+                  className="bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-4xl border px-3 py-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-[3px]"
+                  placeholder="Enter code"
+                />
+                {showError && (
+                  <p className="text-destructive text-xs">Invalid code.</p>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring/50 h-9 rounded-4xl px-4 text-sm font-medium shadow-sm transition focus-visible:ring-[3px]"
+                >
+                  Continue
+                </button>
+              </div>
+            </form>
+          )}
+        </CardContent>
 
         {/* <div className='mt-6 text-xs text-gray-500 dark:text-gray-400'>
           Tip: use a long, random code in production (Vercel env var `SITE_ACCESS_CODE`).
         </div> */}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -44,7 +44,7 @@ export function CardPicker({
           : 'Session not ready for voting! Wait for moderator to start'}
       </div>
       {error && (
-        <div className="text-center text-red-600 text-xs -mt-2 mb-2">
+        <div className="text-center text-destructive text-xs -mt-2 mb-2">
           {error}
         </div>
       )}
@@ -59,12 +59,12 @@ export function CardPicker({
               disabled={game.gameStatus === Status.Finished}
               className={`
                 cursor-pointer select-none transition-all duration-300
-                rounded shadow-md border border-gray-300
+                rounded-md border border-border bg-card text-foreground shadow-sm
                 flex flex-col items-center justify-center
-                bg-white text-gray-800
-                hover:scale-110
+                hover:scale-110 hover:shadow-md
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
                 w-16 h-24 md:w-20 md:h-30
-                ${isSelected ? 'border-dashed border-2 border-gray-800 z-10 shadow-lg scale-110' : 'shadow-md'}
+                ${isSelected ? 'border-primary/60 ring-primary/30 border-2 ring-2 z-10 scale-110 shadow-md' : ''}
                 ${game.gameStatus === Status.Finished ? 'opacity-50 cursor-not-allowed' : ''}
               `}
               style={{ backgroundColor: card.color }}
@@ -76,7 +76,7 @@ export function CardPicker({
               <div className="flex flex-col justify-between h-full w-full p-1">
                 {card.value >= 0 && (
                   <>
-                    <span className="text-xs text-gray-800 flex justify-start">
+                    <span className="text-xs text-foreground flex justify-start">
                       {card.displayValue}
                     </span>
                     <span
@@ -84,7 +84,7 @@ export function CardPicker({
                     >
                       {card.displayValue}
                     </span>
-                    <span className="flex justify-end w-full text-xs text-gray-800">
+                    <span className="flex justify-end w-full text-xs text-foreground">
                       {card.displayValue}
                     </span>
                   </>

@@ -3,6 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import {
   deleteGame,
   reset,
@@ -192,145 +197,149 @@ export function GameController({
 
   return (
     <div className="flex flex-col items-center w-full px-2">
-      <div className="w-full max-w-md bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg my-5">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-400 dark:border-gray-600">
-          <div className="text-lg font-semibold truncate flex-grow">
+      <Card className="w-full max-w-md my-5 gap-0 py-0">
+        <CardHeader className="border-border flex flex-wrap items-center gap-3 border-b px-4 py-3">
+          <CardTitle className="text-lg font-semibold truncate flex-grow">
             {game.name}
-          </div>
+          </CardTitle>
           <Timer timerProps={timerProps} onTimerUpdate={onUpdatedTimerProps} />
-          <div className="mx-2 h-6 border-l border-gray-400 dark:border-gray-600" />
+          <Separator orientation="vertical" className="h-6" />
           <span className="text-sm font-medium">
             {game.gameStatus} {getGameStatusIcon(game.gameStatus)}
           </span>
           <AverageComponent game={game} players={players} />
-        </div>
+        </CardHeader>
 
-        {isMod && (
-          <div
-            className="flex justify-end p-2"
-            title="Auto Reveal when all members finished voting"
-          >
-            <AutoReveal
-              autoReveal={game.autoReveal || false}
-              onAutoReveal={onAutoReveal}
-            />
-          </div>
-        )}
-
-        <div className="flex flex-wrap justify-center gap-6 px-2 pt-8 pb-2">
+        <CardContent className="px-4 pb-4 pt-3">
           {isMod && (
-            <>
-              <ControllerButton
-                onClick={() => reveal(game.id, currentPlayerId)}
-                label="Reveal"
-                className="hover:bg-green-200"
-              >
-                👁️
-              </ControllerButton>
-              <ControllerButton
-                onClick={() => reset(game.id, currentPlayerId)}
-                label="Restart"
-                className="hover:bg-red-200"
-              >
-                🔄
-              </ControllerButton>
-              <ControllerButton
-                onClick={handleRemoveGame}
-                label="Delete"
-                className="hover:bg-red-200"
-              >
-                🗑️
-              </ControllerButton>
-            </>
+            <div
+              className="flex justify-end pb-3"
+              title="Auto Reveal when all members finished voting"
+            >
+              <AutoReveal
+                autoReveal={game.autoReveal || false}
+                onAutoReveal={onAutoReveal}
+              />
+            </div>
           )}
 
-          <ControllerButton
-            onClick={leaveGame}
-            label="Exit"
-            className="hover:bg-gray-200"
-          >
-            🚪
-          </ControllerButton>
-          <ControllerButton
-            onClick={copyInviteLink}
-            label="Invite"
-            className="hover:bg-blue-200"
-          >
-            🔗
-          </ControllerButton>
-
-          <div className="w-full text-xs mt-2">
-            <div className="flex items-center justify-between gap-2">
-              <label className="font-semibold" htmlFor="storyName">
-                Story Name:
-              </label>
-
-              {!isEditingStory ? (
-                <button
-                  type="button"
-                  onClick={startStoryEdit}
-                  className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+          <div className="flex flex-wrap justify-center gap-6 pb-2">
+            {isMod && (
+              <>
+                <ControllerButton
+                  onClick={() => reveal(game.id, currentPlayerId)}
+                  label="Reveal"
+                  variant="secondary"
                 >
-                  Edit
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
+                  👁️
+                </ControllerButton>
+                <ControllerButton
+                  onClick={() => reset(game.id, currentPlayerId)}
+                  label="Restart"
+                  variant="outline"
+                >
+                  🔄
+                </ControllerButton>
+                <ControllerButton
+                  onClick={handleRemoveGame}
+                  label="Delete"
+                  variant="destructive"
+                >
+                  🗑️
+                </ControllerButton>
+              </>
+            )}
+
+            <ControllerButton
+              onClick={leaveGame}
+              label="Exit"
+              variant="outline"
+            >
+              🚪
+            </ControllerButton>
+            <ControllerButton
+              onClick={copyInviteLink}
+              label="Invite"
+              variant="secondary"
+            >
+              🔗
+            </ControllerButton>
+
+            <div className="w-full text-xs mt-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="font-semibold" htmlFor="storyName">
+                  Story Name:
+                </label>
+
+                {!isEditingStory ? (
+                  <Button
                     type="button"
-                    onClick={cancelStoryEdit}
-                    disabled={storySaving}
-                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="sm"
+                    variant="outline"
+                    onClick={startStoryEdit}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveStoryEdit}
-                    disabled={storySaving || !storyIsDirty}
-                    className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {storySaving ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelStoryEdit}
+                      disabled={storySaving}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={saveStoryEdit}
+                      disabled={storySaving || !storyIsDirty}
+                    >
+                      {storySaving ? 'Saving…' : 'Save'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <Input
+                id="storyName"
+                ref={storyInputRef}
+                placeholder="Enter story name or number"
+                className="italic mt-2"
+                type="text"
+                value={storyDraft}
+                readOnly={!isEditingStory}
+                aria-readonly={!isEditingStory}
+                onChange={(e) => setStoryDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (!isEditingStory) return;
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void saveStoryEdit();
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelStoryEdit();
+                  }
+                }}
+              />
+              {storyError && (
+                <p className="text-destructive text-xs mt-2">{storyError}</p>
               )}
             </div>
-            <input
-              id="storyName"
-              ref={storyInputRef}
-              placeholder="Enter story name or number"
-              className="w-full italic p-2 mt-2 border bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
-              type="text"
-              value={storyDraft}
-              readOnly={!isEditingStory}
-              aria-readonly={!isEditingStory}
-              onChange={(e) => setStoryDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (!isEditingStory) return;
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void saveStoryEdit();
-                  return;
-                }
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  cancelStoryEdit();
-                }
-              }}
-            />
-            {storyError && (
-              <p className="text-red-600 text-xs mt-2">{storyError}</p>
-            )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {showCopiedMessage && (
         <div className="fixed top-6 right-6 z-50">
           <div
-            className="bg-green-100 border border-green-200 text-gray-800 opacity-85 px-4 py-3 text-xs rounded shadow"
+            className="bg-card border-border text-card-foreground shadow-lg px-4 py-3 text-xs rounded-xl ring-1 ring-foreground/10"
             role="alert"
           >
-            <span className="block font-bold">
+            <span className="block font-semibold">
               Invite link copied to clipboard!
             </span>
           </div>
@@ -343,26 +352,28 @@ export function GameController({
 function ControllerButton({
   onClick,
   label,
-  className,
+  variant = 'outline',
   children,
 }: {
   onClick: () => void;
   label: string;
-  className: string;
+  variant?: React.ComponentProps<typeof Button>['variant'];
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center">
-      <button
+      <Button
         type="button"
         aria-label={label}
         onClick={onClick}
-        className={`p-2 cursor-pointer rounded-full bg-white dark:bg-gray-900 ${className} transition`}
+        className="rounded-full"
         title={label}
+        size="icon"
+        variant={variant}
       >
         <span className="text-2xl">{children}</span>
-      </button>
-      <span className="text-xs mt-1">{label}</span>
+      </Button>
+      <span className="text-muted-foreground text-xs mt-1">{label}</span>
     </div>
   );
 }
@@ -377,19 +388,19 @@ function AutoReveal({
   return (
     <div className="flex flex-col items-center">
       <label className="flex items-center cursor-pointer">
-        <span className="mr-2 text-xs">Auto Reveal</span>
+        <span className="text-muted-foreground mr-2 text-xs">Auto Reveal</span>
         <button
           type="button"
           role="switch"
           aria-checked={autoReveal}
           onClick={() => onAutoReveal(!autoReveal)}
-          className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none ${
-            autoReveal ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+          className={`bg-muted focus-visible:ring-ring/50 relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none ${
+            autoReveal ? 'bg-primary' : 'bg-muted'
           }`}
           style={{ minWidth: '2rem' }}
         >
           <span
-            className={`inline-block h-3 w-3 cursor-pointer transform rounded-full bg-white shadow transition-transform ${
+            className={`bg-background inline-block h-3 w-3 cursor-pointer transform rounded-full shadow transition-transform ${
               autoReveal ? 'translate-x-4' : 'translate-x-1'
             }`}
           />
@@ -431,11 +442,11 @@ function AverageComponent({
 
   return (
     <>
-      <div className="mx-2 h-6 border-l border-gray-400 dark:border-gray-600" />
+      <Separator orientation="vertical" className="h-6 mx-2" />
       <span className="text-sm font-medium">Avg:</span>
-      <span className="px-2 py-1 ml-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900 font-bold shadow-sm border border-gray-200 inline-flex items-center">
+      <Badge variant="secondary" className="font-semibold ml-1">
         {average}
-      </span>
+      </Badge>
     </>
   );
 }

@@ -16,18 +16,18 @@ export function CircularProgressBar({
   const dashOffset = dashArray - (dashArray * (percentage || 0)) / 100;
 
   return (
-    <div className="relative h-fit bg-white dark:bg-gray-800">
+    <div className="relative h-fit bg-card">
       <svg width={sqSize} height={sqSize} viewBox={viewBox}>
         <title>Timer progress</title>
         <circle
-          className="fill-none stroke-gray-200 dark:stroke-gray-700"
+          className="fill-none stroke-border"
           cx={sqSize / 2}
           cy={sqSize / 2}
           r={radius}
           strokeWidth={`${strokeWidth}px`}
         />
         <circle
-          className="fill-none stroke-blue-400 transition-all delay-200 ease-in"
+          className="fill-none stroke-primary transition-all delay-200 ease-in"
           cx={sqSize / 2}
           cy={sqSize / 2}
           r={radius}
