@@ -10,7 +10,7 @@ export function RecentGames() {
 
   if (!recentGames.length) {
     return (
-      <div className="border border-gray-400 rounded-md shadow-sm p-4 w-full">
+      <div className="rounded-[18px] shadow-[0_4px_16px_#00000029] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] p-4 w-full dark:bg-gray-900 bg-white">
         <h3 className="text-lg font-medium mb-2">Recent sessions</h3>
         <p className="text-sm">No recent sessions found</p>
       </div>
@@ -18,8 +18,8 @@ export function RecentGames() {
   }
 
   return (
-    <div className="border border-gray-400 rounded-md shadow-sm w-full">
-      <div className="text-center -mt-5 mx-auto w-[95%] border-2 bg-white dark:bg-gray-800 border-gray-400 rounded-2xl flex items-center justify-center px-3 py-1">
+    <div className="rounded-[18px] shadow-[0_4px_16px_#00000029] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] dark:bg-gray-900 bg-white">
+      <div className="text-center -mt-5 mx-auto w-[95%] flex items-center justify-center px-3 py-1">
         <h3 className="text-lg font-medium truncate">Recent sessions</h3>
       </div>
       <div className="p-4">

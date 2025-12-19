@@ -86,7 +86,7 @@ export function CreateGame() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full flex justify-center">
-      <div className="w-full max-w-lg border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-6">
+      <div className="w-full max-w-lg dark:bg-gray-900 bg-white rounded-[18px] shadow-[0_4px_16px_#00000029] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] p-6">
         <h2 className="text-2xl font-semibold mb-4 text-center">
           Create new session
         </h2>
@@ -186,7 +186,7 @@ export function CreateGame() {
         <div className="flex justify-end mt-6">
           <button
             type="submit"
-            className={`bg-blue-600 text-white px-6 py-2 rounded font-semibold shadow hover:bg-blue-700 transition ${
+            className={`px-[15px] py-[7px] rounded-[980px] bg-[#0071e3] text-white border border-transparent shadow-[2px_6px_14px_#0000001f] transition-all duration-300 ease-[cubic-bezier(0,0,0.5,1)] will-change-transform hover:bg-[#1a7ff0] hover:shadow-[2px_10px_22px_#00000033] hover:scale-[1.035] cursor-pointer ${
               loading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             disabled={loading}

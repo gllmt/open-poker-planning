@@ -10,9 +10,9 @@ const ThemeControl = dynamic(
 
 export function Toolbar() {
   return (
-    <header className="flex w-full items-center justify-between shadow-sm dark:shadow-gray-800 px-2">
+    <header className="flex w-full items-center justify-between shadow-sm dark:shadow-gray-800 p-2 px-4">
       <div className="inline-flex items-center">
-        <Link href="/" className="button-ghost flex items-center">
+        <Link href="/" className="flex items-center">
           <span className="md:text-2xl text-sm font-normal">
             Planning Poker
           </span>
@@ -20,11 +20,11 @@ export function Toolbar() {
       </div>
 
       <nav className="inline-flex items-center justify-end gap-1">
-        <Link href="/" className="button-ghost">
-          New session
+        <Link href="/" className="cursor-pointer px-4 py-2">
+          New
         </Link>
-        <Link href="/join" className="button-ghost">
-          Join session
+        <Link href="/join" className="cursor-pointer px-4 py-2">
+          Join
         </Link>
         <ThemeControl />
       </nav>
