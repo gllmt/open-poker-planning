@@ -20,6 +20,9 @@ export function Toolbar() {
       </div>
 
       <nav className="inline-flex items-center justify-end gap-1">
+        <Link href="/shadcn" className="cursor-pointer px-4 py-2">
+          Shadcn
+        </Link>
         <Link href="/" className="cursor-pointer px-4 py-2">
           New
         </Link>

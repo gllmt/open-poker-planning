@@ -1,20 +1,11 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Noto_Sans } from 'next/font/google';
 
 import { Toolbar } from '@/components/toolbar/toolbar';
 
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-  preload: false,
-});
+const notoSans = Noto_Sans({ variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Planning Poker',
@@ -28,9 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${notoSans.variable} antialiased`}>
         <div className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
           <Toolbar />
           {children}
