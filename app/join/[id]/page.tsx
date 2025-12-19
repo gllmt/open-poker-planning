@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 
 import { JoinGame } from '@/components/poker/join-game';
+import { Loading } from '@/components/ui/loading';
 
 export default async function JoinGamePage({
   params,
@@ -14,7 +15,10 @@ export default async function JoinGamePage({
         <div className="w-full max-w-xl animate-fade-in-down">
           <Suspense
             fallback={
-              <div className="text-muted-foreground text-sm">Loading…</div>
+              <div className="flex items-center justify-center py-6">
+                <Loading />
+                <span className="sr-only">Loading</span>
+              </div>
             }
           >
             <JoinGame initialGameId={id} />
