@@ -20,6 +20,15 @@ export function GameArea({
 }) {
   return (
     <>
+      <div className="text-center flex justify-center">
+        <CardPicker
+          game={game}
+          players={players}
+          currentPlayerId={currentPlayerId}
+          onVote={onVote}
+          error={voteError}
+        />
+      </div>
       <div className="flex flex-col min-h-[60%] overflow-auto p-0.5 justify-center">
         <Players
           game={game}
@@ -30,15 +39,6 @@ export function GameArea({
           game={game}
           players={players}
           currentPlayerId={currentPlayerId}
-        />
-      </div>
-      <div className="text-center flex justify-center">
-        <CardPicker
-          game={game}
-          players={players}
-          currentPlayerId={currentPlayerId}
-          onVote={onVote}
-          error={voteError}
         />
       </div>
     </>

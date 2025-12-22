@@ -58,13 +58,17 @@ export function CardPicker({
               aria-pressed={isSelected}
               disabled={game.gameStatus === Status.Finished}
               className={`
-                cursor-pointer select-none transition-all duration-300
-                rounded-md border border-border bg-card text-foreground shadow-sm
+                cursor-pointer select-none transition-all duration-300 ease-out will-change-transform
+                rounded-md border-2 border-transparent bg-card text-foreground shadow-sm
                 flex flex-col items-center justify-center
-                hover:scale-110 hover:shadow-md
+                hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-md
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
-                w-16 h-24 md:w-20 md:h-30
-                ${isSelected ? 'border-primary/60 ring-primary/30 border-2 ring-2 z-10 scale-110 shadow-md' : ''}
+                w-20 h-[110px] md:w-[130px] md:h-[180px]
+                ${
+                  isSelected
+                    ? 'ring-4 ring-primary/70 dark:ring-primary/80 scale-[1.04] shadow-md'
+                    : ''
+                }
                 ${game.gameStatus === Status.Finished ? 'opacity-50 cursor-not-allowed' : ''}
               `}
               style={{ backgroundColor: card.color }}

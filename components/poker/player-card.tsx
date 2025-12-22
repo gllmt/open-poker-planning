@@ -1,9 +1,17 @@
 'use client';
 
+import { Check, CircleUserRound } from 'lucide-react';
+
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { removePlayer } from '@/lib/api/games';
 import { isModerator } from '@/lib/is-moderator';
-import type { Game, GameType } from '@/types/game';
+import { cn } from '@/lib/utils';
+import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
@@ -29,39 +37,67 @@ export function PlayerCard({
     await removePlayer(game.id, player.id, currentPlayerId);
   };
 
+  const hasVoted = player.status === Status.Finished;
+  const isRevealed = game.gameStatus === Status.Finished;
+  const cardDisplayValue =
+    hasVoted && isRevealed ? getCardDisplayValue(game, player.value) : '';
+  const cardColor =
+    hasVoted && isRevealed ? getCardColor(game, player.value) : '';
+
   return (
     <div
-      className="border-border bg-muted text-foreground w-25 rounded-2xl border shadow-sm mb-2 m-3"
-      style={{
-        backgroundColor: getCardColor(game, player.value),
-      }}
+      className={cn(
+        'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2',
+        getPlayerRowClass(player.id)
+      )}
     >
-      <div className="bg-background border-border text-center -mt-5 mx-auto w-[95%] rounded-2xl border-2 flex items-center justify-around px-3 py-1">
-        <div
-          className="text-center font-semibold text-sm truncate"
-          title={player.name}
-        >
-          {player.name}
+      <div className="flex min-w-0 items-center gap-3">
+        <Avatar size="sm" className="shrink-0">
+          <AvatarImage src={undefined} alt={player.name} />
+          <AvatarFallback className="bg-background/70 text-muted-foreground">
+            <CircleUserRound className="size-4" aria-hidden="true" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold" title={player.name}>
+            {player.name}
+          </div>
         </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {!isRevealed && (
+          <span className="flex size-5 items-center justify-center">
+            {hasVoted ? (
+              <Check
+                className="size-4 text-emerald-500"
+                aria-hidden="true"
+              />
+            ) : null}
+          </span>
+        )}
+        {isRevealed && (
+          <span
+            className={cn(
+              'min-w-[2.5rem] rounded-full px-2 py-1 text-center text-xs font-semibold',
+              cardColor ? 'text-slate-900' : 'bg-muted text-muted-foreground'
+            )}
+            style={cardColor ? { backgroundColor: cardColor } : undefined}
+          >
+            {hasVoted ? cardDisplayValue || '-' : '-'}
+          </span>
+        )}
         {canRemove && (
           <Button
             type="button"
             title="Remove"
-            variant="ghost"
-            size="icon-xs"
+            variant="outline"
+            size="sm"
             className="text-destructive hover:text-destructive"
             onClick={onRemove}
           >
-            🗑️
+            remove player
           </Button>
         )}
-      </div>
-      <div className="flex items-center justify-center text-foreground py-6 mb-3">
-        <span
-          className={`${getCardValue(player, game)?.length < 2 ? 'text-4xl' : 'text-3xl'}`}
-        >
-          {getCardValue(player, game)}
-        </span>
       </div>
     </div>
   );
@@ -77,28 +113,37 @@ function getCardColor(game: Game, value: number | undefined): string {
   return '';
 }
 
-function getCardValue(player: Player, game: Game) {
-  if (game.gameStatus !== Status.Finished) {
-    return player.status === Status.Finished ? '👍' : '🤔';
-  }
-
-  if (player.status === Status.Finished) {
-    if (player.value === -1) return player.emoji || '☕';
-    return getCardDisplayValue(game, player.value);
-  }
-  return '🤔';
-}
-
-function getCardDisplayValue(
-  game: Game,
-  cardValue: number | undefined
-): string {
+function getCardDisplayValue(game: Game, cardValue: number | undefined): string {
   const cards = game.cards?.length
     ? game.cards
-    : getCards(game.gameType as GameType);
+    : getCards(game.gameType);
   return (
     cards.find((card) => card.value === cardValue)?.displayValue ||
     cardValue?.toString() ||
     ''
   );
+}
+
+const playerRowClasses = [
+  'border-sky-200 bg-sky-50/80',
+  'border-emerald-200 bg-emerald-50/80',
+  'border-amber-200 bg-amber-50/80',
+  'border-rose-200 bg-rose-50/80',
+  'border-lime-200 bg-lime-50/80',
+  'border-cyan-200 bg-cyan-50/80',
+  'border-orange-200 bg-orange-50/80',
+  'border-teal-200 bg-teal-50/80',
+];
+
+function getPlayerRowClass(playerId: string) {
+  const index = getStableColorIndex(playerId, playerRowClasses.length);
+  return playerRowClasses[index] || '';
+}
+
+function getStableColorIndex(seed: string, length: number) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) % length;
+  }
+  return hash;
 }
