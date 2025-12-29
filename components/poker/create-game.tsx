@@ -138,23 +138,40 @@ export function CreateGame() {
                     label: 'T-Shirt & Numbers',
                   },
                   { type: GameType.Custom, label: 'Custom' },
-                ].map(({ type, label }) => (
-                  <label key={type} className="flex items-center gap-2 text-sm">
-                    <span className="relative flex size-4 items-center justify-center">
-                      <input
-                        type="radio"
-                        className="peer sr-only"
-                        name="gameType"
-                        value={type}
-                        checked={gameType === type}
-                        onChange={() => setGameType(type)}
-                      />
-                      <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition" />
-                      <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full opacity-0 transition peer-checked:opacity-100" />
-                    </span>
-                    <span>{label}</span>
-                  </label>
-                ))}
+                ].map(({ type, label }) => {
+                  const preview =
+                    type === GameType.Custom
+                      ? 'Choose your own values below (min 2).'
+                      : getCards(type)
+                          .map((card) => card.displayValue)
+                          .join(' · ');
+
+                  return (
+                    <label
+                      key={type}
+                      className="flex flex-col gap-1 text-sm"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="relative flex size-4 items-center justify-center">
+                          <input
+                            type="radio"
+                            className="peer sr-only"
+                            name="gameType"
+                            value={type}
+                            checked={gameType === type}
+                            onChange={() => setGameType(type)}
+                          />
+                          <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition" />
+                          <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full opacity-0 transition peer-checked:opacity-100" />
+                        </span>
+                        <span>{label}</span>
+                      </span>
+                      <span className="text-muted-foreground pl-6 text-xs">
+                        {preview}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
 
