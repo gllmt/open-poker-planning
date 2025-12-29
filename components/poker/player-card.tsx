@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, CircleUserRound } from 'lucide-react';
+import { Check, CircleQuestionMark, CircleUserRound, Coffee } from 'lucide-react';
 
 import {
   Avatar,
@@ -15,7 +15,7 @@ import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { getCards } from './card-configs';
+import { getCards, normalizeLegacyCards } from './card-configs';
 
 export function PlayerCard({
   game,
@@ -43,6 +43,10 @@ export function PlayerCard({
     hasVoted && isRevealed ? getCardDisplayValue(game, player.value) : '';
   const cardColor =
     hasVoted && isRevealed ? getCardColor(game, player.value) : '';
+  const shouldShowCoffee =
+    hasVoted && isRevealed && player.value === -1;
+  const shouldShowQuestion =
+    hasVoted && isRevealed && player.value === -2;
 
   return (
     <div
@@ -78,12 +82,27 @@ export function PlayerCard({
         {isRevealed && (
           <span
             className={cn(
-              'min-w-[2.5rem] rounded-full px-2 py-1 text-center text-xs font-semibold',
-              cardColor ? 'text-slate-900' : 'bg-muted text-muted-foreground'
+              'min-w-10 rounded-full px-2 py-1 text-center text-xs font-semibold',
+              cardColor
+                ? 'text-slate-900 dark:text-white'
+                : 'bg-muted text-muted-foreground'
             )}
             style={cardColor ? { backgroundColor: cardColor } : undefined}
           >
-            {hasVoted ? cardDisplayValue || '-' : '-'}
+            {hasVoted ? (
+              shouldShowCoffee ? (
+                <Coffee className="inline-block size-4" aria-hidden="true" />
+              ) : shouldShowQuestion ? (
+                <CircleQuestionMark
+                  className="inline-block size-4"
+                  aria-hidden="true"
+                />
+              ) : (
+                cardDisplayValue || '-'
+              )
+            ) : (
+              '-'
+            )}
           </span>
         )}
         {canRemove && (
@@ -105,18 +124,21 @@ export function PlayerCard({
 
 function getCardColor(game: Game, value: number | undefined): string {
   if (game.gameStatus === Status.Finished) {
-    const card = (
+    const cards = normalizeLegacyCards(
+      game.gameType,
       game.cards?.length ? game.cards : getCards(game.gameType)
-    ).find((c) => c.value === value);
+    );
+    const card = cards.find((c) => c.value === value);
     return card ? card.color : '';
   }
   return '';
 }
 
 function getCardDisplayValue(game: Game, cardValue: number | undefined): string {
-  const cards = game.cards?.length
-    ? game.cards
-    : getCards(game.gameType);
+  const cards = normalizeLegacyCards(
+    game.gameType,
+    game.cards?.length ? game.cards : getCards(game.gameType)
+  );
   return (
     cards.find((card) => card.value === cardValue)?.displayValue ||
     cardValue?.toString() ||

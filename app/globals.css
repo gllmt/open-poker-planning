@@ -80,6 +80,17 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --card-zero: #5eead4;
+  --card-question: #a78bfa;
+  --card-coffee: #fdba74;
+  --card-xxs: #f9a8d4;
+  --card-blue-1: #93c5fd;
+  --card-blue-2: #7dd3fc;
+  --card-green-1: #86efac;
+  --card-yellow-1: #fde68a;
+  --card-red-1: #fca5a5;
+  --card-red-2: #f87171;
+  --card-purple-1: #c4b5fd;
 
   html {
     text-rendering: optimizeLegibility;
@@ -129,6 +140,17 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --card-zero: #0f766e;
+  --card-question: #5b21b6;
+  --card-coffee: #c2410c;
+  --card-xxs: #be185d;
+  --card-blue-1: #1d4ed8;
+  --card-blue-2: #0369a1;
+  --card-green-1: #15803d;
+  --card-yellow-1: #b45309;
+  --card-red-1: #b91c1c;
+  --card-red-2: #991b1b;
+  --card-purple-1: #6d28d9;
 }
 
 @layer base {

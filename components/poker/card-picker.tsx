@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { CircleQuestionMark, Coffee } from 'lucide-react';
 import type { CardConfig } from '@/types/cards';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { getCards, getRandomEmoji } from './card-configs';
+import { getCards, normalizeLegacyCards } from './card-configs';
 
 export function CardPicker({
   game,
@@ -21,19 +21,15 @@ export function CardPicker({
   onVote: (value: number, emoji?: string) => void;
   error?: string | null;
 }) {
-  const randomEmoji = useMemo(() => {
-    const seed = `${game.id}:${game.updatedAt || ''}:${currentPlayerId}:${game.gameStatus}`;
-    return pickEmoji(seed);
-  }, [game.id, game.updatedAt, currentPlayerId, game.gameStatus]);
-
-  const cards = game.cards?.length ? game.cards : getCards(game.gameType);
+  const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
+  const cards = normalizeLegacyCards(game.gameType, baseCards);
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
   const currentValue =
     currentPlayer?.status === Status.Finished ? currentPlayer.value : undefined;
 
   const play = (card: CardConfig) => {
     if (game.gameStatus === Status.Finished) return;
-    onVote(card.value, card.value === -1 ? randomEmoji : undefined);
+    onVote(card.value, card.value === -1 ? 'coffee' : undefined);
   };
 
   return (
@@ -59,7 +55,7 @@ export function CardPicker({
               disabled={game.gameStatus === Status.Finished}
               className={`
                 cursor-pointer select-none transition-all duration-300 ease-out will-change-transform
-                rounded-md border-2 border-transparent bg-card text-foreground shadow-sm
+                rounded-md border-2 border-transparent bg-card shadow-sm text-slate-900 dark:text-white
                 flex flex-col items-center justify-center
                 hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-md
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
@@ -80,7 +76,7 @@ export function CardPicker({
               <div className="flex flex-col justify-between h-full w-full p-1">
                 {card.value >= 0 && (
                   <>
-                    <span className="text-xs text-foreground flex justify-start">
+                    <span className="text-xs flex justify-start">
                       {card.displayValue}
                     </span>
                     <span
@@ -88,19 +84,19 @@ export function CardPicker({
                     >
                       {card.displayValue}
                     </span>
-                    <span className="flex justify-end w-full text-xs text-foreground">
+                    <span className="flex justify-end w-full text-xs">
                       {card.displayValue}
                     </span>
                   </>
                 )}
                 {card.value === -1 && (
-                  <span className="flex flex-col justify-center h-full text-4xl">
-                    {randomEmoji}
+                  <span className="flex flex-col justify-center h-full w-full text-4xl">
+                    <Coffee className="size-9 w-full" aria-hidden="true" />
                   </span>
                 )}
                 {card.value === -2 && (
-                  <span className="flex flex-col justify-center h-full text-4xl">
-                    ❓
+                  <span className="flex flex-col justify-center h-full w-full text-4xl">
+                    <CircleQuestionMark className="size-9 w-full" aria-hidden="true" />
                   </span>
                 )}
               </div>
@@ -110,30 +106,4 @@ export function CardPicker({
       </div>
     </div>
   );
-}
-
-function pickEmoji(seed: string) {
-  const emojis = [
-    '☕',
-    '🥤',
-    '🍹',
-    '🍸',
-    '🍧',
-    '🍨',
-    '🍩',
-    '🍎',
-    '🧁',
-    '🍪',
-    '🍿',
-    '🌮',
-    '🍦',
-    '🍉',
-    '🍐',
-    '🍰',
-    '🍫',
-  ];
-  let hash = 5381;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 33) ^ seed.charCodeAt(i);
-  const index = Math.abs(hash) % emojis.length;
-  return emojis[index] || getRandomEmoji();
 }
