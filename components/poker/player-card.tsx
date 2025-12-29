@@ -50,7 +50,7 @@ export function PlayerCard({
   return (
     <div
       className={cn(
-        'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2',
+        'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 max-w-content',
         getPlayerRowClass(player.id)
       )}
     >

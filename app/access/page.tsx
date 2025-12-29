@@ -1,5 +1,5 @@
 import Link from 'next/link';
-
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -7,6 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import { submitAccessCode } from './actions';
 
@@ -66,18 +68,16 @@ export default async function AccessPage({
             >
               <input type="hidden" name="next" value={nextPath} />
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="code">
-                  Access code
-                </label>
-                <input
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="code">Access code</Label>
+                <Input
                   id="code"
                   name="code"
                   type="password"
                   required
                   suppressHydrationWarning
-                  className="bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-4xl border px-3 py-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-[3px]"
                   placeholder="Enter code"
+                  aria-invalid={showError || undefined}
                 />
                 {showError && (
                   <p className="text-destructive text-xs">Invalid code.</p>
@@ -85,12 +85,7 @@ export default async function AccessPage({
               </div>
 
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring/50 h-9 rounded-4xl px-4 text-sm font-medium shadow-sm transition focus-visible:ring-[3px]"
-                >
-                  Continue
-                </button>
+                <Button type="submit">Continue</Button>
               </div>
             </form>
           )}

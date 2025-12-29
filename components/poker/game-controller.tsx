@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  CircleCheckBig,
+  CircleDot,
+  Eye,
+  Hourglass,
+  LogOut,
+  RefreshCcw,
+  Share,
+  Trash,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -231,21 +241,21 @@ export function GameController({
                   label="Reveal"
                   variant="secondary"
                 >
-                  👁️
+                  <Eye className="size-5" aria-hidden="true" />
                 </ControllerButton>
                 <ControllerButton
                   onClick={() => reset(game.id, currentPlayerId)}
                   label="Restart"
                   variant="outline"
                 >
-                  🔄
+                  <RefreshCcw className="size-5" aria-hidden="true" />
                 </ControllerButton>
                 <ControllerButton
                   onClick={handleRemoveGame}
                   label="Delete"
                   variant="destructive"
                 >
-                  🗑️
+                  <Trash className="size-5" aria-hidden="true" />
                 </ControllerButton>
               </>
             )}
@@ -255,14 +265,14 @@ export function GameController({
               label="Exit"
               variant="outline"
             >
-              🚪
+              <LogOut className="size-5" aria-hidden="true" />
             </ControllerButton>
             <ControllerButton
               onClick={copyInviteLink}
               label="Invite"
               variant="secondary"
             >
-              🔗
+              <Share className="size-5" aria-hidden="true" />
             </ControllerButton>
 
             <div className="w-full text-xs mt-2">
@@ -413,11 +423,13 @@ function AutoReveal({
 function getGameStatusIcon(gameStatus: string) {
   switch (gameStatus) {
     case 'In Progress':
-      return '⏱️';
+      return <Hourglass className="inline-block size-4" aria-hidden="true" />;
     case 'Finished':
-      return '🎉';
+      return (
+        <CircleCheckBig className="inline-block size-4" aria-hidden="true" />
+      );
     default:
-      return '🚀';
+      return <CircleDot className="inline-block size-4" aria-hidden="true" />;
   }
 }
 

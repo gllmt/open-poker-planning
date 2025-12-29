@@ -1,5 +1,6 @@
 'use client';
 
+import { Hourglass } from 'lucide-react';
 import { useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -67,7 +68,7 @@ export function Timer({
           <span
             className={`${timerVisible ? 'text-primary' : 'text-muted-foreground'}`}
           >
-            ⏱️
+            <Hourglass className="size-5" aria-hidden="true" />
           </span>
         </Button>
       )}
