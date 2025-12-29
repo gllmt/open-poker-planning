@@ -20,13 +20,13 @@ export function GameArea({
 }) {
   return (
     <>
-    <div className="flex flex-col gap-4">
-    <GameController
+      <div className="flex flex-col gap-4">
+        <GameController
           game={game}
           players={players}
           currentPlayerId={currentPlayerId}
         />
-    </div>
+      </div>
       <div className="text-center flex justify-center pb-4">
         <CardPicker
           game={game}

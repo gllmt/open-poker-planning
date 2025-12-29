@@ -147,10 +147,7 @@ export function CreateGame() {
                           .join(' · ');
 
                   return (
-                    <label
-                      key={type}
-                      className="flex flex-col gap-1 text-sm"
-                    >
+                    <label key={type} className="flex flex-col gap-1 text-sm">
                       <span className="flex items-center gap-2">
                         <span className="relative flex size-4 items-center justify-center">
                           <input

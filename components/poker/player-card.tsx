@@ -1,12 +1,13 @@
 'use client';
 
-import { Check, CircleQuestionMark, CircleUserRound, Coffee } from 'lucide-react';
-
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
+  Check,
+  CircleQuestionMark,
+  CircleUserRound,
+  Coffee,
+} from 'lucide-react';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { removePlayer } from '@/lib/api/games';
 import { isModerator } from '@/lib/is-moderator';
@@ -43,10 +44,8 @@ export function PlayerCard({
     hasVoted && isRevealed ? getCardDisplayValue(game, player.value) : '';
   const cardColor =
     hasVoted && isRevealed ? getCardColor(game, player.value) : '';
-  const shouldShowCoffee =
-    hasVoted && isRevealed && player.value === -1;
-  const shouldShowQuestion =
-    hasVoted && isRevealed && player.value === -2;
+  const shouldShowCoffee = hasVoted && isRevealed && player.value === -1;
+  const shouldShowQuestion = hasVoted && isRevealed && player.value === -2;
 
   return (
     <div
@@ -72,10 +71,7 @@ export function PlayerCard({
         {!isRevealed && (
           <span className="flex size-5 items-center justify-center">
             {hasVoted ? (
-              <Check
-                className="size-4 text-emerald-500"
-                aria-hidden="true"
-              />
+              <Check className="size-4 text-emerald-500" aria-hidden="true" />
             ) : null}
           </span>
         )}
@@ -134,7 +130,10 @@ function getCardColor(game: Game, value: number | undefined): string {
   return '';
 }
 
-function getCardDisplayValue(game: Game, cardValue: number | undefined): string {
+function getCardDisplayValue(
+  game: Game,
+  cardValue: number | undefined
+): string {
   const cards = normalizeLegacyCards(
     game.gameType,
     game.cards?.length ? game.cards : getCards(game.gameType)

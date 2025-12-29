@@ -96,7 +96,10 @@ export function CardPicker({
                 )}
                 {card.value === -2 && (
                   <span className="flex flex-col justify-center h-full w-full text-4xl">
-                    <CircleQuestionMark className="size-9 w-full" aria-hidden="true" />
+                    <CircleQuestionMark
+                      className="size-9 w-full"
+                      aria-hidden="true"
+                    />
                   </span>
                 )}
               </div>
