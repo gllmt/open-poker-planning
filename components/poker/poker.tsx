@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loading } from '@/components/ui/loading';
 import { fetchGameState, vote } from '@/lib/api/games';
 import {
@@ -23,7 +23,6 @@ type PendingVote = {
 
 export function Poker({ gameId }: { gameId: string }) {
   const router = useRouter();
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[] | null>(null);
@@ -113,6 +112,7 @@ export function Poker({ gameId }: { gameId: string }) {
   }, [refresh]);
 
   useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
     const channel = supabase.channel(`game:${gameId}`, {
       config: { broadcast: { ack: false, self: true } },
     });
@@ -130,7 +130,7 @@ export function Poker({ gameId }: { gameId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, gameId, refresh, clearPendingVote]);
+  }, [gameId, refresh, clearPendingVote]);
 
   useEffect(() => {
     if (!players || !currentPlayerId) return;

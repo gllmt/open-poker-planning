@@ -1,6 +1,16 @@
 'use client';
 
 import {
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  Square,
+  Volume2,
+  VolumeOff,
+  X,
+} from 'lucide-react';
+import {
   type ChangeEvent,
   useCallback,
   useEffect,
@@ -10,6 +20,7 @@ import {
 } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { CircularProgressBar } from './circular-progress';
 
@@ -65,9 +76,18 @@ const nowStore = {
 };
 
 function useNow(active: boolean) {
+  const subscribe = useCallback(
+    (onStoreChange: () => void) =>
+      active ? nowStore.subscribe(onStoreChange) : () => {},
+    [active]
+  );
+  const getSnapshot = useCallback(
+    () => (active ? nowStore.getSnapshot() : nowStore.getServerSnapshot()),
+    [active]
+  );
   return useSyncExternalStore(
-    (onStoreChange) => (active ? nowStore.subscribe(onStoreChange) : () => {}),
-    nowStore.getSnapshot,
+    subscribe,
+    getSnapshot,
     nowStore.getServerSnapshot
   );
 }
@@ -105,7 +125,11 @@ function TimerProgressView({
         title={soundOn ? 'Sound enabled' : 'Sound disabled'}
         className="text-muted-foreground absolute top-3 left-3 p-1"
       >
-        {soundOn ? '🔊' : '🔇'}
+        {soundOn ? (
+          <Volume2 className="size-4" aria-hidden="true" />
+        ) : (
+          <VolumeOff className="size-4" aria-hidden="true" />
+        )}
       </div>
       <div className="flex h-full w-full justify-center items-center space-y-2 flex-col">
         <CircularProgressBar percentage={percentage}>
@@ -114,22 +138,22 @@ function TimerProgressView({
               title={`Running time: ${runningMinutes}m ${runningSeconds}s`}
               className="text-foreground flex items-center space-x-1 flex-grow"
             >
-              <input
+              <Input
                 type="text"
                 value={runningMinutes.toString().padStart(2, '0')}
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground w-[2.5rem] border-none bg-transparent focus:outline-none"
+                className="text-foreground disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={() => {}}
                 disabled
               />
               <span className="pb-[0.3rem]">:</span>
-              <input
+              <Input
                 type="text"
                 value={runningSeconds.toString().padStart(2, '0')}
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground w-[2.5rem] border-none bg-transparent focus:outline-none"
+                className="text-foreground disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={() => {}}
                 disabled
               />
@@ -365,7 +389,11 @@ function TimerProgressMod({
         size="icon-xs"
         variant="ghost"
       >
-        {soundOn ? '🔊' : '🔇'}
+        {soundOn ? (
+          <Volume2 className="size-4" aria-hidden="true" />
+        ) : (
+          <VolumeOff className="size-4" aria-hidden="true" />
+        )}
       </Button>
       {isMod && (
         <Button
@@ -376,7 +404,7 @@ function TimerProgressMod({
           size="icon-xs"
           variant="ghost"
         >
-          ✕
+          <X className="size-4" aria-hidden="true" />
         </Button>
       )}
       <div className="flex h-full w-full justify-center items-center space-y-2 flex-col">
@@ -390,7 +418,7 @@ function TimerProgressMod({
               }
               className="text-foreground flex items-center space-x-1 flex-grow"
             >
-              <input
+              <Input
                 type="text"
                 value={
                   isRunning || !isMod
@@ -399,13 +427,13 @@ function TimerProgressMod({
                 }
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground w-[2.5rem] border-none bg-transparent focus:outline-none"
+                className="text-foreground text-2xl disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={onMinutesChange}
                 onBlur={onInputsBlur}
                 disabled={isRunning}
               />
               <span className="pb-[0.3rem]">:</span>
-              <input
+              <Input
                 type="text"
                 value={
                   isRunning || !isMod
@@ -414,7 +442,7 @@ function TimerProgressMod({
                 }
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground w-[2.5rem] border-none bg-transparent focus:outline-none"
+                className="text-foreground text-2xl disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={onSecondsChange}
                 onBlur={onInputsBlur}
                 disabled={isRunning}
@@ -442,7 +470,7 @@ function TimerProgressMod({
                 callback={handleReset}
                 className="text-muted-foreground"
               >
-                {'\u23F9'}
+                <Square className="size-4" aria-hidden="true" />
               </TimerControlButton>
               <div className="flex-grow w-full">
                 {!isRunning && (
@@ -451,13 +479,13 @@ function TimerProgressMod({
                       callback={onReduceSeconds}
                       title="Minus 1 minute"
                     >
-                      -
+                      <Minus className="size-4" aria-hidden="true" />
                     </TimerControlButton>
                     <TimerControlButton
                       callback={onAddSeconds}
                       title="Add 1 minute"
                     >
-                      +
+                      <Plus className="size-4" aria-hidden="true" />
                     </TimerControlButton>
                   </div>
                 )}
@@ -469,7 +497,7 @@ function TimerProgressMod({
                   disabled={displayTotal === 0}
                   className="text-muted-foreground"
                 >
-                  {'\u25B6'}
+                  <Play className="size-4" aria-hidden="true" />
                 </TimerControlButton>
               ) : (
                 <TimerControlButton
@@ -477,7 +505,7 @@ function TimerProgressMod({
                   callback={pauseTimer}
                   className="text-muted-foreground"
                 >
-                  {'\u23F8'}
+                  <Pause className="size-4" aria-hidden="true" />
                 </TimerControlButton>
               )}
             </div>
