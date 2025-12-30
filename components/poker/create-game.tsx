@@ -96,7 +96,7 @@ export function CreateGame() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full flex justify-center">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-xl">
         <CardHeader className="text-center">
           <CardTitle>Create new session</CardTitle>
         </CardHeader>
