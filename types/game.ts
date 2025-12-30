@@ -2,10 +2,12 @@ import type { CardConfig } from './cards';
 import type { Status } from './status';
 
 export interface TimerProps {
-  currentSeconds?: number;
+  startedAt?: number | null;
+  pausedAt?: number | null;
   totalSeconds?: number;
   soundOn?: boolean;
   timerVisible?: boolean;
+  currentSeconds?: number;
   timerPaused?: boolean;
 }
 

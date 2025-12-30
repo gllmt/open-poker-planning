@@ -1,12 +1,65 @@
 'use client';
 
 import { Hourglass } from 'lucide-react';
-import { useCallback } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import type { TimerProps as GameTimerProps } from '@/types/game';
 
 import { TimerProgress } from './timer-progress-popup';
+
+type VisibilityStore = {
+  getSnapshot: () => boolean;
+  subscribe: (listener: () => void) => () => void;
+  setOverride: (value: boolean | null) => void;
+  setServerValue: (value: boolean) => void;
+};
+
+function createVisibilityStore(initialValue: boolean): VisibilityStore {
+  let override: boolean | null = null;
+  let serverValue = initialValue;
+  const listeners = new Set<() => void>();
+
+  const getSnapshot = () => override ?? serverValue;
+  const notify = () => {
+    listeners.forEach((listener) => {
+      listener();
+    });
+  };
+
+  const setOverride = (value: boolean | null) => {
+    const prevSnapshot = getSnapshot();
+    override = value;
+    if (override !== null && override === serverValue) {
+      override = null;
+    }
+    if (getSnapshot() !== prevSnapshot) notify();
+  };
+
+  const setServerValue = (value: boolean) => {
+    const prevSnapshot = getSnapshot();
+    serverValue = value;
+    if (override !== null && override === serverValue) {
+      override = null;
+    }
+    if (getSnapshot() !== prevSnapshot) notify();
+  };
+
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+
+  return { getSnapshot, subscribe, setOverride, setServerValue };
+}
 
 export function Timer({
   timerProps,
@@ -14,10 +67,12 @@ export function Timer({
 }: {
   timerProps: {
     isMod?: boolean;
-    currentSeconds?: number;
+    startedAt?: number | null;
+    pausedAt?: number | null;
     totalSeconds?: number;
     soundOn?: boolean;
     timerVisible?: boolean;
+    currentSeconds?: number;
     timerPaused?: boolean;
   };
   onTimerUpdate: (timer: GameTimerProps) => void;
@@ -25,10 +80,12 @@ export function Timer({
   const {
     isMod = false,
     timerVisible = false,
-    timerPaused = false,
-    currentSeconds = 0,
+    startedAt,
+    pausedAt,
     totalSeconds = 300,
     soundOn = true,
+    currentSeconds,
+    timerPaused,
   } = timerProps;
 
   const onTimerStateUpdate = useCallback(
@@ -36,29 +93,84 @@ export function Timer({
     [onTimerUpdate]
   );
 
-  const onTimerClose = useCallback(() => {
+  const legacyMigrationRef = useRef(false);
+  const visibilityStore = useMemo(
+    () => createVisibilityStore(timerVisible),
+    [timerVisible]
+  );
+  const localTimerVisible = useSyncExternalStore(
+    visibilityStore.subscribe,
+    visibilityStore.getSnapshot,
+    visibilityStore.getSnapshot
+  );
+
+  useEffect(() => {
+    if (startedAt !== undefined || pausedAt !== undefined) return;
+    if (typeof currentSeconds !== 'number') return;
+    if (legacyMigrationRef.current) return;
+    legacyMigrationRef.current = true;
+
+    if (timerPaused === false) {
+      const legacyStartedAt = Date.now() - currentSeconds * 1000;
+      onTimerStateUpdate({
+        startedAt: legacyStartedAt,
+        pausedAt: null,
+        totalSeconds,
+        soundOn,
+        timerVisible,
+      });
+      return;
+    }
+
     onTimerStateUpdate({
-      currentSeconds: 0,
+      startedAt: null,
+      pausedAt: currentSeconds,
+      totalSeconds,
+      soundOn,
+      timerVisible,
+    });
+  }, [
+    startedAt,
+    pausedAt,
+    currentSeconds,
+    timerPaused,
+    totalSeconds,
+    soundOn,
+    timerVisible,
+    onTimerStateUpdate,
+  ]);
+
+  const normalizedStartedAt = startedAt ?? null;
+  const normalizedPausedAt =
+    pausedAt ?? (typeof currentSeconds === 'number' ? currentSeconds : null);
+
+  const onTimerOpen = useCallback(() => {
+    visibilityStore.setOverride(true);
+    onTimerStateUpdate({
+      startedAt: null,
+      pausedAt: 0,
       totalSeconds: 300,
       soundOn: true,
-      timerPaused: false,
+      timerVisible: true,
+    });
+  }, [onTimerStateUpdate, visibilityStore]);
+
+  const onTimerClose = useCallback(() => {
+    visibilityStore.setOverride(false);
+    onTimerStateUpdate({
+      startedAt: null,
+      pausedAt: 0,
+      totalSeconds: 300,
+      soundOn: true,
       timerVisible: false,
     });
-  }, [onTimerStateUpdate]);
+  }, [onTimerStateUpdate, visibilityStore]);
 
   return (
     <>
       {isMod && (
         <Button
-          onClick={() =>
-            onTimerStateUpdate({
-              currentSeconds: 0,
-              totalSeconds: 300,
-              soundOn: true,
-              timerPaused: false,
-              timerVisible: true,
-            })
-          }
+          onClick={onTimerOpen}
           title="Timer"
           aria-label="Timer"
           type="button"
@@ -66,24 +178,24 @@ export function Timer({
           variant="ghost"
         >
           <span
-            className={`${timerVisible ? 'text-primary' : 'text-muted-foreground'}`}
+            className={`${localTimerVisible ? 'text-primary' : 'text-muted-foreground'}`}
           >
             <Hourglass className="size-5" aria-hidden="true" />
           </span>
         </Button>
       )}
 
-      {timerVisible && (
+      {localTimerVisible && (
         <TimerProgress
-          currentSeconds={currentSeconds}
+          startedAt={normalizedStartedAt}
+          pausedAt={normalizedPausedAt}
           totalSeconds={totalSeconds}
           onTimerClose={onTimerClose}
           isMod={isMod}
           onTimerStateUpdate={(update) =>
-            onTimerStateUpdate({ ...update, timerVisible })
+            onTimerStateUpdate({ ...update, timerVisible: localTimerVisible })
           }
           soundOn={soundOn}
-          timerPaused={timerPaused}
         />
       )}
     </>

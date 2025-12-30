@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -14,23 +15,62 @@ import { CircularProgressBar } from './circular-progress';
 
 type TimerProps = {
   isMod?: boolean;
-  currentSeconds?: number;
+  startedAt?: number | null;
+  pausedAt?: number | null;
   totalSeconds?: number;
   soundOn?: boolean;
-  timerPaused?: boolean;
   onTimerClose: () => void;
   onTimerStateUpdate: (update: {
-    currentSeconds: number;
+    startedAt: number | null;
+    pausedAt: number | null;
     totalSeconds: number;
     soundOn: boolean;
-    timerPaused: boolean;
   }) => void;
 };
 
 const getMinutesAndSeconds = (time: number) =>
   [Math.floor(time / 60), time % 60] as const;
-const audio =
-  typeof Audio !== 'undefined' ? new Audio('/timer-notification.mp3') : null;
+
+const playNotification = () => {
+  if (typeof Audio === 'undefined') return;
+  const notification = new Audio('/timer-notification.mp3');
+  notification.play().catch(() => {});
+};
+
+const nowStore = {
+  current: 0,
+  listeners: new Set<() => void>(),
+  intervalId: null as ReturnType<typeof setInterval> | null,
+  subscribe: (listener: () => void) => {
+    nowStore.listeners.add(listener);
+    if (!nowStore.intervalId) {
+      nowStore.current = Date.now();
+      nowStore.intervalId = setInterval(() => {
+        nowStore.current = Date.now();
+        nowStore.listeners.forEach((cb) => {
+          cb();
+        });
+      }, 1000);
+    }
+    return () => {
+      nowStore.listeners.delete(listener);
+      if (nowStore.listeners.size === 0 && nowStore.intervalId) {
+        clearInterval(nowStore.intervalId);
+        nowStore.intervalId = null;
+      }
+    };
+  },
+  getSnapshot: () => nowStore.current,
+  getServerSnapshot: () => 0,
+};
+
+function useNow(active: boolean) {
+  return useSyncExternalStore(
+    (onStoreChange) => (active ? nowStore.subscribe(onStoreChange) : () => {}),
+    nowStore.getSnapshot,
+    nowStore.getServerSnapshot
+  );
+}
 
 export function TimerProgress(props: TimerProps) {
   if (props.isMod) return <TimerProgressMod {...props} />;
@@ -38,20 +78,26 @@ export function TimerProgress(props: TimerProps) {
 }
 
 function TimerProgressView({
-  currentSeconds = 0,
+  startedAt = null,
+  pausedAt = 0,
   totalSeconds = 300,
   soundOn = true,
-  timerPaused = false,
 }: TimerProps) {
-  const total = totalSeconds;
-  const current = currentSeconds;
-  const inProgress = !timerPaused;
-
-  const [minutes, seconds] = getMinutesAndSeconds(total);
-  const [runningMinutes, runningSeconds] = getMinutesAndSeconds(
-    total - current
+  const startedAtValue = startedAt ?? 0;
+  const inProgress = startedAt != null;
+  const now = useNow(inProgress);
+  const elapsed = inProgress
+    ? Math.floor((now - startedAtValue) / 1000)
+    : (pausedAt ?? 0);
+  const clampedElapsed = Math.min(
+    Math.max(elapsed, 0),
+    Math.max(totalSeconds, 0)
   );
-  const percentage = total > 0 ? 100 - (current / total) * 100 : 100;
+  const remaining = Math.max(0, totalSeconds - clampedElapsed);
+
+  const [minutes, seconds] = getMinutesAndSeconds(totalSeconds);
+  const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
+  const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
 
   return (
     <div className="border-border bg-card text-card-foreground absolute top-13 right-2 z-10 h-fit w-[15rem] rounded-xl border p-4 shadow-xl">
@@ -107,100 +153,219 @@ function TimerProgressView({
 
 function TimerProgressMod({
   isMod = false,
-  currentSeconds = 0,
+  startedAt = null,
+  pausedAt = 0,
   totalSeconds = 300,
   onTimerClose,
   onTimerStateUpdate,
   soundOn = true,
 }: TimerProps) {
-  const [total, setTotal] = useState(totalSeconds);
-  const [current, setCurrent] = useState(currentSeconds);
-  const [inProgress, setInProgress] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [_soundOn, setSoundOn] = useState(soundOn);
+  const [draftTotal, setDraftTotal] = useState<number | null>(null);
+  const finishedRef = useRef(false);
+  const pendingUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (inProgress) {
-      intervalRef.current = setInterval(() => {
-        setCurrent((prev) => {
-          if (prev + 1 >= total) {
-            clearInterval(intervalRef.current as NodeJS.Timeout);
-            setInProgress(false);
-            if (audio && _soundOn) audio.play();
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(intervalRef.current as NodeJS.Timeout);
-  }, [inProgress, total, _soundOn]);
-
-  useEffect(() => {
-    onTimerStateUpdate({
-      totalSeconds: total,
-      currentSeconds: current,
-      timerPaused: !inProgress,
-      soundOn: _soundOn,
-    });
-  }, [current, total, inProgress, _soundOn, onTimerStateUpdate]);
-
-  const startTimer = useCallback(() => setInProgress(true), []);
-  const pauseTimer = useCallback(() => {
-    setInProgress(false);
-    clearInterval(intervalRef.current as NodeJS.Timeout);
-  }, []);
-  const handleReset = useCallback(() => {
-    setCurrent(0);
-    setInProgress(false);
-    clearInterval(intervalRef.current as NodeJS.Timeout);
-    intervalRef.current = null;
-  }, []);
-  const onAddSeconds = useCallback(() => setTotal((prev) => prev + 60), []);
-  const onReduceSeconds = useCallback(
-    () => setTotal((prev) => (prev - 60 > 30 ? prev - 60 : prev)),
-    []
+  const startedAtValue = startedAt ?? 0;
+  const isRunning = startedAt != null;
+  const now = useNow(isRunning);
+  const elapsed = isRunning
+    ? Math.floor((now - startedAtValue) / 1000)
+    : (pausedAt ?? 0);
+  const clampedElapsed = Math.min(
+    Math.max(elapsed, 0),
+    Math.max(totalSeconds, 0)
   );
+  const remaining = Math.max(0, totalSeconds - clampedElapsed);
+  const activeDraftTotal =
+    draftTotal !== null && draftTotal !== totalSeconds ? draftTotal : null;
+  const resolvedDraftTotal = activeDraftTotal ?? totalSeconds;
+  const displayTotal = isRunning ? totalSeconds : resolvedDraftTotal;
+
+  useEffect(() => {
+    if (!isRunning) {
+      finishedRef.current = false;
+      return;
+    }
+    if (remaining > 0) {
+      finishedRef.current = false;
+      return;
+    }
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    playNotification();
+    onTimerStateUpdate({
+      startedAt: null,
+      pausedAt: 0,
+      totalSeconds,
+      soundOn,
+    });
+  }, [isRunning, remaining, totalSeconds, soundOn, onTimerStateUpdate]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingUpdateRef.current) {
+        clearTimeout(pendingUpdateRef.current);
+        pendingUpdateRef.current = null;
+      }
+    };
+  }, []);
+
+  const cancelPendingUpdate = useCallback(() => {
+    if (pendingUpdateRef.current) {
+      clearTimeout(pendingUpdateRef.current);
+      pendingUpdateRef.current = null;
+    }
+  }, []);
+
+  const commitTotalUpdate = useCallback(
+    (nextTotal: number) => {
+      const safeTotal = Math.max(0, nextTotal);
+      cancelPendingUpdate();
+      onTimerStateUpdate({
+        startedAt: null,
+        pausedAt: 0,
+        totalSeconds: safeTotal,
+        soundOn,
+      });
+    },
+    [cancelPendingUpdate, soundOn, onTimerStateUpdate]
+  );
+
+  const scheduleTotalUpdate = useCallback(
+    (nextTotal: number) => {
+      const safeTotal = Math.max(0, nextTotal);
+      cancelPendingUpdate();
+      pendingUpdateRef.current = setTimeout(() => {
+        pendingUpdateRef.current = null;
+        onTimerStateUpdate({
+          startedAt: null,
+          pausedAt: 0,
+          totalSeconds: safeTotal,
+          soundOn,
+        });
+      }, 400);
+    },
+    [cancelPendingUpdate, soundOn, onTimerStateUpdate]
+  );
+
+  const startTimer = useCallback(() => {
+    cancelPendingUpdate();
+    const baseElapsed = pausedAt ?? 0;
+    const startAt = Date.now() - baseElapsed * 1000;
+    onTimerStateUpdate({
+      startedAt: startAt,
+      pausedAt: null,
+      totalSeconds: resolvedDraftTotal,
+      soundOn,
+    });
+  }, [
+    pausedAt,
+    resolvedDraftTotal,
+    soundOn,
+    onTimerStateUpdate,
+    cancelPendingUpdate,
+  ]);
+
+  const pauseTimer = useCallback(() => {
+    cancelPendingUpdate();
+    onTimerStateUpdate({
+      startedAt: null,
+      pausedAt: clampedElapsed,
+      totalSeconds,
+      soundOn,
+    });
+  }, [
+    clampedElapsed,
+    totalSeconds,
+    soundOn,
+    onTimerStateUpdate,
+    cancelPendingUpdate,
+  ]);
+
+  const handleReset = useCallback(() => {
+    cancelPendingUpdate();
+    onTimerStateUpdate({
+      startedAt: null,
+      pausedAt: 0,
+      totalSeconds,
+      soundOn,
+    });
+  }, [totalSeconds, soundOn, onTimerStateUpdate, cancelPendingUpdate]);
+
+  const onAddSeconds = useCallback(() => {
+    const nextTotal = resolvedDraftTotal + 60;
+    setDraftTotal(nextTotal);
+    commitTotalUpdate(nextTotal);
+  }, [resolvedDraftTotal, commitTotalUpdate]);
+
+  const onReduceSeconds = useCallback(() => {
+    const nextTotal =
+      resolvedDraftTotal - 60 > 30
+        ? resolvedDraftTotal - 60
+        : resolvedDraftTotal;
+    setDraftTotal(nextTotal);
+    commitTotalUpdate(nextTotal);
+  }, [resolvedDraftTotal, commitTotalUpdate]);
 
   const onMinutesChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const minutes = Number(event.target.value.slice(-2));
-      setTotal(minutes * 60 + (total % 60));
-      setCurrent(0);
+      const nextTotal = minutes * 60 + (resolvedDraftTotal % 60);
+      setDraftTotal(nextTotal);
+      scheduleTotalUpdate(nextTotal);
     },
-    [total]
+    [resolvedDraftTotal, scheduleTotalUpdate]
   );
 
   const onSecondsChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const seconds = Number(event.target.value.slice(-2));
-      setTotal(Math.floor(total / 60) * 60 + seconds);
-      setCurrent(0);
+      const nextTotal = Math.floor(resolvedDraftTotal / 60) * 60 + seconds;
+      setDraftTotal(nextTotal);
+      scheduleTotalUpdate(nextTotal);
     },
-    [total]
+    [resolvedDraftTotal, scheduleTotalUpdate]
   );
 
-  const [minutes, seconds] = getMinutesAndSeconds(total);
-  const [runningMinutes, runningSeconds] = getMinutesAndSeconds(
-    total - current
-  );
-  const percentage = total > 0 ? 100 - (current / total) * 100 : 100;
+  const onInputsBlur = useCallback(() => {
+    if (activeDraftTotal === null) return;
+    commitTotalUpdate(activeDraftTotal);
+  }, [activeDraftTotal, commitTotalUpdate]);
+
+  const toggleSound = useCallback(() => {
+    cancelPendingUpdate();
+    const nextSound = !soundOn;
+    onTimerStateUpdate({
+      startedAt: startedAt ?? null,
+      pausedAt: startedAt ? null : (pausedAt ?? 0),
+      totalSeconds,
+      soundOn: nextSound,
+    });
+  }, [
+    soundOn,
+    startedAt,
+    pausedAt,
+    totalSeconds,
+    onTimerStateUpdate,
+    cancelPendingUpdate,
+  ]);
+
+  const [minutes, seconds] = getMinutesAndSeconds(displayTotal);
+  const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
+  const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
   const [currentMinutesRunning, currentSecondsRunning] =
-    getMinutesAndSeconds(current);
-
-  const isRunning = inProgress;
+    getMinutesAndSeconds(clampedElapsed);
 
   return (
     <div className="border-border bg-card text-card-foreground absolute top-13 right-2 z-10 h-fit w-[15rem] rounded-xl border p-4 shadow-xl">
       <Button
-        title={_soundOn ? 'Disable sound' : 'Enable sound'}
+        title={soundOn ? 'Disable sound' : 'Enable sound'}
         className="absolute top-3 left-3"
-        onClick={() => isMod && setSoundOn((s) => !s)}
+        onClick={() => isMod && toggleSound()}
         type="button"
         size="icon-xs"
         variant="ghost"
       >
-        {_soundOn ? '🔊' : '🔇'}
+        {soundOn ? '🔊' : '🔇'}
       </Button>
       {isMod && (
         <Button
@@ -236,6 +401,7 @@ function TimerProgressMod({
                 pattern="[0-9]*"
                 className="text-foreground disabled:text-muted-foreground w-[2.5rem] border-none bg-transparent focus:outline-none"
                 onChange={onMinutesChange}
+                onBlur={onInputsBlur}
                 disabled={isRunning}
               />
               <span className="pb-[0.3rem]">:</span>
@@ -250,10 +416,11 @@ function TimerProgressMod({
                 pattern="[0-9]*"
                 className="text-foreground disabled:text-muted-foreground w-[2.5rem] border-none bg-transparent focus:outline-none"
                 onChange={onSecondsChange}
+                onBlur={onInputsBlur}
                 disabled={isRunning}
               />
             </div>
-            {isMod && !inProgress && (
+            {isMod && !isRunning && (
               <div
                 title={`Elapsed: ${currentMinutesRunning}m ${currentSecondsRunning}s`}
                 className="text-foreground text-2xl"
@@ -278,7 +445,7 @@ function TimerProgressMod({
                 {'\u23F9'}
               </TimerControlButton>
               <div className="flex-grow w-full">
-                {!inProgress && (
+                {!isRunning && (
                   <div className="flex justify-center items-center gap-x-2 w-full h-8">
                     <TimerControlButton
                       callback={onReduceSeconds}
@@ -295,11 +462,11 @@ function TimerProgressMod({
                   </div>
                 )}
               </div>
-              {!inProgress ? (
+              {!isRunning ? (
                 <TimerControlButton
                   title="Start timer"
                   callback={startTimer}
-                  disabled={total === 0}
+                  disabled={displayTotal === 0}
                   className="text-muted-foreground"
                 >
                   {'\u25B6'}

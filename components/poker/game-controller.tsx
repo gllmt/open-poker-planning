@@ -187,23 +187,7 @@ export function GameController({
     router.push('/');
   };
 
-  const timerProps: {
-    isMod?: boolean;
-    timerVisible?: boolean;
-    timerPaused?: boolean;
-    currentSeconds?: number;
-    totalSeconds?: number;
-    soundOn?: boolean;
-  } = { isMod, timerVisible: game.timerProps?.timerVisible };
-
-  if (!isMod) {
-    timerProps.isMod = false;
-    timerProps.timerVisible = game.timerProps?.timerVisible;
-    timerProps.timerPaused = game.timerProps?.timerPaused;
-    timerProps.currentSeconds = game.timerProps?.currentSeconds;
-    timerProps.totalSeconds = game.timerProps?.totalSeconds;
-    timerProps.soundOn = game.timerProps?.soundOn;
-  }
+  const timerProps = { isMod, ...(game.timerProps ?? {}) };
 
   return (
     <div className="flex flex-col items-center w-full px-2">
