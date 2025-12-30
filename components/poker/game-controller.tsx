@@ -190,10 +190,10 @@ export function GameController({
   const timerProps = { isMod, ...(game.timerProps ?? {}) };
 
   return (
-    <div className="flex flex-col items-center w-full px-2">
-      <Card className="w-full max-w-md my-5 gap-0 py-0">
+    <div className="flex flex-col items-center w-full">
+      <Card className="w-full max-w-xl my-5 gap-0 py-0">
         <CardHeader className="border-border flex flex-wrap items-center gap-3 border-b px-4 py-3">
-          <CardTitle className="text-lg font-semibold truncate flex-grow">
+          <CardTitle className="text-lg font-semibold truncate grow">
             {game.name}
           </CardTitle>
           <Timer timerProps={timerProps} onTimerUpdate={onUpdatedTimerProps} />

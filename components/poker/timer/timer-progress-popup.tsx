@@ -136,14 +136,14 @@ function TimerProgressView({
           <div className="text-4xl flex flex-col items-center space-y-2">
             <div
               title={`Running time: ${runningMinutes}m ${runningSeconds}s`}
-              className="text-foreground flex items-center space-x-1 flex-grow"
+              className="text-foreground flex items-center space-x-1 grow"
             >
               <Input
                 type="text"
                 value={runningMinutes.toString().padStart(2, '0')}
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-foreground disabled:text-muted-foreground text-xl md:text-2xl disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={() => {}}
                 disabled
               />
@@ -153,7 +153,7 @@ function TimerProgressView({
                 value={runningSeconds.toString().padStart(2, '0')}
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-foreground disabled:text-muted-foreground md:text-2xl text-xl disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={() => {}}
                 disabled
               />
@@ -416,7 +416,7 @@ function TimerProgressMod({
                   ? `Set time: ${minutes}m ${seconds}s`
                   : `Running time: ${runningMinutes}m ${runningSeconds}s`
               }
-              className="text-foreground flex items-center space-x-1 flex-grow"
+              className="text-foreground flex items-center space-x-1 grow"
             >
               <Input
                 type="text"
@@ -427,7 +427,7 @@ function TimerProgressMod({
                 }
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground text-2xl disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-foreground md:text-2xl text-xl disabled:text-muted-foreground disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={onMinutesChange}
                 onBlur={onInputsBlur}
                 disabled={isRunning}
@@ -442,7 +442,7 @@ function TimerProgressMod({
                 }
                 maxLength={3}
                 pattern="[0-9]*"
-                className="text-foreground text-2xl disabled:text-muted-foreground disabled:opacity-100 w-[2.5rem] border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-foreground md:text-2xl text-xl disabled:text-muted-foreground disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
                 onChange={onSecondsChange}
                 onBlur={onInputsBlur}
                 disabled={isRunning}
@@ -451,7 +451,7 @@ function TimerProgressMod({
             {isMod && !isRunning && (
               <div
                 title={`Elapsed: ${currentMinutesRunning}m ${currentSecondsRunning}s`}
-                className="text-foreground text-2xl"
+                className="text-foreground md:text-2xl text-xl"
               >
                 <span>{currentMinutesRunning.toString().padStart(2, '0')}</span>
                 <span>:</span>
@@ -472,9 +472,9 @@ function TimerProgressMod({
               >
                 <Square className="size-4" aria-hidden="true" />
               </TimerControlButton>
-              <div className="flex-grow w-full">
+              <div className="grow w-full">
                 {!isRunning && (
-                  <div className="flex justify-center items-center gap-x-2 w-full h-8">
+                  <div className="flex justify-center items-center gap-x-2 w-full h-9">
                     <TimerControlButton
                       callback={onReduceSeconds}
                       title="Minus 1 minute"
@@ -532,7 +532,7 @@ function TimerControlButton({
   return (
     <Button
       title={title}
-      className={`text-muted-foreground hover:text-foreground ${className}`}
+      className={`text-muted-foreground hover:text-foreground text-xl md:text-2xl ${className}`}
       onClick={callback}
       type="button"
       disabled={disabled}

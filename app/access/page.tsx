@@ -40,7 +40,7 @@ export default async function AccessPage({
 
   return (
     <div className="flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <CardTitle>Access required</CardTitle>
           <CardDescription>Enter the access code to continue.</CardDescription>
