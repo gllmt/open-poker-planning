@@ -166,38 +166,38 @@ export function Timer({
     });
   }, [onTimerStateUpdate, visibilityStore]);
 
-  return (
-    <>
-      {isMod && (
+  if (!localTimerVisible) {
+    if (!isMod) return null;
+    return (
+      <div className="border-border bg-card text-card-foreground flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+          <Hourglass className="size-4" aria-hidden="true" />
+          <span>Timer disabled</span>
+        </div>
         <Button
           onClick={onTimerOpen}
-          title="Timer"
-          aria-label="Timer"
+          title="Show timer"
           type="button"
-          size="icon"
+          size="sm"
           variant="ghost"
         >
-          <span
-            className={`${localTimerVisible ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <Hourglass className="size-5" aria-hidden="true" />
-          </span>
+          Start timer
         </Button>
-      )}
+      </div>
+    );
+  }
 
-      {localTimerVisible && (
-        <TimerProgress
-          startedAt={normalizedStartedAt}
-          pausedAt={normalizedPausedAt}
-          totalSeconds={totalSeconds}
-          onTimerClose={onTimerClose}
-          isMod={isMod}
-          onTimerStateUpdate={(update) =>
-            onTimerStateUpdate({ ...update, timerVisible: localTimerVisible })
-          }
-          soundOn={soundOn}
-        />
-      )}
-    </>
+  return (
+    <TimerProgress
+      startedAt={normalizedStartedAt}
+      pausedAt={normalizedPausedAt}
+      totalSeconds={totalSeconds}
+      onTimerClose={onTimerClose}
+      isMod={isMod}
+      onTimerStateUpdate={(update) =>
+        onTimerStateUpdate({ ...update, timerVisible: localTimerVisible })
+      }
+      soundOn={soundOn}
+    />
   );
 }

@@ -196,8 +196,6 @@ export function GameController({
           <CardTitle className="text-lg font-semibold truncate grow">
             {game.name}
           </CardTitle>
-          <Timer timerProps={timerProps} onTimerUpdate={onUpdatedTimerProps} />
-          <Separator orientation="vertical" className="h-6" />
           <span className="text-sm font-medium">
             {game.gameStatus} {getGameStatusIcon(game.gameStatus)}
           </span>
@@ -205,6 +203,12 @@ export function GameController({
         </CardHeader>
 
         <CardContent className="px-4 pb-4 pt-3">
+          <div className="pb-3">
+            <Timer
+              timerProps={timerProps}
+              onTimerUpdate={onUpdatedTimerProps}
+            />
+          </div>
           {isMod && (
             <div
               className="flex justify-end pb-3"

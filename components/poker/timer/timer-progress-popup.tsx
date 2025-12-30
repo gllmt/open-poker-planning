@@ -21,8 +21,6 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { CircularProgressBar } from './circular-progress';
 
 type TimerProps = {
   isMod?: boolean;
@@ -120,56 +118,56 @@ function TimerProgressView({
   const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
 
   return (
-    <div className="border-border bg-card text-card-foreground absolute top-13 right-2 z-10 h-fit w-[15rem] rounded-xl border p-4 shadow-xl">
-      <div
-        title={soundOn ? 'Sound enabled' : 'Sound disabled'}
-        className="text-muted-foreground absolute top-3 left-3 p-1"
-      >
-        {soundOn ? (
-          <Volume2 className="size-4" aria-hidden="true" />
-        ) : (
-          <VolumeOff className="size-4" aria-hidden="true" />
-        )}
-      </div>
-      <div className="flex h-full w-full justify-center items-center space-y-2 flex-col">
-        <CircularProgressBar percentage={percentage}>
-          <div className="text-4xl flex flex-col items-center space-y-2">
-            <div
-              title={`Running time: ${runningMinutes}m ${runningSeconds}s`}
-              className="text-foreground flex items-center space-x-1 grow"
-            >
-              <Input
-                type="text"
-                value={runningMinutes.toString().padStart(2, '0')}
-                maxLength={3}
-                pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground text-xl md:text-2xl disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
-                onChange={() => {}}
-                disabled
-              />
-              <span className="pb-[0.3rem]">:</span>
-              <Input
-                type="text"
-                value={runningSeconds.toString().padStart(2, '0')}
-                maxLength={3}
-                pattern="[0-9]*"
-                className="text-foreground disabled:text-muted-foreground md:text-2xl text-xl disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
-                onChange={() => {}}
-                disabled
-              />
-            </div>
-            {!inProgress && (
-              <div
-                title={`Paused at ${minutes}m ${seconds}s`}
-                className="text-foreground text-2xl"
-              >
-                <span>{minutes.toString().padStart(2, '0')}</span>
-                <span>:</span>
-                <span>{seconds.toString().padStart(2, '0')}</span>
-              </div>
+    <div className="border-border bg-card text-card-foreground w-full rounded-xl border px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div
+            title={soundOn ? 'Sound enabled' : 'Sound disabled'}
+            className="text-muted-foreground"
+          >
+            {soundOn ? (
+              <Volume2 className="size-4" aria-hidden="true" />
+            ) : (
+              <VolumeOff className="size-4" aria-hidden="true" />
             )}
           </div>
-        </CircularProgressBar>
+          <div
+            title={`Running time: ${runningMinutes}m ${runningSeconds}s`}
+            className="text-foreground flex items-center gap-1 font-mono text-lg tabular-nums"
+          >
+            <Input
+              type="text"
+              value={runningMinutes.toString().padStart(2, '0')}
+              maxLength={3}
+              pattern="[0-9]*"
+              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              onChange={() => {}}
+              disabled
+            />
+            <span className="pb-[0.2rem]">:</span>
+            <Input
+              type="text"
+              value={runningSeconds.toString().padStart(2, '0')}
+              maxLength={3}
+              pattern="[0-9]*"
+              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              onChange={() => {}}
+              disabled
+            />
+          </div>
+        </div>
+        {!inProgress && (
+          <span className="text-muted-foreground text-xs">
+            Total {minutes.toString().padStart(2, '0')}:
+            {seconds.toString().padStart(2, '0')}
+          </span>
+        )}
+      </div>
+      <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
+        <div
+          className="bg-primary h-full rounded-full transition-[width] duration-500 ease-linear"
+          style={{ width: `${percentage}%` }}
+        />
       </div>
     </div>
   );
@@ -380,138 +378,134 @@ function TimerProgressMod({
     getMinutesAndSeconds(clampedElapsed);
 
   return (
-    <div className="border-border bg-card text-card-foreground absolute top-13 right-2 z-10 h-fit w-[15rem] rounded-xl border p-4 shadow-xl">
-      <Button
-        title={soundOn ? 'Disable sound' : 'Enable sound'}
-        className="absolute top-3 left-3"
-        onClick={() => isMod && toggleSound()}
-        type="button"
-        size="icon-xs"
-        variant="ghost"
-      >
-        {soundOn ? (
-          <Volume2 className="size-4" aria-hidden="true" />
-        ) : (
-          <VolumeOff className="size-4" aria-hidden="true" />
-        )}
-      </Button>
-      {isMod && (
-        <Button
-          type="button"
-          className="absolute top-3 right-3"
-          title="Close timer"
-          onClick={onTimerClose}
-          size="icon-xs"
-          variant="ghost"
-        >
-          <X className="size-4" aria-hidden="true" />
-        </Button>
-      )}
-      <div className="flex h-full w-full justify-center items-center space-y-2 flex-col">
-        <CircularProgressBar percentage={percentage}>
-          <div className="text-4xl flex flex-col items-center space-y-2">
-            <div
-              title={
-                isMod
-                  ? `Set time: ${minutes}m ${seconds}s`
-                  : `Running time: ${runningMinutes}m ${runningSeconds}s`
+    <div className="border-border bg-card text-card-foreground w-full rounded-xl border px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            title={soundOn ? 'Disable sound' : 'Enable sound'}
+            onClick={() => isMod && toggleSound()}
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+          >
+            {soundOn ? (
+              <Volume2 className="size-4" aria-hidden="true" />
+            ) : (
+              <VolumeOff className="size-4" aria-hidden="true" />
+            )}
+          </Button>
+          <div
+            title={
+              isMod
+                ? `Set time: ${minutes}m ${seconds}s`
+                : `Running time: ${runningMinutes}m ${runningSeconds}s`
+            }
+            className="text-foreground flex items-center gap-1 font-mono text-lg tabular-nums"
+          >
+            <Input
+              type="text"
+              value={
+                isRunning || !isMod
+                  ? runningMinutes.toString().padStart(2, '0')
+                  : minutes.toString().padStart(2, '0')
               }
-              className="text-foreground flex items-center space-x-1 grow"
+              maxLength={3}
+              pattern="[0-9]*"
+              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              onChange={onMinutesChange}
+              onBlur={onInputsBlur}
+              disabled={isRunning}
+            />
+            <span className="pb-[0.2rem]">:</span>
+            <Input
+              type="text"
+              value={
+                isRunning || !isMod
+                  ? runningSeconds.toString().padStart(2, '0')
+                  : seconds.toString().padStart(2, '0')
+              }
+              maxLength={3}
+              pattern="[0-9]*"
+              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              onChange={onSecondsChange}
+              onBlur={onInputsBlur}
+              disabled={isRunning}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isRunning ? (
+            <TimerControlButton
+              title="Start timer"
+              callback={startTimer}
+              disabled={displayTotal === 0}
+              className="text-muted-foreground"
             >
-              <Input
-                type="text"
-                value={
-                  isRunning || !isMod
-                    ? runningMinutes.toString().padStart(2, '0')
-                    : minutes.toString().padStart(2, '0')
-                }
-                maxLength={3}
-                pattern="[0-9]*"
-                className="text-foreground md:text-2xl text-xl disabled:text-muted-foreground disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
-                onChange={onMinutesChange}
-                onBlur={onInputsBlur}
-                disabled={isRunning}
-              />
-              <span className="pb-[0.3rem]">:</span>
-              <Input
-                type="text"
-                value={
-                  isRunning || !isMod
-                    ? runningSeconds.toString().padStart(2, '0')
-                    : seconds.toString().padStart(2, '0')
-                }
-                maxLength={3}
-                pattern="[0-9]*"
-                className="text-foreground md:text-2xl text-xl disabled:text-muted-foreground disabled:opacity-100 w-10 border-none bg-transparent p-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0"
-                onChange={onSecondsChange}
-                onBlur={onInputsBlur}
-                disabled={isRunning}
-              />
-            </div>
-            {isMod && !isRunning && (
-              <div
-                title={`Elapsed: ${currentMinutesRunning}m ${currentSecondsRunning}s`}
-                className="text-foreground md:text-2xl text-xl"
-              >
-                <span>{currentMinutesRunning.toString().padStart(2, '0')}</span>
-                <span>:</span>
-                <span>{currentSecondsRunning.toString().padStart(2, '0')}</span>
-              </div>
+              <Play className="size-4" aria-hidden="true" />
+            </TimerControlButton>
+          ) : (
+            <TimerControlButton
+              title="Pause timer"
+              callback={pauseTimer}
+              className="text-muted-foreground"
+            >
+              <Pause className="size-4" aria-hidden="true" />
+            </TimerControlButton>
+          )}
+          {isMod && (
+            <Button
+              type="button"
+              title="Close timer"
+              onClick={onTimerClose}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
+        <div
+          className="bg-primary h-full rounded-full transition-[width] duration-500 ease-linear"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      {isMod && (
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <TimerControlButton
+              title="Reset timer"
+              callback={handleReset}
+              className="text-muted-foreground"
+            >
+              <Square className="size-4" aria-hidden="true" />
+            </TimerControlButton>
+            {!isRunning && (
+              <>
+                <TimerControlButton
+                  callback={onReduceSeconds}
+                  title="Minus 1 minute"
+                >
+                  <Minus className="size-4" aria-hidden="true" />
+                </TimerControlButton>
+                <TimerControlButton
+                  callback={onAddSeconds}
+                  title="Add 1 minute"
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                </TimerControlButton>
+              </>
             )}
           </div>
-        </CircularProgressBar>
-
-        {isMod && (
-          <>
-            <Separator className="my-3" />
-            <div className="flex space-x-2 w-full">
-              <TimerControlButton
-                title="Reset timer"
-                callback={handleReset}
-                className="text-muted-foreground"
-              >
-                <Square className="size-4" aria-hidden="true" />
-              </TimerControlButton>
-              <div className="grow w-full">
-                {!isRunning && (
-                  <div className="flex justify-center items-center gap-x-2 w-full h-9">
-                    <TimerControlButton
-                      callback={onReduceSeconds}
-                      title="Minus 1 minute"
-                    >
-                      <Minus className="size-4" aria-hidden="true" />
-                    </TimerControlButton>
-                    <TimerControlButton
-                      callback={onAddSeconds}
-                      title="Add 1 minute"
-                    >
-                      <Plus className="size-4" aria-hidden="true" />
-                    </TimerControlButton>
-                  </div>
-                )}
-              </div>
-              {!isRunning ? (
-                <TimerControlButton
-                  title="Start timer"
-                  callback={startTimer}
-                  disabled={displayTotal === 0}
-                  className="text-muted-foreground"
-                >
-                  <Play className="size-4" aria-hidden="true" />
-                </TimerControlButton>
-              ) : (
-                <TimerControlButton
-                  title="Pause timer"
-                  callback={pauseTimer}
-                  className="text-muted-foreground"
-                >
-                  <Pause className="size-4" aria-hidden="true" />
-                </TimerControlButton>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+          {!isRunning && (
+            <span className="text-muted-foreground text-xs">
+              Elapsed {currentMinutesRunning.toString().padStart(2, '0')}:
+              {currentSecondsRunning.toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -532,7 +526,7 @@ function TimerControlButton({
   return (
     <Button
       title={title}
-      className={`text-muted-foreground hover:text-foreground text-xl md:text-2xl ${className}`}
+      className={`text-muted-foreground hover:text-foreground ${className}`}
       onClick={callback}
       type="button"
       disabled={disabled}
