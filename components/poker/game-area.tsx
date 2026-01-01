@@ -27,9 +27,9 @@ export function GameArea({
           currentPlayerId={currentPlayerId}
         />
         <Players
-            game={game}
-            players={players}
-            currentPlayerId={currentPlayerId}
+          game={game}
+          players={players}
+          currentPlayerId={currentPlayerId}
         />
       </div>
       <div className="text-center flex justify-center pb-4">
