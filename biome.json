@@ -62,6 +62,7 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
       "trailingCommas": "es5",
       "semicolons": "always"
     },
@@ -70,6 +71,13 @@
   "css": {
     "parser": {
       "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
     }
   },
   "json": {
