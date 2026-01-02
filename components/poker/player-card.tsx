@@ -42,8 +42,6 @@ export function PlayerCard({
   const isRevealed = game.gameStatus === Status.Finished;
   const cardDisplayValue =
     hasVoted && isRevealed ? getCardDisplayValue(game, player.value) : '';
-  const cardColor =
-    hasVoted && isRevealed ? getCardColor(game, player.value) : '';
   const shouldShowCoffee = hasVoted && isRevealed && player.value === -1;
   const shouldShowQuestion = hasVoted && isRevealed && player.value === -2;
 
@@ -79,11 +77,10 @@ export function PlayerCard({
           <span
             className={cn(
               'min-w-10 rounded-full px-2 py-1 text-center text-xs font-semibold',
-              cardColor
-                ? 'text-slate-900 dark:text-white'
+              hasVoted
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground'
             )}
-            style={cardColor ? { backgroundColor: cardColor } : undefined}
           >
             {hasVoted ? (
               shouldShowCoffee ? (
@@ -116,18 +113,6 @@ export function PlayerCard({
       </div>
     </div>
   );
-}
-
-function getCardColor(game: Game, value: number | undefined): string {
-  if (game.gameStatus === Status.Finished) {
-    const cards = normalizeLegacyCards(
-      game.gameType,
-      game.cards?.length ? game.cards : getCards(game.gameType)
-    );
-    const card = cards.find((c) => c.value === value);
-    return card ? card.color : '';
-  }
-  return '';
 }
 
 function getCardDisplayValue(

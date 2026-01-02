@@ -61,7 +61,6 @@ export function ResultsSection({
                 : null;
               const displayValue =
                 card?.displayValue ?? player.value?.toString() ?? '';
-              const cardColor = card?.color ?? '';
               const voteContent = hasVoted ? (
                 player.value === -1 ? (
                   <Coffee className="size-4" aria-hidden="true" />
@@ -82,15 +81,10 @@ export function ResultsSection({
                   <td className="px-3 py-2 text-right">
                     <span
                       className={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${
-                        cardColor && hasVoted
-                          ? 'text-slate-900 dark:text-white'
+                        hasVoted
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-muted-foreground'
                       }`}
-                      style={
-                        cardColor && hasVoted
-                          ? { backgroundColor: cardColor }
-                          : undefined
-                      }
                       title={displayValue || 'No vote'}
                     >
                       {voteContent}
