@@ -46,12 +46,7 @@ export function PlayerCard({
   const shouldShowQuestion = hasVoted && isRevealed && player.value === -2;
 
   return (
-    <div
-      className={cn(
-        'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 max-w-content',
-        getPlayerRowClass(player.id)
-      )}
-    >
+    <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 text-card-foreground max-w-content">
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="sm" className="shrink-0">
           <AvatarImage src={undefined} alt={player.name} />
@@ -128,28 +123,4 @@ function getCardDisplayValue(
     cardValue?.toString() ||
     ''
   );
-}
-
-const playerRowClasses = [
-  'border-sky-200 bg-sky-50/80',
-  'border-emerald-200 bg-emerald-50/80',
-  'border-amber-200 bg-amber-50/80',
-  'border-rose-200 bg-rose-50/80',
-  'border-lime-200 bg-lime-50/80',
-  'border-cyan-200 bg-cyan-50/80',
-  'border-orange-200 bg-orange-50/80',
-  'border-teal-200 bg-teal-50/80',
-];
-
-function getPlayerRowClass(playerId: string) {
-  const index = getStableColorIndex(playerId, playerRowClasses.length);
-  return playerRowClasses[index] || '';
-}
-
-function getStableColorIndex(seed: string, length: number) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) % length;
-  }
-  return hash;
 }

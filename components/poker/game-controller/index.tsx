@@ -34,7 +34,6 @@ import { ConfettiOverlay } from '../results/confetti-overlay';
 import { ResultsSection } from '../results/results-section';
 import { Timer } from '../timer/timer';
 import { AutoRevealToggle } from './auto-reveal-toggle';
-import { AverageBadge } from './average-badge';
 import { StoryEditor } from './story-editor';
 
 export function GameController({
@@ -146,7 +145,6 @@ export function GameController({
           <span className="text-sm font-medium">
             {game.gameStatus} {getGameStatusIcon(game.gameStatus)}
           </span>
-          <AverageBadge label={averageLabel} isVisible={canShowAverage} />
         </CardHeader>
 
         <CardContent className="px-4 pb-4 pt-3">
