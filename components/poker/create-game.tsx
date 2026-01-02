@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,13 +20,15 @@ import {
   setRecentPlayerName,
   upsertPlayerGame,
 } from '@/lib/browser-storage';
+import { withLocale } from '@/lib/i18n/paths';
 import { GameType, type NewGame } from '@/types/game';
 import { getCards, getCustomCards } from './card-configs';
 
 export function CreateGame() {
   const router = useRouter();
+  const { locale, t } = useI18n();
 
-  const [gameName, setGameName] = useState('New session');
+  const [gameName, setGameName] = useState(() => t('createGame.defaultName'));
   const [createdBy, setCreatedBy] = useState<string>('');
   const [gameType, setGameType] = useState<GameType>(GameType.Fibonacci);
   const [allowMembersToManageSession, setAllowMembersToManageSession] =
@@ -49,7 +52,7 @@ export function CreateGame() {
         0
       );
       if (count < 2) {
-        setError('Please enter at least two custom options.');
+        setError(t('createGame.errorCustomOptions'));
         return;
       }
     }
@@ -80,9 +83,11 @@ export function CreateGame() {
         isAllowMembersToManageSession: allowMembersToManageSession,
       });
 
-      router.push(`/game/${gameId}`);
+      router.push(withLocale(`/game/${gameId}`, locale));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create session');
+      setError(
+        e instanceof Error ? e.message : t('createGame.errorCreateFailed')
+      );
     } finally {
       setLoading(false);
     }
@@ -98,12 +103,14 @@ export function CreateGame() {
     <form onSubmit={handleSubmit} className="w-full flex justify-center">
       <Card className="w-full max-w-xl">
         <CardHeader className="text-center">
-          <CardTitle>Create new session</CardTitle>
+          <CardTitle>{t('createGame.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <FieldGroup className="gap-5">
             <Field>
-              <FieldLabel htmlFor="gameName">Session name</FieldLabel>
+              <FieldLabel htmlFor="gameName">
+                {t('createGame.sessionName')}
+              </FieldLabel>
               <Input
                 id="gameName"
                 required
@@ -114,7 +121,9 @@ export function CreateGame() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="createdBy">Your name</FieldLabel>
+              <FieldLabel htmlFor="createdBy">
+                {t('createGame.yourName')}
+              </FieldLabel>
               <Input
                 id="createdBy"
                 required
@@ -126,22 +135,28 @@ export function CreateGame() {
 
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">
-                Session sizing type
+                {t('createGame.sizingType')}
               </legend>
               <div className="flex flex-col gap-2">
                 {[
-                  { type: GameType.Fibonacci, label: 'Fibonacci' },
-                  { type: GameType.ShortFibonacci, label: 'Short Fibonacci' },
-                  { type: GameType.TShirt, label: 'T-Shirt' },
+                  {
+                    type: GameType.Fibonacci,
+                    label: t('createGame.fibonacci'),
+                  },
+                  {
+                    type: GameType.ShortFibonacci,
+                    label: t('createGame.shortFibonacci'),
+                  },
+                  { type: GameType.TShirt, label: t('createGame.tshirt') },
                   {
                     type: GameType.TShirtAndNumber,
-                    label: 'T-Shirt & Numbers',
+                    label: t('createGame.tshirtNumbers'),
                   },
-                  { type: GameType.Custom, label: 'Custom' },
+                  { type: GameType.Custom, label: t('createGame.custom') },
                 ].map(({ type, label }) => {
                   const preview =
                     type === GameType.Custom
-                      ? 'Choose your own values below (min 2).'
+                      ? t('createGame.customHint')
                       : getCards(type)
                           .map((card) => card.displayValue)
                           .join(' · ');
@@ -205,7 +220,7 @@ export function CreateGame() {
                   ✓
                 </span>
               </span>
-              <span>Allow members to manage session</span>
+              <span>{t('createGame.allowMembers')}</span>
             </label>
 
             {error && <p className="text-destructive text-xs">{error}</p>}
@@ -214,7 +229,7 @@ export function CreateGame() {
 
         <CardFooter className="justify-end">
           <Button type="submit" disabled={loading}>
-            {loading ? 'Creating…' : 'Create'}
+            {loading ? t('common.creating') : t('common.create')}
           </Button>
         </CardFooter>
       </Card>

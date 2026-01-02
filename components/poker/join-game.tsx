@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,10 +21,12 @@ import {
   setRecentPlayerName,
   upsertPlayerGame,
 } from '@/lib/browser-storage';
+import { withLocale } from '@/lib/i18n/paths';
 
 export function JoinGame({ initialGameId }: { initialGameId?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { locale, t } = useI18n();
 
   const initialToken = useMemo(
     () => searchParams.get('token') || '',
@@ -47,9 +50,9 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
     if (!existingPlayerId) return;
 
     fetchGameState({ gameId: joinGameId, playerId: existingPlayerId })
-      .then(() => router.push(`/game/${joinGameId}`))
+      .then(() => router.push(withLocale(`/game/${joinGameId}`, locale)))
       .catch(() => {});
-  }, [joinGameId, router]);
+  }, [joinGameId, router, locale]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -69,9 +72,9 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
         joinToken: inviteToken,
       });
 
-      router.push(`/game/${joinGameId}`);
+      router.push(withLocale(`/game/${joinGameId}`, locale));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to join session');
+      setError(e instanceof Error ? e.message : t('joinGame.errorJoinFailed'));
     } finally {
       setLoading(false);
     }
@@ -82,41 +85,47 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
       <form onSubmit={handleSubmit} className="w-full flex justify-center">
         <Card className="w-full max-w-lg">
           <CardHeader className="text-center">
-            <CardTitle>Join a Session</CardTitle>
+            <CardTitle>{t('joinGame.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <FieldGroup className="gap-5">
               <Field>
-                <FieldLabel htmlFor="sessionId">Session ID</FieldLabel>
+                <FieldLabel htmlFor="sessionId">
+                  {t('joinGame.sessionId')}
+                </FieldLabel>
                 <Input
                   id="sessionId"
                   required
                   type="text"
-                  placeholder="UUID…"
+                  placeholder={t('joinGame.sessionIdPlaceholder')}
                   value={joinGameId}
                   onChange={(e) => setJoinGameId(e.target.value)}
                 />
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="inviteToken">Invite token</FieldLabel>
+                <FieldLabel htmlFor="inviteToken">
+                  {t('joinGame.inviteToken')}
+                </FieldLabel>
                 <Input
                   id="inviteToken"
                   required
                   type="text"
-                  placeholder="Paste the token from the invite link"
+                  placeholder={t('joinGame.inviteTokenPlaceholder')}
                   value={inviteToken}
                   onChange={(e) => setInviteToken(e.target.value)}
                 />
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="playerName">Your Name</FieldLabel>
+                <FieldLabel htmlFor="playerName">
+                  {t('joinGame.yourName')}
+                </FieldLabel>
                 <Input
                   id="playerName"
                   required
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder={t('joinGame.yourNamePlaceholder')}
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                 />
@@ -127,7 +136,7 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
           </CardContent>
           <CardFooter className="justify-end">
             <Button type="submit" disabled={loading}>
-              {loading ? 'Joining…' : 'Join'}
+              {loading ? t('common.joining') : t('common.join')}
             </Button>
           </CardFooter>
         </Card>

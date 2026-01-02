@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Loading } from '@/components/ui/loading';
 import { fetchGameState, vote } from '@/lib/api/games';
 import {
@@ -9,6 +11,7 @@ import {
   getPlayerGamesFromCache,
   upsertPlayerGame,
 } from '@/lib/browser-storage';
+import { withLocale } from '@/lib/i18n/paths';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -23,6 +26,7 @@ type PendingVote = {
 
 export function Poker({ gameId }: { gameId: string }) {
   const router = useRouter();
+  const { locale, t } = useI18n();
 
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[] | null>(null);
@@ -48,7 +52,7 @@ export function Poker({ gameId }: { gameId: string }) {
     const playerId = getCurrentPlayerId(gameId);
     if (!playerId) {
       if (refreshRequestIdRef.current === requestId)
-        router.push(`/join/${gameId}`);
+        router.push(withLocale(`/join/${gameId}`, locale));
       return;
     }
 
@@ -101,11 +105,11 @@ export function Poker({ gameId }: { gameId: string }) {
       });
     } catch {
       if (refreshRequestIdRef.current === requestId)
-        router.push(`/join/${gameId}`);
+        router.push(withLocale(`/join/${gameId}`, locale));
     } finally {
       if (refreshRequestIdRef.current === requestId) setLoading(false);
     }
-  }, [gameId, router]);
+  }, [gameId, router, locale]);
 
   useEffect(() => {
     refresh();
@@ -135,8 +139,8 @@ export function Poker({ gameId }: { gameId: string }) {
   useEffect(() => {
     if (!players || !currentPlayerId) return;
     const stillInGame = players.some((p) => p.id === currentPlayerId);
-    if (!stillInGame) router.push(`/join/${gameId}`);
-  }, [players, currentPlayerId, router, gameId]);
+    if (!stillInGame) router.push(withLocale(`/join/${gameId}`, locale));
+  }, [players, currentPlayerId, router, gameId, locale]);
 
   useEffect(() => {
     return () => {
@@ -156,7 +160,7 @@ export function Poker({ gameId }: { gameId: string }) {
   if (!game || !players || !currentPlayerId) {
     return (
       <div className="p-6 text-center">
-        <p className="text-sm">Game not found</p>
+        <p className="text-sm">{t('game.gameNotFound')}</p>
       </div>
     );
   }
@@ -190,7 +194,7 @@ export function Poker({ gameId }: { gameId: string }) {
         (e) => {
           if (voteRequestIdRef.current !== requestId) return;
           pendingVoteRef.current = null;
-          setVoteError(e instanceof Error ? e.message : 'Failed to vote');
+          setVoteError(e instanceof Error ? e.message : t('game.voteFailed'));
           refresh().catch(() => {});
         }
       );

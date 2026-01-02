@@ -1,3 +1,5 @@
+import { useI18n } from '@/components/i18n/use-i18n';
+
 export function AutoRevealToggle({
   autoReveal,
   onAutoReveal,
@@ -5,10 +7,13 @@ export function AutoRevealToggle({
   autoReveal: boolean;
   onAutoReveal: (autoReveal: boolean) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center">
       <label className="flex items-center cursor-pointer">
-        <span className="text-muted-foreground mr-2 text-xs">Auto Reveal</span>
+        <span className="text-muted-foreground mr-2 text-xs">
+          {t('game.autoReveal')}
+        </span>
         <button
           type="button"
           role="switch"

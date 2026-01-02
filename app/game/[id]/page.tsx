@@ -1,14 +1,12 @@
-import { Poker } from '@/components/poker/poker';
+import { redirect } from 'next/navigation';
 
-export default async function GamePage({
+import { i18n } from '@/lib/i18n/config';
+
+export default async function GameRedirectPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return (
-    <div className="px-2">
-      <Poker gameId={id} />
-    </div>
-  );
+  redirect(`/${i18n.defaultLocale}/game/${id}`);
 }

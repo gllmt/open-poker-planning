@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { updateStory } from '@/lib/api/games';
@@ -15,6 +16,7 @@ export function StoryEditor({
   playerId: string;
   storyName: string;
 }) {
+  const { t } = useI18n();
   const serverStoryName = storyName ?? '';
   const storyInputRef = useRef<HTMLInputElement>(null);
   const storyEditInitialRef = useRef<string>(serverStoryName);
@@ -77,7 +79,9 @@ export function StoryEditor({
       setStoryPendingSync(true);
       setIsEditingStory(false);
     } catch (e) {
-      setStoryError(e instanceof Error ? e.message : 'Failed to update story');
+      setStoryError(
+        e instanceof Error ? e.message : t('story.errorUpdateFailed')
+      );
     } finally {
       setStorySaving(false);
     }
@@ -87,7 +91,7 @@ export function StoryEditor({
     <div className="w-full text-xs mt-2">
       <div className="flex items-center justify-between gap-2">
         <label className="font-semibold" htmlFor="storyName">
-          Story Name:
+          {t('story.label')}
         </label>
 
         {!isEditingStory ? (
@@ -97,7 +101,7 @@ export function StoryEditor({
             variant="outline"
             onClick={startStoryEdit}
           >
-            Edit
+            {t('common.edit')}
           </Button>
         ) : (
           <div className="flex items-center gap-2">
@@ -108,7 +112,7 @@ export function StoryEditor({
               onClick={cancelStoryEdit}
               disabled={storySaving}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
@@ -116,7 +120,7 @@ export function StoryEditor({
               onClick={saveStoryEdit}
               disabled={storySaving || !storyIsDirty}
             >
-              {storySaving ? 'Saving...' : 'Save'}
+              {storySaving ? t('common.saving') : t('common.save')}
             </Button>
           </div>
         )}
@@ -124,7 +128,7 @@ export function StoryEditor({
       <Input
         id="storyName"
         ref={storyInputRef}
-        placeholder="Enter story name or number"
+        placeholder={t('story.placeholder')}
         className="italic mt-2"
         type="text"
         value={storyDraft}

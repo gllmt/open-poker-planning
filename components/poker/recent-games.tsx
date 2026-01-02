@@ -2,22 +2,25 @@
 
 import { useRouter } from 'next/navigation';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
+import { withLocale } from '@/lib/i18n/paths';
 
 export function RecentGames() {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const recentGames = getPlayerGamesFromCache();
 
   if (!recentGames.length) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Recent sessions</CardTitle>
+          <CardTitle>{t('recentGames.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            No recent sessions found
+            {t('recentGames.empty')}
           </p>
         </CardContent>
       </Card>
@@ -27,7 +30,7 @@ export function RecentGames() {
   return (
     <Card className="w-full">
       <CardHeader className="text-center">
-        <CardTitle className="truncate">Recent sessions</CardTitle>
+        <CardTitle className="truncate">{t('recentGames.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto" style={{ maxHeight: 250 }}>
@@ -35,10 +38,10 @@ export function RecentGames() {
             <thead className="bg-muted/40">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-bold tracking-wider">
-                  Name
+                  {t('recentGames.name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold tracking-wider">
-                  Created By
+                  {t('recentGames.createdBy')}
                 </th>
               </tr>
             </thead>
@@ -47,7 +50,9 @@ export function RecentGames() {
                 <tr
                   key={g.id}
                   className="hover:bg-muted/60 border-border cursor-pointer border-t transition"
-                  onClick={() => router.push(`/game/${g.id}`)}
+                  onClick={() =>
+                    router.push(withLocale(`/game/${g.id}`, locale))
+                  }
                 >
                   <td className="px-6 py-4 text-sm">{g.name}</td>
                   <td className="px-6 py-4 text-sm">{g.createdBy || '-'}</td>

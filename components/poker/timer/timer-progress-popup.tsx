@@ -19,6 +19,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -101,6 +102,7 @@ function TimerProgressView({
   totalSeconds = 300,
   soundOn = true,
 }: TimerProps) {
+  const { t } = useI18n();
   const startedAtValue = startedAt ?? 0;
   const inProgress = startedAt != null;
   const now = useNow(inProgress);
@@ -116,13 +118,15 @@ function TimerProgressView({
   const [minutes, seconds] = getMinutesAndSeconds(totalSeconds);
   const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
   const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
+  const totalMinutesLabel = minutes.toString().padStart(2, '0');
+  const totalSecondsLabel = seconds.toString().padStart(2, '0');
 
   return (
     <div className="border-border bg-card text-card-foreground w-full rounded-xl border px-3 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div
-            title={soundOn ? 'Sound enabled' : 'Sound disabled'}
+            title={soundOn ? t('timer.soundEnabled') : t('timer.soundDisabled')}
             className="text-muted-foreground"
           >
             {soundOn ? (
@@ -132,7 +136,10 @@ function TimerProgressView({
             )}
           </div>
           <div
-            title={`Running time: ${runningMinutes}m ${runningSeconds}s`}
+            title={t('timer.runningTime', {
+              minutes: runningMinutes,
+              seconds: runningSeconds,
+            })}
             className="text-foreground flex items-center gap-1 font-mono text-lg tabular-nums"
           >
             <Input
@@ -158,8 +165,10 @@ function TimerProgressView({
         </div>
         {!inProgress && (
           <span className="text-muted-foreground text-xs">
-            Total {minutes.toString().padStart(2, '0')}:
-            {seconds.toString().padStart(2, '0')}
+            {t('timer.total', {
+              minutes: totalMinutesLabel,
+              seconds: totalSecondsLabel,
+            })}
           </span>
         )}
       </div>
@@ -182,6 +191,7 @@ function TimerProgressMod({
   onTimerStateUpdate,
   soundOn = true,
 }: TimerProps) {
+  const { t } = useI18n();
   const [draftTotal, setDraftTotal] = useState<number | null>(null);
   const finishedRef = useRef(false);
   const pendingUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -382,7 +392,7 @@ function TimerProgressMod({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button
-            title={soundOn ? 'Disable sound' : 'Enable sound'}
+            title={soundOn ? t('timer.disableSound') : t('timer.enableSound')}
             onClick={() => isMod && toggleSound()}
             type="button"
             size="icon-xs"
@@ -397,8 +407,11 @@ function TimerProgressMod({
           <div
             title={
               isMod
-                ? `Set time: ${minutes}m ${seconds}s`
-                : `Running time: ${runningMinutes}m ${runningSeconds}s`
+                ? t('timer.setTime', { minutes, seconds })
+                : t('timer.runningTime', {
+                    minutes: runningMinutes,
+                    seconds: runningSeconds,
+                  })
             }
             className="text-foreground flex items-center gap-1 font-mono text-lg tabular-nums"
           >
@@ -436,7 +449,7 @@ function TimerProgressMod({
         <div className="flex items-center gap-2">
           {!isRunning ? (
             <TimerControlButton
-              title="Start timer"
+              title={t('timer.startTitle')}
               callback={startTimer}
               disabled={displayTotal === 0}
               className="text-muted-foreground"
@@ -445,7 +458,7 @@ function TimerProgressMod({
             </TimerControlButton>
           ) : (
             <TimerControlButton
-              title="Pause timer"
+              title={t('timer.pauseTitle')}
               callback={pauseTimer}
               className="text-muted-foreground"
             >
@@ -455,7 +468,7 @@ function TimerProgressMod({
           {isMod && (
             <Button
               type="button"
-              title="Close timer"
+              title={t('timer.closeTitle')}
               onClick={onTimerClose}
               size="icon-xs"
               variant="ghost"
@@ -475,7 +488,7 @@ function TimerProgressMod({
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <TimerControlButton
-              title="Reset timer"
+              title={t('timer.resetTitle')}
               callback={handleReset}
               className="text-muted-foreground"
             >
@@ -485,13 +498,13 @@ function TimerProgressMod({
               <>
                 <TimerControlButton
                   callback={onReduceSeconds}
-                  title="Minus 1 minute"
+                  title={t('timer.minusMinute')}
                 >
                   <Minus className="size-4" aria-hidden="true" />
                 </TimerControlButton>
                 <TimerControlButton
                   callback={onAddSeconds}
-                  title="Add 1 minute"
+                  title={t('timer.addMinute')}
                 >
                   <Plus className="size-4" aria-hidden="true" />
                 </TimerControlButton>
@@ -500,8 +513,10 @@ function TimerProgressMod({
           </div>
           {!isRunning && (
             <span className="text-muted-foreground text-xs">
-              Elapsed {currentMinutesRunning.toString().padStart(2, '0')}:
-              {currentSecondsRunning.toString().padStart(2, '0')}
+              {t('timer.elapsed', {
+                minutes: currentMinutesRunning.toString().padStart(2, '0'),
+                seconds: currentSecondsRunning.toString().padStart(2, '0'),
+              })}
             </span>
           )}
         </div>

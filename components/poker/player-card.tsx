@@ -7,6 +7,7 @@ import {
   Coffee,
 } from 'lucide-react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { removePlayer } from '@/lib/api/games';
@@ -27,6 +28,7 @@ export function PlayerCard({
   player: Player;
   currentPlayerId: string;
 }) {
+  const { t } = useI18n();
   const canRemove =
     isModerator(
       game.createdById,
@@ -96,13 +98,13 @@ export function PlayerCard({
         {canRemove && (
           <Button
             type="button"
-            title="Remove"
+            title={t('playerCard.removeTitle')}
             variant="outline"
             size="sm"
             className="text-destructive hover:text-destructive"
             onClick={onRemove}
           >
-            remove player
+            {t('playerCard.removeButton')}
           </Button>
         )}
       </div>

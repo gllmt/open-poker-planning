@@ -3,40 +3,45 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
+import { useI18n } from '@/components/i18n/use-i18n';
+import { withLocale } from '@/lib/i18n/paths';
+
 const ThemeControl = dynamic(
   () => import('./theme-control').then((m) => m.ThemeControl),
   { ssr: false }
 );
 
 export function Toolbar() {
+  const { locale, t } = useI18n();
+
   return (
     <header className="border-border/80 bg-background/80 flex w-full items-center justify-between border-b px-4 py-2 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="inline-flex items-center">
-        <Link href="/" className="flex items-center">
+        <Link href={withLocale('/', locale)} className="flex items-center">
           <span className="md:text-2xl text-sm font-normal">
-            Planning Poker
+            {t('toolbar.brand')}
           </span>
         </Link>
       </div>
 
       <nav className="inline-flex items-center justify-end gap-1">
         <Link
-          href="/shadcn"
+          href={withLocale('/shadcn', locale)}
           className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
         >
-          Shadcn
+          {t('toolbar.shadcn')}
         </Link>
         <Link
-          href="/"
+          href={withLocale('/', locale)}
           className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
         >
-          New
+          {t('toolbar.new')}
         </Link>
         <Link
-          href="/join"
+          href={withLocale('/join', locale)}
           className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
         >
-          Join
+          {t('toolbar.join')}
         </Link>
         <ThemeControl />
       </nav>

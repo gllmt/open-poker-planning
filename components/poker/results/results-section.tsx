@@ -1,6 +1,7 @@
 import { CircleQuestionMark, Coffee } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Badge } from '@/components/ui/badge';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -19,6 +20,7 @@ export function ResultsSection({
   averageLabel: string;
   showAverage: boolean;
 }) {
+  const { t } = useI18n();
   const cardLookup = useMemo(() => {
     const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
     const cards = normalizeLegacyCards(game.gameType, baseCards);
@@ -30,10 +32,10 @@ export function ResultsSection({
   return (
     <div className="mt-4 border-t border-border/60 pt-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Results</h3>
+        <h3 className="text-sm font-semibold">{t('results.title')}</h3>
         {showAverage && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Avg</span>
+            <span className="text-muted-foreground">{t('results.avg')}</span>
             <Badge variant="secondary" className="font-semibold">
               {averageLabel}
             </Badge>
@@ -45,10 +47,10 @@ export function ResultsSection({
           <thead className="bg-muted/40">
             <tr>
               <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                Player
+                {t('results.player')}
               </th>
               <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                Vote
+                {t('results.vote')}
               </th>
             </tr>
           </thead>
@@ -85,7 +87,7 @@ export function ResultsSection({
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-muted-foreground'
                       }`}
-                      title={displayValue || 'No vote'}
+                      title={displayValue || t('results.noVote')}
                     >
                       {voteContent}
                     </span>

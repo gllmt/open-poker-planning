@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import type { TimerProps as GameTimerProps } from '@/types/game';
 
@@ -77,6 +78,7 @@ export function Timer({
   };
   onTimerUpdate: (timer: GameTimerProps) => void;
 }) {
+  const { t } = useI18n();
   const {
     isMod = false,
     timerVisible = false,
@@ -172,16 +174,16 @@ export function Timer({
       <div className="border-border bg-card text-card-foreground flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2">
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <Hourglass className="size-4" aria-hidden="true" />
-          <span>Timer disabled</span>
+          <span>{t('timer.disabled')}</span>
         </div>
         <Button
           onClick={onTimerOpen}
-          title="Show timer"
+          title={t('timer.show')}
           type="button"
           size="sm"
           variant="ghost"
         >
-          Start timer
+          {t('timer.start')}
         </Button>
       </div>
     );

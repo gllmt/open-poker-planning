@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
+import { cookies } from 'next/headers';
 
-import { Toolbar } from '@/components/toolbar/toolbar';
+import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
 
 import './globals.css';
 
@@ -23,22 +24,21 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
+  const lang = isLocale(cookieLocale) ? cookieLocale : i18n.defaultLocale;
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <script>{themeScript}</script>
       </head>
-      <body className={`${notoSans.variable} antialiased`}>
-        <div className="bg-background text-foreground min-h-screen">
-          <Toolbar />
-          {children}
-        </div>
-      </body>
+      <body className={`${notoSans.variable} antialiased`}>{children}</body>
     </html>
   );
 }

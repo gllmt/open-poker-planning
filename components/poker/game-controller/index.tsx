@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,6 +24,7 @@ import {
   updateTimer,
 } from '@/lib/api/games';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
+import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -46,6 +48,7 @@ export function GameController({
   currentPlayerId: string;
 }) {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
 
   const isMod = isModerator(
@@ -73,13 +76,14 @@ export function GameController({
 
   const copyInviteLink = async () => {
     if (!joinToken) {
-      window.alert(
-        'No invite token available on this device. Use the one from the original invite link.'
-      );
+      window.alert(t('game.inviteNoToken'));
       return;
     }
 
-    const inviteLink = `${window.location.origin}/join/${game.id}?token=${joinToken}`;
+    const inviteLink = `${window.location.origin}${withLocale(
+      `/join/${game.id}`,
+      locale
+    )}?token=${joinToken}`;
 
     try {
       if (navigator.clipboard?.writeText) {
@@ -112,7 +116,7 @@ export function GameController({
       }
     } catch {}
 
-    window.prompt('Copy this invite link:', inviteLink);
+    window.prompt(t('game.invitePrompt'), inviteLink);
   };
 
   const onAutoReveal = (value: boolean) =>
@@ -122,15 +126,13 @@ export function GameController({
     [game.id, currentPlayerId]
   );
 
-  const leaveGame = () => router.push('/');
+  const leaveGame = () => router.push(withLocale('/', locale));
 
   const handleRemoveGame = async () => {
-    const confirm = window.confirm(
-      'Are you sure? This will delete this session and remove all players.'
-    );
+    const confirm = window.confirm(t('game.confirmDelete'));
     if (!confirm) return;
     await deleteGame(game.id, currentPlayerId);
-    router.push('/');
+    router.push(withLocale('/', locale));
   };
 
   const timerProps = { isMod, ...(game.timerProps ?? {}) };
@@ -143,7 +145,8 @@ export function GameController({
             {game.name}
           </CardTitle>
           <span className="text-sm font-medium">
-            {game.gameStatus} {getGameStatusIcon(game.gameStatus)}
+            {getStatusLabel(game.gameStatus, t)}{' '}
+            {getGameStatusIcon(game.gameStatus)}
           </span>
         </CardHeader>
 
@@ -157,7 +160,7 @@ export function GameController({
           {isMod && (
             <div
               className="flex justify-end pb-3"
-              title="Auto Reveal when all members finished voting"
+              title={t('game.autoRevealHint')}
             >
               <AutoRevealToggle
                 autoReveal={game.autoReveal || false}
@@ -171,21 +174,21 @@ export function GameController({
               <>
                 <ControllerButton
                   onClick={() => reveal(game.id, currentPlayerId)}
-                  label="Reveal"
+                  label={t('game.reveal')}
                   variant="secondary"
                 >
                   <Eye className="size-5" aria-hidden="true" />
                 </ControllerButton>
                 <ControllerButton
                   onClick={() => reset(game.id, currentPlayerId)}
-                  label="Restart"
+                  label={t('game.restart')}
                   variant="outline"
                 >
                   <RefreshCcw className="size-5" aria-hidden="true" />
                 </ControllerButton>
                 <ControllerButton
                   onClick={handleRemoveGame}
-                  label="Delete"
+                  label={t('game.delete')}
                   variant="destructive"
                 >
                   <Trash className="size-5" aria-hidden="true" />
@@ -195,14 +198,14 @@ export function GameController({
 
             <ControllerButton
               onClick={leaveGame}
-              label="Exit"
+              label={t('game.exit')}
               variant="outline"
             >
               <LogOut className="size-5" aria-hidden="true" />
             </ControllerButton>
             <ControllerButton
               onClick={copyInviteLink}
-              label="Invite"
+              label={t('game.invite')}
               variant="secondary"
             >
               <Share className="size-5" aria-hidden="true" />
@@ -230,7 +233,7 @@ export function GameController({
             role="alert"
           >
             <span className="block font-semibold">
-              Invite link copied to clipboard!
+              {t('game.inviteCopied')}
             </span>
           </div>
         </div>
@@ -280,4 +283,15 @@ function getGameStatusIcon(gameStatus: string) {
     default:
       return <CircleDot className="inline-block size-4" aria-hidden="true" />;
   }
+}
+
+function getStatusLabel(status: Status, t: (key: string) => string) {
+  const statusKeyMap: Record<Status, string> = {
+    [Status.NotStarted]: 'game.status.notStarted',
+    [Status.Started]: 'game.status.started',
+    [Status.InProgress]: 'game.status.inProgress',
+    [Status.Finished]: 'game.status.finished',
+  };
+
+  return t(statusKeyMap[status] ?? status);
 }

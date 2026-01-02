@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import {
   getStoredTheme,
@@ -9,6 +11,7 @@ import {
 } from '@/lib/browser-storage';
 
 export function ThemeControl() {
+  const { t } = useI18n();
   const [theme, setTheme] = useState<'light' | 'dark'>(() => getTheme());
   const [hasStoredTheme, setHasStoredTheme] = useState(
     () => getStoredTheme() !== null
@@ -40,9 +43,9 @@ export function ThemeControl() {
         setHasStoredTheme(true);
         setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
       }}
-      aria-label="Toggle theme"
+      aria-label={t('theme.toggle')}
     >
-      {theme === 'dark' ? 'Light' : 'Dark'}
+      {theme === 'dark' ? t('theme.light') : t('theme.dark')}
     </Button>
   );
 }

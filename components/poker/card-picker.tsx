@@ -1,11 +1,11 @@
 'use client';
 
 import { CircleQuestionMark, Coffee } from 'lucide-react';
+import { useI18n } from '@/components/i18n/use-i18n';
 import type { CardConfig } from '@/types/cards';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
-
 import { getCards, normalizeLegacyCards } from './card-configs';
 
 export function CardPicker({
@@ -21,6 +21,7 @@ export function CardPicker({
   onVote: (value: number, emoji?: string) => void;
   error?: string | null;
 }) {
+  const { t } = useI18n();
   const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
   const cards = normalizeLegacyCards(game.gameType, baseCards);
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
@@ -36,8 +37,8 @@ export function CardPicker({
     <div className="w-full max-w-full animate-fade-in-down">
       <div className="text-center text-lg font-semibold my-4">
         {game.gameStatus !== Status.Finished
-          ? 'Click on the card to vote'
-          : 'Session not ready for voting! Wait for moderator to start'}
+          ? t('cardPicker.cta')
+          : t('cardPicker.notReady')}
       </div>
       {error && (
         <div className="text-center text-destructive text-xs -mt-2 mb-2">

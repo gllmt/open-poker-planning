@@ -1,19 +1,7 @@
-import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 
-import { HomePage } from '@/components/poker/home-page';
-import { Loading } from '@/components/ui/loading';
+import { i18n } from '@/lib/i18n/config';
 
-export default function Home() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center p-6">
-          <Loading />
-          <span className="sr-only">Loading</span>
-        </div>
-      }
-    >
-      <HomePage />
-    </Suspense>
-  );
+export default function RootPage() {
+  redirect(`/${i18n.defaultLocale}`);
 }

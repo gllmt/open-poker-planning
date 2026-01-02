@@ -1,5 +1,7 @@
-import { ComponentExample } from '@/components/component-example';
+import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <ComponentExample />;
+import { i18n } from '@/lib/i18n/config';
+
+export default function ShadcnRedirectPage() {
+  redirect(`/${i18n.defaultLocale}/shadcn`);
 }
