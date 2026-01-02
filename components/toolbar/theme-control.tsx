@@ -15,7 +15,8 @@ export function ThemeControl() {
   );
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
     if (hasStoredTheme) {
       persistTheme(theme);
     }
