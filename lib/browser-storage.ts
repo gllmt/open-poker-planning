@@ -28,9 +28,21 @@ export function setRecentPlayerName(name: string) {
   safeSetItem(RECENT_PLAYER_NAME_KEY, name);
 }
 
-export function getTheme(): 'light' | 'dark' {
+export function getStoredTheme(): 'light' | 'dark' | null {
   const value = safeGetItem(THEME_KEY);
-  return value === 'dark' ? 'dark' : 'light';
+  return value === 'dark' || value === 'light' ? value : null;
+}
+
+export function getSystemTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
+    return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
+export function getTheme(): 'light' | 'dark' {
+  return getStoredTheme() ?? getSystemTheme();
 }
 
 export function setTheme(theme: 'light' | 'dark') {

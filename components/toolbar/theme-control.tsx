@@ -2,22 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { getTheme, setTheme as persistTheme } from '@/lib/browser-storage';
+import {
+  getStoredTheme,
+  getTheme,
+  setTheme as persistTheme,
+} from '@/lib/browser-storage';
 
 export function ThemeControl() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => getTheme());
+  const [hasStoredTheme, setHasStoredTheme] = useState(
+    () => getStoredTheme() !== null
+  );
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
-    persistTheme(theme);
-  }, [theme]);
+    if (hasStoredTheme) {
+      persistTheme(theme);
+    }
+  }, [theme, hasStoredTheme]);
+
+  useEffect(() => {
+    if (hasStoredTheme) return;
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setTheme(media.matches ? 'dark' : 'light');
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [hasStoredTheme]);
 
   return (
     <Button
       type="button"
       variant="ghost"
       size="sm"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={() => {
+        setHasStoredTheme(true);
+        setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
+      }}
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? 'Light' : 'Dark'}
