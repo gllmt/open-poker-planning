@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "title": "Planning Poker",
+    "description": "Free planning poker app"
+  },
+  "common": {
+    "loading": "Loading",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "edit": "Edit",
+    "create": "Create",
+    "creating": "Creating...",
+    "join": "Join",
+    "joining": "Joining...",
+    "avg": "Avg",
+    "avgWithColon": "Avg:"
+  },
+  "toolbar": {
+    "brand": "Planning Poker",
+    "shadcn": "Shadcn",
+    "new": "New",
+    "join": "Join"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "createGame": {
+    "title": "Create new session",
+    "defaultName": "New session",
+    "sessionName": "Session name",
+    "yourName": "Your name",
+    "sizingType": "Session sizing type",
+    "fibonacci": "Fibonacci",
+    "shortFibonacci": "Short Fibonacci",
+    "tshirt": "T-Shirt",
+    "tshirtNumbers": "T-Shirt & Numbers",
+    "custom": "Custom",
+    "customHint": "Choose your own values below (min 2).",
+    "allowMembers": "Allow members to manage session",
+    "errorCustomOptions": "Please enter at least two custom options.",
+    "errorCreateFailed": "Failed to create session"
+  },
+  "joinGame": {
+    "title": "Join a Session",
+    "sessionId": "Session ID",
+    "sessionIdPlaceholder": "UUID...",
+    "inviteToken": "Invite token",
+    "inviteTokenPlaceholder": "Paste the token from the invite link",
+    "yourName": "Your Name",
+    "yourNamePlaceholder": "Enter your name",
+    "errorJoinFailed": "Failed to join session"
+  },
+  "cardPicker": {
+    "cta": "Click on the card to vote",
+    "notReady": "Session not ready for voting! Wait for moderator to start"
+  },
+  "players": {
+    "title": "Players"
+  },
+  "playerCard": {
+    "removeTitle": "Remove",
+    "removeButton": "Remove player"
+  },
+  "game": {
+    "status": {
+      "notStarted": "Not started",
+      "started": "Started",
+      "inProgress": "In progress",
+      "finished": "Finished"
+    },
+    "inviteNoToken": "No invite token available on this device. Use the one from the original invite link.",
+    "inviteCopied": "Invite link copied to clipboard!",
+    "invitePrompt": "Copy this invite link:",
+    "confirmDelete": "Are you sure? This will delete this session and remove all players.",
+    "reveal": "Reveal",
+    "restart": "Restart",
+    "delete": "Delete",
+    "exit": "Exit",
+    "invite": "Invite",
+    "autoReveal": "Auto Reveal",
+    "autoRevealHint": "Auto Reveal when all members finished voting",
+    "gameNotFound": "Game not found",
+    "voteFailed": "Failed to vote"
+  },
+  "results": {
+    "title": "Results",
+    "avg": "Avg",
+    "player": "Player",
+    "vote": "Vote",
+    "noVote": "No vote"
+  },
+  "story": {
+    "label": "Story Name:",
+    "placeholder": "Enter story name or number",
+    "errorUpdateFailed": "Failed to update story"
+  },
+  "timer": {
+    "disabled": "Timer disabled",
+    "show": "Show timer",
+    "start": "Start timer",
+    "soundEnabled": "Sound enabled",
+    "soundDisabled": "Sound disabled",
+    "disableSound": "Disable sound",
+    "enableSound": "Enable sound",
+    "runningTime": "Running time: {minutes}m {seconds}s",
+    "setTime": "Set time: {minutes}m {seconds}s",
+    "total": "Total {minutes}:{seconds}",
+    "startTitle": "Start timer",
+    "pauseTitle": "Pause timer",
+    "closeTitle": "Close timer",
+    "resetTitle": "Reset timer",
+    "minusMinute": "Minus 1 minute",
+    "addMinute": "Add 1 minute",
+    "elapsed": "Elapsed {minutes}:{seconds}"
+  },
+  "recentGames": {
+    "title": "Recent sessions",
+    "empty": "No recent sessions found",
+    "name": "Name",
+    "createdBy": "Created By"
+  },
+  "access": {
+    "title": "Access required",
+    "description": "Enter the access code to continue.",
+    "disabled": "The access gate is disabled (missing server env var `SITE_ACCESS_CODE`).",
+    "accessCode": "Access code",
+    "codePlaceholder": "Enter code",
+    "invalidCode": "Invalid code."
+  }
+}

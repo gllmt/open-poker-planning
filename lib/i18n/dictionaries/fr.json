@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "title": "Planning Poker",
+    "description": "Application gratuite de planning poker"
+  },
+  "common": {
+    "loading": "Chargement",
+    "continue": "Continuer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "edit": "Modifier",
+    "create": "Creer",
+    "creating": "Creation...",
+    "join": "Rejoindre",
+    "joining": "Rejoindre...",
+    "avg": "Moy.",
+    "avgWithColon": "Moy.:"
+  },
+  "toolbar": {
+    "brand": "Planning Poker",
+    "shadcn": "Shadcn",
+    "new": "Nouveau",
+    "join": "Rejoindre"
+  },
+  "theme": {
+    "toggle": "Changer le theme",
+    "light": "Clair",
+    "dark": "Sombre"
+  },
+  "createGame": {
+    "title": "Creer une nouvelle session",
+    "defaultName": "Nouvelle session",
+    "sessionName": "Nom de la session",
+    "yourName": "Votre nom",
+    "sizingType": "Type d'estimation",
+    "fibonacci": "Fibonacci",
+    "shortFibonacci": "Fibonacci court",
+    "tshirt": "T-Shirt",
+    "tshirtNumbers": "T-Shirt et chiffres",
+    "custom": "Personnalise",
+    "customHint": "Choisissez vos propres valeurs ci-dessous (min 2).",
+    "allowMembers": "Autoriser les membres a gerer la session",
+    "errorCustomOptions": "Veuillez saisir au moins deux options personnalisees.",
+    "errorCreateFailed": "Impossible de creer la session"
+  },
+  "joinGame": {
+    "title": "Rejoindre une session",
+    "sessionId": "ID de session",
+    "sessionIdPlaceholder": "UUID...",
+    "inviteToken": "Jeton d'invitation",
+    "inviteTokenPlaceholder": "Collez le jeton du lien d'invitation",
+    "yourName": "Votre nom",
+    "yourNamePlaceholder": "Entrez votre nom",
+    "errorJoinFailed": "Impossible de rejoindre la session"
+  },
+  "cardPicker": {
+    "cta": "Cliquez sur la carte pour voter",
+    "notReady": "Session pas prete pour voter ! Attendez le moderateur."
+  },
+  "players": {
+    "title": "Joueurs"
+  },
+  "playerCard": {
+    "removeTitle": "Retirer",
+    "removeButton": "Retirer le joueur"
+  },
+  "game": {
+    "status": {
+      "notStarted": "Pas demarree",
+      "started": "Demarree",
+      "inProgress": "En cours",
+      "finished": "Terminee"
+    },
+    "inviteNoToken": "Aucun jeton d'invitation disponible sur cet appareil. Utilisez celui du lien d'invitation d'origine.",
+    "inviteCopied": "Lien d'invitation copie dans le presse-papiers !",
+    "invitePrompt": "Copiez ce lien d'invitation :",
+    "confirmDelete": "Etes-vous sur ? Cette action supprimera cette session et tous les joueurs.",
+    "reveal": "Reveler",
+    "restart": "Redemarrer",
+    "delete": "Supprimer",
+    "exit": "Quitter",
+    "invite": "Inviter",
+    "autoReveal": "Revelation auto",
+    "autoRevealHint": "Revelation auto quand tous ont vote",
+    "gameNotFound": "Session introuvable",
+    "voteFailed": "Impossible de voter"
+  },
+  "results": {
+    "title": "Resultats",
+    "avg": "Moy.",
+    "player": "Joueur",
+    "vote": "Vote",
+    "noVote": "Pas de vote"
+  },
+  "story": {
+    "label": "Nom de la story :",
+    "placeholder": "Entrez un nom ou un numero de story",
+    "errorUpdateFailed": "Impossible de mettre a jour la story"
+  },
+  "timer": {
+    "disabled": "Minuteur desactive",
+    "show": "Afficher le minuteur",
+    "start": "Demarrer le minuteur",
+    "soundEnabled": "Son active",
+    "soundDisabled": "Son desactive",
+    "disableSound": "Desactiver le son",
+    "enableSound": "Activer le son",
+    "runningTime": "Temps restant : {minutes}m {seconds}s",
+    "setTime": "Regler le temps : {minutes}m {seconds}s",
+    "total": "Total {minutes}:{seconds}",
+    "startTitle": "Demarrer le minuteur",
+    "pauseTitle": "Mettre en pause",
+    "closeTitle": "Fermer le minuteur",
+    "resetTitle": "Reinitialiser le minuteur",
+    "minusMinute": "Moins 1 minute",
+    "addMinute": "Ajouter 1 minute",
+    "elapsed": "Ecoule {minutes}:{seconds}"
+  },
+  "recentGames": {
+    "title": "Sessions recentes",
+    "empty": "Aucune session recente trouvee",
+    "name": "Nom",
+    "createdBy": "Cree par"
+  },
+  "access": {
+    "title": "Acces requis",
+    "description": "Entrez le code d'acces pour continuer.",
+    "disabled": "Le controle d'acces est desactive (variable serveur `SITE_ACCESS_CODE` manquante).",
+    "accessCode": "Code d'acces",
+    "codePlaceholder": "Entrez le code",
+    "invalidCode": "Code invalide."
+  }
+}
