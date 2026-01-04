@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import { cookies } from 'next/headers';
+import Script from 'next/script';
 
 import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
 
@@ -39,6 +40,11 @@ export default async function RootLayout({
         <script>{themeScript}</script>
       </head>
       <body className={`${notoSans.variable} antialiased`}>{children}</body>
+      <Script
+        src="https://umami.pierreguillemot.dev/script.js"
+        data-website-id="72235807-ee28-4c05-9f7a-a68539283061"
+        strategy="afterInteractive"
+      />
     </html>
   );
 }
