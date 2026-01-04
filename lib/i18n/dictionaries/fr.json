@@ -1,7 +1,21 @@
 {
   "meta": {
-    "title": "Planning Poker",
-    "description": "Application gratuite de planning poker"
+    "title": "Planning Poker | Estimation agile gratuite",
+    "description": "Planning poker gratuit pour equipes agiles. Creez une session, invitez votre equipe, estimez en temps reel.",
+    "siteName": "Planning Poker",
+    "ogAlt": "Planning Poker - planning poker gratuit en temps reel"
+  },
+  "home": {
+    "eyebrow": "Planning poker open source",
+    "title": "Estimez plus vite avec un planning poker en temps reel",
+    "description": "Creez une session en quelques secondes, invitez votre equipe via un lien, et revelez les votes ensemble. Gratuit pour le moment, pret pour les equipes qui grandissent.",
+    "featureTitle": "Pourquoi les equipes l'utilisent",
+    "features": [
+      "Vote en temps reel avec revelation instantanee",
+      "Jeux Fibonacci, T-Shirt, ou personnalises",
+      "Liens d'invitation partageables et controle d'acces",
+      "Prive par conception, sans compte requis"
+    ]
   },
   "common": {
     "loading": "Chargement",

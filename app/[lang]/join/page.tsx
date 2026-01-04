@@ -1,9 +1,17 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { JoinGame } from '@/components/poker/join-game';
 import { Loading } from '@/components/ui/loading';
 import { i18n, isLocale } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function JoinPage({
   params,

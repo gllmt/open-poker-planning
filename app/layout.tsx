@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import Script from 'next/script';
 
 import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
+import { getSiteUrl } from '@/lib/seo/site-url';
 
 import './globals.css';
 
@@ -13,8 +14,16 @@ const themeScript =
   "(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(t!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})();";
 
 export const metadata: Metadata = {
+  metadataBase: getSiteUrl(),
+  applicationName: 'Planning Poker',
+  generator: 'Next.js',
+  referrer: 'origin-when-cross-origin',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   title: 'Planning Poker',
-  description: 'Free planning poker app',
 };
 
 export const viewport: Viewport = {
@@ -39,12 +48,14 @@ export default async function RootLayout({
       <head>
         <script>{themeScript}</script>
       </head>
-      <body className={`${notoSans.variable} antialiased`}>{children}</body>
-      <Script
-        src="https://umami.pierreguillemot.dev/script.js"
-        data-website-id="72235807-ee28-4c05-9f7a-a68539283061"
-        strategy="afterInteractive"
-      />
+      <body className={`${notoSans.variable} antialiased`}>
+        {children}
+        <Script
+          src="https://umami.pierreguillemot.dev/script.js"
+          data-website-id="72235807-ee28-4c05-9f7a-a68539283061"
+          strategy="afterInteractive"
+        />
+      </body>
     </html>
   );
 }

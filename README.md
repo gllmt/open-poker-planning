@@ -11,6 +11,7 @@ Real-time planning poker built with **Next.js App Router** and **Supabase Postgr
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (browser, used only for Realtime broadcast)
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only, used by Route Handlers)
 - Optional: `SITE_ACCESS_CODE` (server-only) to enable the global access-code gate at `/access`
+- Optional: `SITE_URL` (server-only) absolute URL used for SEO metadata and sitemap
 
 ## Commands
 

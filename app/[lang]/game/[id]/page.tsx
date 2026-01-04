@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
+
 import { Poker } from '@/components/poker/poker';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function GamePage({
   params,
