@@ -15,7 +15,7 @@ export function Toolbar() {
   const { locale, t } = useI18n();
 
   return (
-    <header className="border-border/80 bg-background/80 flex w-full items-center justify-between border-b px-4 py-2 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="border-border/80 bg-background/80 sticky top-0 z-50 flex w-full items-center justify-between border-b px-4 py-2 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="inline-flex items-center">
         <Link href={withLocale('/', locale)} className="flex items-center">
           <span className="md:text-2xl text-sm font-normal">

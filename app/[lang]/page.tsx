@@ -57,7 +57,7 @@ export default async function Home({
           href="https://github.com/gllmt"
           target="_blank"
           rel="noreferrer"
-          className="underline underline-offset-2"
+          className="underline underline-offset-2 hover:text-primary/80 transition"
         >
           GitHub
         </a>
