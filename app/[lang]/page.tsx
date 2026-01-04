@@ -52,6 +52,16 @@ export default async function Home({
       >
         <HomePage />
       </Suspense>
+      <footer className="w-full max-w-5xl pt-12 text-center text-xs text-muted-foreground">
+        <a
+          href="https://github.com/gllmt"
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2"
+        >
+          GitHub
+        </a>
+      </footer>
       <StructuredData
         locale={locale}
         name={dictionary.meta.siteName}
