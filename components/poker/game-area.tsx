@@ -11,12 +11,14 @@ export function GameArea({
   currentPlayerId,
   onVote,
   voteError,
+  confettiSeed,
 }: {
   game: Game;
   players: Player[];
   currentPlayerId: string;
   onVote: (value: number, emoji?: string) => void;
   voteError?: string | null;
+  confettiSeed?: string | null;
 }) {
   return (
     <>
@@ -25,6 +27,7 @@ export function GameArea({
           game={game}
           players={players}
           currentPlayerId={currentPlayerId}
+          confettiSeed={confettiSeed}
         />
         <Players
           game={game}

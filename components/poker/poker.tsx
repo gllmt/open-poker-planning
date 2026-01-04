@@ -18,6 +18,7 @@ import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
 import { GameArea } from './game-area';
+import { isTieResult } from './hooks/use-confetti';
 
 type PendingVote = {
   value: number;
@@ -35,6 +36,7 @@ export function Poker({ gameId }: { gameId: string }) {
     undefined
   );
   const [voteError, setVoteError] = useState<string | null>(null);
+  const [confettiSeed, setConfettiSeed] = useState<string | null>(null);
 
   const pendingVoteRef = useRef<PendingVote | null>(null);
   const voteDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -42,6 +44,7 @@ export function Poker({ gameId }: { gameId: string }) {
   );
   const voteRequestIdRef = useRef(0);
   const refreshRequestIdRef = useRef(0);
+  const lastGameStatusRef = useRef<Status | null>(null);
 
   const clearPendingVote = useCallback(() => {
     pendingVoteRef.current = null;
@@ -88,6 +91,24 @@ export function Poker({ gameId }: { gameId: string }) {
           );
         }
       }
+
+      const previousStatus = lastGameStatusRef.current;
+      const isTie = isTieResult(serverGame, nextPlayers);
+      if (
+        previousStatus !== null &&
+        previousStatus !== Status.Finished &&
+        serverGame.gameStatus === Status.Finished &&
+        isTie
+      ) {
+        setConfettiSeed(`${serverGame.id}-${Date.now()}`);
+      }
+      if (
+        previousStatus === Status.Finished &&
+        serverGame.gameStatus !== Status.Finished
+      ) {
+        setConfettiSeed(null);
+      }
+      lastGameStatusRef.current = serverGame.gameStatus;
 
       setGame(serverGame);
       setPlayers(nextPlayers);
@@ -208,6 +229,7 @@ export function Poker({ gameId }: { gameId: string }) {
       currentPlayerId={currentPlayerId}
       onVote={onVote}
       voteError={voteError}
+      confettiSeed={confettiSeed}
     />
   );
 }

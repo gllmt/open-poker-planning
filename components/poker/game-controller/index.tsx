@@ -30,7 +30,6 @@ import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { useConfetti } from '../hooks/use-confetti';
 import { useGameAverage } from '../hooks/use-game-average';
 import { ConfettiOverlay } from '../results/confetti-overlay';
 import { ResultsSection } from '../results/results-section';
@@ -42,10 +41,12 @@ export function GameController({
   game,
   players,
   currentPlayerId,
+  confettiSeed,
 }: {
   game: Game;
   players: Player[];
   currentPlayerId: string;
+  confettiSeed?: string | null;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -62,11 +63,6 @@ export function GameController({
     [game.id]
   );
 
-  const showConfetti = useConfetti(game, players);
-  const confettiSeed = useMemo(
-    () => `${game.id}-${game.updatedAt ?? ''}-${game.gameStatus}`,
-    [game.id, game.updatedAt, game.gameStatus]
-  );
   const averageValue = useGameAverage(game, players);
   const canShowAverage = averageValue !== null;
   const averageLabel =
@@ -238,7 +234,9 @@ export function GameController({
           </div>
         </div>
       )}
-      <ConfettiOverlay isActive={showConfetti} seed={confettiSeed} />
+      {confettiSeed ? (
+        <ConfettiOverlay key={confettiSeed} seed={confettiSeed} />
+      ) : null}
     </div>
   );
 }

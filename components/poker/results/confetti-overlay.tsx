@@ -69,15 +69,8 @@ const createConfettiPieces = (seed: string) => {
   });
 };
 
-export function ConfettiOverlay({
-  isActive,
-  seed,
-}: {
-  isActive: boolean;
-  seed: string;
-}) {
+export function ConfettiOverlay({ seed }: { seed: string }) {
   const confettiPieces = useMemo(() => createConfettiPieces(seed), [seed]);
-  if (!isActive) return null;
 
   return (
     <div
