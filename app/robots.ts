@@ -14,8 +14,6 @@ export default function robots(): MetadataRoute.Robots {
     `/${locale}/join`,
     `/${locale}/join/`,
     `/${locale}/game/`,
-    `/${locale}/shadcn`,
-    `/${locale}/shadcn/`,
   ]);
 
   return {
@@ -31,8 +29,6 @@ export default function robots(): MetadataRoute.Robots {
             '/join',
             '/join/',
             '/game/',
-            '/shadcn',
-            '/shadcn/',
             ...localizedDisallow,
           ],
         },

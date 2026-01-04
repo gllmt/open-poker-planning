@@ -26,12 +26,6 @@ export function Toolbar() {
 
       <nav className="inline-flex items-center justify-end gap-1">
         <Link
-          href={withLocale('/shadcn', locale)}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
-        >
-          {t('toolbar.shadcn')}
-        </Link>
-        <Link
           href={withLocale('/', locale)}
           className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
         >
