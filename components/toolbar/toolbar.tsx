@@ -1,15 +1,10 @@
 'use client';
-
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { withLocale } from '@/lib/i18n/paths';
 
-const ThemeControl = dynamic(
-  () => import('./theme-control').then((m) => m.ThemeControl),
-  { ssr: false }
-);
+import { ThemeControl } from './theme-control';
 
 export function Toolbar() {
   const { locale, t } = useI18n();
