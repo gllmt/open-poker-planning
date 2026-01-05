@@ -1,20 +1,20 @@
 {
   "meta": {
-    "title": "Planning Poker | Estimation agile gratuite",
-    "description": "Planning poker gratuit pour equipes agiles. Creez une session, invitez votre equipe, estimez en temps reel.",
+    "title": "Planning Poker | Estimation agile gratuite",  
+    "description": "Planning poker gratuit pour équipes agiles. Créez une session, invitez votre équipe, estimez en temps réel.",
     "siteName": "Planning Poker",
-    "ogAlt": "Planning Poker - planning poker gratuit en temps reel"
+    "ogAlt": "Planning Poker - planning poker gratuit en temps réel pour équipes agiles"
   },
   "home": {
     "eyebrow": "Planning poker open source",
-    "title": "Estimez plus vite avec un planning poker en temps reel",
-    "description": "Creez une session en quelques secondes, invitez votre equipe via un lien, et revelez les votes ensemble. Gratuit pour le moment, pret pour les equipes qui grandissent.",
-    "featureTitle": "Pourquoi les equipes l'utilisent",
+    "title": "Estimez plus vite avec un planning poker en temps réel",
+    "description": "Créez une session en quelques secondes, invitez votre équipe via un lien, et révélez les votes ensemble.",
+    "featureTitle": "Pourquoi les équipes l'utilisent",
     "features": [
-      "Vote en temps reel avec revelation instantanee",
-      "Jeux Fibonacci, T-Shirt, ou personnalises",
-      "Liens d'invitation partageables et controle d'acces",
-      "Prive par default, sans compte requis"
+      "Vote en temps réel avec révélation instantanée",
+      "Jeux Fibonacci, ou personnalisés",
+      "Liens d'invitation partageables et contrôle d'accès",
+      "Privé par défaut, sans compte requis"
     ]
   },
   "common": {
@@ -24,12 +24,12 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "edit": "Modifier",
-    "create": "Creer",
-    "creating": "Creation...",
+    "create": "Créer",
+    "creating": "Création...",
     "join": "Rejoindre",
-    "joining": "Rejoindre...",
+    "joining": "En cours...",
     "avg": "Moy.",
-    "avgWithColon": "Moy.:"
+    "avgWithColon": "Moyenne :"
   },
   "toolbar": {
     "brand": "Planning Poker",
@@ -37,12 +37,12 @@
     "join": "Rejoindre"
   },
   "theme": {
-    "toggle": "Changer le theme",
+    "toggle": "Changer le thème",
     "light": "Clair",
     "dark": "Sombre"
   },
   "createGame": {
-    "title": "Creer une nouvelle session",
+    "title": "Créer une nouvelle session",
     "defaultName": "Nouvelle session",
     "sessionName": "Nom de la session",
     "yourName": "Votre nom",
@@ -51,11 +51,11 @@
     "shortFibonacci": "Fibonacci court",
     "tshirt": "T-Shirt",
     "tshirtNumbers": "T-Shirt et chiffres",
-    "custom": "Personnalise",
+    "custom": "Personnalisé",
     "customHint": "Choisissez vos propres valeurs ci-dessous (min 2).",
-    "allowMembers": "Autoriser les membres a gerer la session",
-    "errorCustomOptions": "Veuillez saisir au moins deux options personnalisees.",
-    "errorCreateFailed": "Impossible de creer la session"
+    "allowMembers": "Autoriser les membres à gérer la session",
+    "errorCustomOptions": "Veuillez saisir au moins deux options personnalisées.",
+    "errorCreateFailed": "Impossible de créer la session."
   },
   "joinGame": {
     "title": "Rejoindre une session",
@@ -65,11 +65,11 @@
     "inviteTokenPlaceholder": "Collez le jeton du lien d'invitation",
     "yourName": "Votre nom",
     "yourNamePlaceholder": "Entrez votre nom",
-    "errorJoinFailed": "Impossible de rejoindre la session"
+    "errorJoinFailed": "Impossible de rejoindre la session."
   },
   "cardPicker": {
     "cta": "Cliquez sur la carte pour voter",
-    "notReady": "Session pas prete pour voter ! Attendez le moderateur."
+    "notReady": "Session pas prête pour voter ! Attendez le moderateur."
   },
   "players": {
     "title": "Joueurs"
@@ -80,67 +80,67 @@
   },
   "game": {
     "status": {
-      "notStarted": "Pas demarree",
-      "started": "Demarree",
-      "inProgress": "En cours",
-      "finished": "Terminee"
+      "notStarted": "Session non démarrée",
+      "started": "Session démarrée",
+      "inProgress": "Session en cours de vote",
+      "finished": "Session terminée"
     },
     "inviteNoToken": "Aucun jeton d'invitation disponible sur cet appareil. Utilisez celui du lien d'invitation d'origine.",
-    "inviteCopied": "Lien d'invitation copie dans le presse-papiers !",
+    "inviteCopied": "Lien d'invitation copié dans le presse-papiers !",
     "invitePrompt": "Copiez ce lien d'invitation :",
     "confirmDelete": "Etes-vous sur ? Cette action supprimera cette session et tous les joueurs.",
-    "reveal": "Reveler",
-    "restart": "Redemarrer",
+    "reveal": "Révéler",
+    "restart": "Recommencer",
     "delete": "Supprimer",
     "exit": "Quitter",
     "invite": "Inviter",
-    "autoReveal": "Revelation auto",
-    "autoRevealHint": "Revelation auto quand tous ont vote",
+    "autoReveal": "Révéler automatiquement",
+    "autoRevealHint": "Révéler automatiquement quand tous les joueurs ont voté",
     "gameNotFound": "Session introuvable",
-    "voteFailed": "Impossible de voter"
+    "voteFailed": "Impossible de voter."
   },
   "results": {
-    "title": "Resultats",
-    "avg": "Moy.",
+    "title": "Résultats",
+    "avg": "Moyenne",
     "player": "Joueur",
     "vote": "Vote",
-    "noVote": "Pas de vote"
+    "noVote": "Pas de vote."
   },
   "story": {
     "label": "Nom de la story :",
     "placeholder": "Entrez un nom ou un numero de story",
-    "errorUpdateFailed": "Impossible de mettre a jour la story"
+    "errorUpdateFailed": "Impossible de mettre à jour la story."
   },
   "timer": {
-    "disabled": "Minuteur desactive",
+    "disabled": "Minuteur désactivé",
     "show": "Afficher le minuteur",
-    "start": "Demarrer le minuteur",
+    "start": "Démarrer le minuteur",
     "soundEnabled": "Son active",
-    "soundDisabled": "Son desactive",
-    "disableSound": "Desactiver le son",
+    "soundDisabled": "Son désactivé",
+    "disableSound": "Désactivé le son",
     "enableSound": "Activer le son",
     "runningTime": "Temps restant : {minutes}m {seconds}s",
-    "setTime": "Regler le temps : {minutes}m {seconds}s",
+    "setTime": "Régler le temps : {minutes}m {seconds}s",
     "total": "Total {minutes}:{seconds}",
-    "startTitle": "Demarrer le minuteur",
+    "startTitle": "Démarrer le minuteur",
     "pauseTitle": "Mettre en pause",
     "closeTitle": "Fermer le minuteur",
-    "resetTitle": "Reinitialiser le minuteur",
+    "resetTitle": "Réinitialiser le minuteur",
     "minusMinute": "Moins 1 minute",
     "addMinute": "Ajouter 1 minute",
-    "elapsed": "Ecoule {minutes}:{seconds}"
+    "elapsed": "Temps écoulé {minutes}:{seconds}"
   },
   "recentGames": {
     "title": "Sessions recentes",
-    "empty": "Aucune session recente trouvee",
+    "empty": "Aucune session récente trouvée",
     "name": "Nom",
-    "createdBy": "Cree par"
+    "createdBy": "Créé par"
   },
   "access": {
-    "title": "Acces requis",
-    "description": "Entrez le code d'acces pour continuer.",
-    "disabled": "Le controle d'acces est desactive (variable serveur `SITE_ACCESS_CODE` manquante).",
-    "accessCode": "Code d'acces",
+    "title": "Accès requis",
+    "description": "Entrez le code d'accès pour continuer.",
+    "disabled": "Le contrôle d'accès est désactivé (variable serveur `SITE_ACCESS_CODE` manquante).",
+    "accessCode": "Code d'accès",
     "codePlaceholder": "Entrez le code",
     "invalidCode": "Code invalide."
   }
