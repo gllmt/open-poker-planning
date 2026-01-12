@@ -11,12 +11,7 @@ import {
   Trash,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -34,7 +29,6 @@ import { ConfettiOverlay } from '../results/confetti-overlay';
 import { ResultsSection } from '../results/results-section';
 import { Timer } from '../timer/timer';
 import { AutoRevealToggle } from './auto-reveal-toggle';
-import { StoryEditor } from './story-editor';
 
 export function GameController({
   game,
@@ -142,6 +136,11 @@ export function GameController({
     [autoRevealPending, baseAutoReveal, currentPlayerId, game.id]
   );
 
+  const handleTimerComplete = useCallback(() => {
+    if (autoRevealValue) return;
+    onReveal();
+  }, [autoRevealValue, onReveal]);
+
   useEffect(() => {
     if (autoRevealPending) return;
     if (autoRevealPendingSync) {
@@ -185,7 +184,11 @@ export function GameController({
 
         <CardContent className="px-4 pb-4 pt-3">
           <div className="pb-3">
-            <Timer timerProps={timerProps} onTimerUpdate={onTimerUpdate} />
+            <Timer
+              timerProps={timerProps}
+              onTimerUpdate={onTimerUpdate}
+              onTimerComplete={handleTimerComplete}
+            />
           </div>
           {isMod && (
             <div
@@ -242,11 +245,12 @@ export function GameController({
               <Share className="size-5" aria-hidden="true" />
             </ControllerButton>
 
-            <StoryEditor
+            {/* TODO: Add story editor for new feature with story history soon! */}
+            {/* <StoryEditor
               gameId={game.id}
               playerId={currentPlayerId}
               storyName={game.storyName ?? ''}
-            />
+            /> */}
           </div>
           <ResultsSection
             game={game}

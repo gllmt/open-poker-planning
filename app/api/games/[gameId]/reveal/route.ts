@@ -5,6 +5,7 @@ import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { broadcastGameChanged } from '@/lib/supabase/broadcast';
+import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 
 type RevealBody = { callerPlayerId?: string };
 
@@ -26,6 +27,8 @@ export async function POST(
   if (gameError || !game) {
     return NextResponse.json({ error: 'Game not found' }, { status: 404 });
   }
+
+  const nextTimerProps = resetTimerProps(game.timer_props);
 
   const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
   const isAdmin =
@@ -56,9 +59,12 @@ export async function POST(
     }
   }
 
+  const updatePayload: Record<string, unknown> = { game_status: 'Finished' };
+  if (nextTimerProps) updatePayload.timer_props = nextTimerProps;
+
   const { error: updateError } = await supabase
     .from('games')
-    .update({ game_status: 'Finished' })
+    .update(updatePayload)
     .eq('id', gameId);
 
   if (updateError) {

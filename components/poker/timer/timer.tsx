@@ -65,6 +65,7 @@ function createVisibilityStore(initialValue: boolean): VisibilityStore {
 export function Timer({
   timerProps,
   onTimerUpdate,
+  onTimerComplete,
 }: {
   timerProps: {
     isMod?: boolean;
@@ -77,6 +78,7 @@ export function Timer({
     timerPaused?: boolean;
   };
   onTimerUpdate: (timer: GameTimerProps) => void;
+  onTimerComplete?: () => void;
 }) {
   const { t } = useI18n();
   const {
@@ -200,6 +202,7 @@ export function Timer({
         onTimerStateUpdate({ ...update, timerVisible: localTimerVisible })
       }
       soundOn={soundOn}
+      onTimerComplete={onTimerComplete}
     />
   );
 }

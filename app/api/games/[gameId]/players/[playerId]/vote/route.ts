@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
-import { type NextRequest, NextResponse } from 'next/server';
+import { after, type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { broadcastGameChanged } from '@/lib/supabase/broadcast';
+import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 
 type VoteBody = {
   value: number;
@@ -45,7 +46,7 @@ export async function POST(
 
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, game_status, auto_reveal')
+    .select('id, game_status, auto_reveal, timer_props')
     .eq('id', gameId)
     .maybeSingle();
 
@@ -83,9 +84,16 @@ export async function POST(
     }
   }
 
+  const nextTimerProps =
+    game.auto_reveal && nextStatus === 'Finished'
+      ? resetTimerProps(game.timer_props)
+      : null;
+  const updatePayload: Record<string, unknown> = { game_status: nextStatus };
+  if (nextTimerProps) updatePayload.timer_props = nextTimerProps;
+
   const { error: statusError } = await supabase
     .from('games')
-    .update({ game_status: nextStatus })
+    .update(updatePayload)
     .eq('id', gameId);
 
   if (statusError) {
@@ -95,6 +103,6 @@ export async function POST(
     );
   }
 
-  await broadcastGameChanged(gameId, { type: 'vote' }).catch(() => {});
+  after(() => broadcastGameChanged(gameId, { type: 'vote' }).catch(() => {}));
   return NextResponse.json({ ok: true });
 }

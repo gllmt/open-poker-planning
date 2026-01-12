@@ -19,6 +19,7 @@ import {
 } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
@@ -181,9 +182,15 @@ export function Poker({ gameId }: { gameId: string }) {
 
   const onReveal = useCallback(async () => {
     if (!game || !currentPlayerId) return;
+    if (game.gameStatus === Status.Finished) return;
     const requestId = ++revealRequestIdRef.current;
     const previousGame = game;
-    setGame({ ...game, gameStatus: Status.Finished });
+    const nextTimerProps = resetTimerProps(game.timerProps) ?? undefined;
+    setGame({
+      ...game,
+      gameStatus: Status.Finished,
+      timerProps: nextTimerProps,
+    });
 
     try {
       await reveal(game.id, currentPlayerId);
@@ -200,7 +207,12 @@ export function Poker({ gameId }: { gameId: string }) {
     const previousPlayers = players;
     clearPendingVote();
     setConfettiSeed(null);
-    setGame({ ...game, gameStatus: Status.Started });
+    const nextTimerProps = resetTimerProps(game.timerProps) ?? undefined;
+    setGame({
+      ...game,
+      gameStatus: Status.Started,
+      timerProps: nextTimerProps,
+    });
     setPlayers(
       players.map((player) => ({
         ...player,

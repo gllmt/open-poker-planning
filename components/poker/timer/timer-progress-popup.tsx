@@ -36,6 +36,7 @@ type TimerProps = {
     totalSeconds: number;
     soundOn: boolean;
   }) => void;
+  onTimerComplete?: () => void;
 };
 
 const getMinutesAndSeconds = (time: number) =>
@@ -73,6 +74,8 @@ const nowStore = {
   getSnapshot: () => nowStore.current,
   getServerSnapshot: () => 0,
 };
+
+const showTimerDebugPresets = process.env.NEXT_PUBLIC_TIMER_DEBUG === 'true';
 
 function useNow(active: boolean) {
   const subscribe = useCallback(
@@ -190,6 +193,7 @@ function TimerProgressMod({
   onTimerClose,
   onTimerStateUpdate,
   soundOn = true,
+  onTimerComplete,
 }: TimerProps) {
   const { t } = useI18n();
   const [draftTotal, setDraftTotal] = useState<number | null>(null);
@@ -230,7 +234,15 @@ function TimerProgressMod({
       totalSeconds,
       soundOn,
     });
-  }, [isRunning, remaining, totalSeconds, soundOn, onTimerStateUpdate]);
+    onTimerComplete?.();
+  }, [
+    isRunning,
+    remaining,
+    totalSeconds,
+    soundOn,
+    onTimerStateUpdate,
+    onTimerComplete,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -328,6 +340,12 @@ function TimerProgressMod({
     setDraftTotal(nextTotal);
     commitTotalUpdate(nextTotal);
   }, [resolvedDraftTotal, commitTotalUpdate]);
+
+  const setTenSeconds = useCallback(() => {
+    const nextTotal = 10;
+    setDraftTotal(nextTotal);
+    commitTotalUpdate(nextTotal);
+  }, [commitTotalUpdate]);
 
   const onReduceSeconds = useCallback(() => {
     const nextTotal =
@@ -502,6 +520,16 @@ function TimerProgressMod({
                 >
                   <Minus className="size-4" aria-hidden="true" />
                 </TimerControlButton>
+                {showTimerDebugPresets && (
+                  <TimerControlButton
+                    callback={setTenSeconds}
+                    title={t('timer.setTime', { minutes: 0, seconds: 10 })}
+                  >
+                    <span className="text-[10px] font-semibold leading-none">
+                      10s
+                    </span>
+                  </TimerControlButton>
+                )}
                 <TimerControlButton
                   callback={onAddSeconds}
                   title={t('timer.addMinute')}
