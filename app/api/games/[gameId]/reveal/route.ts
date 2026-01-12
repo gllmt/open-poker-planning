@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { type NextRequest, NextResponse } from 'next/server';
+import { after, type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -65,6 +65,8 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to reveal' }, { status: 500 });
   }
 
-  await broadcastGameChanged(gameId, { type: 'revealed' }).catch(() => {});
+  after(() =>
+    broadcastGameChanged(gameId, { type: 'revealed' }).catch(() => {})
+  );
   return NextResponse.json({ ok: true });
 }

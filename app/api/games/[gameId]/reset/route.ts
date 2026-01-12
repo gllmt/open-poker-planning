@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { type NextRequest, NextResponse } from 'next/server';
+import { after, type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -80,6 +80,6 @@ export async function POST(
     );
   }
 
-  await broadcastGameChanged(gameId, { type: 'reset' }).catch(() => {});
+  after(() => broadcastGameChanged(gameId, { type: 'reset' }).catch(() => {}));
   return NextResponse.json({ ok: true });
 }

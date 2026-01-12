@@ -11,18 +11,17 @@ import {
   Trash,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  deleteGame,
-  reset,
-  reveal,
-  setAutoReveal,
-  updateTimer,
-} from '@/lib/api/games';
+import { deleteGame, setAutoReveal } from '@/lib/api/games';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
@@ -42,15 +41,25 @@ export function GameController({
   players,
   currentPlayerId,
   confettiSeed,
+  onReveal,
+  onReset,
+  onTimerUpdate,
 }: {
   game: Game;
   players: Player[];
   currentPlayerId: string;
   confettiSeed?: string | null;
+  onReveal: () => void;
+  onReset: () => void;
+  onTimerUpdate: (timer: TimerProps) => void;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  const baseAutoReveal = game.autoReveal ?? false;
+  const [autoRevealValue, setAutoRevealValue] = useState(baseAutoReveal);
+  const [autoRevealPending, setAutoRevealPending] = useState(false);
+  const [autoRevealPendingSync, setAutoRevealPendingSync] = useState(false);
 
   const isMod = isModerator(
     game.createdById,
@@ -115,13 +124,41 @@ export function GameController({
     window.prompt(t('game.invitePrompt'), inviteLink);
   };
 
-  const onAutoReveal = (value: boolean) =>
-    setAutoReveal(game.id, value, currentPlayerId);
-  const onUpdatedTimerProps = useCallback(
-    (timer: TimerProps) => updateTimer(game.id, timer, currentPlayerId),
-    [game.id, currentPlayerId]
+  const onAutoReveal = useCallback(
+    async (value: boolean) => {
+      if (autoRevealPending) return;
+      setAutoRevealValue(value);
+      setAutoRevealPending(true);
+      try {
+        await setAutoReveal(game.id, value, currentPlayerId);
+        setAutoRevealPendingSync(true);
+      } catch {
+        setAutoRevealValue(baseAutoReveal);
+        setAutoRevealPendingSync(false);
+      } finally {
+        setAutoRevealPending(false);
+      }
+    },
+    [autoRevealPending, baseAutoReveal, currentPlayerId, game.id]
   );
 
+  useEffect(() => {
+    if (autoRevealPending) return;
+    if (autoRevealPendingSync) {
+      if (baseAutoReveal === autoRevealValue) {
+        setAutoRevealPendingSync(false);
+      }
+      return;
+    }
+    if (baseAutoReveal !== autoRevealValue) {
+      setAutoRevealValue(baseAutoReveal);
+    }
+  }, [
+    autoRevealPending,
+    autoRevealPendingSync,
+    autoRevealValue,
+    baseAutoReveal,
+  ]);
   const leaveGame = () => router.push(withLocale('/', locale));
 
   const handleRemoveGame = async () => {
@@ -148,10 +185,7 @@ export function GameController({
 
         <CardContent className="px-4 pb-4 pt-3">
           <div className="pb-3">
-            <Timer
-              timerProps={timerProps}
-              onTimerUpdate={onUpdatedTimerProps}
-            />
+            <Timer timerProps={timerProps} onTimerUpdate={onTimerUpdate} />
           </div>
           {isMod && (
             <div
@@ -159,7 +193,8 @@ export function GameController({
               title={t('game.autoRevealHint')}
             >
               <AutoRevealToggle
-                autoReveal={game.autoReveal || false}
+                autoReveal={autoRevealValue}
+                disabled={autoRevealPending}
                 onAutoReveal={onAutoReveal}
               />
             </div>
@@ -169,14 +204,14 @@ export function GameController({
             {isMod && (
               <>
                 <ControllerButton
-                  onClick={() => reveal(game.id, currentPlayerId)}
+                  onClick={onReveal}
                   label={t('game.reveal')}
                   variant="secondary"
                 >
                   <Eye className="size-5" aria-hidden="true" />
                 </ControllerButton>
                 <ControllerButton
-                  onClick={() => reset(game.id, currentPlayerId)}
+                  onClick={onReset}
                   label={t('game.restart')}
                   variant="outline"
                 >

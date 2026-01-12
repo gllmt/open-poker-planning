@@ -1,4 +1,4 @@
-import type { Game } from '@/types/game';
+import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 
 import { CardPicker } from './card-picker';
@@ -10,6 +10,9 @@ export function GameArea({
   players,
   currentPlayerId,
   onVote,
+  onReveal,
+  onReset,
+  onTimerUpdate,
   voteError,
   confettiSeed,
 }: {
@@ -17,6 +20,9 @@ export function GameArea({
   players: Player[];
   currentPlayerId: string;
   onVote: (value: number, emoji?: string) => void;
+  onReveal: () => void;
+  onReset: () => void;
+  onTimerUpdate: (timer: TimerProps) => void;
   voteError?: string | null;
   confettiSeed?: string | null;
 }) {
@@ -28,6 +34,9 @@ export function GameArea({
           players={players}
           currentPlayerId={currentPlayerId}
           confettiSeed={confettiSeed}
+          onReveal={onReveal}
+          onReset={onReset}
+          onTimerUpdate={onTimerUpdate}
         />
         <Players
           game={game}

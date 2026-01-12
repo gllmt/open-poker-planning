@@ -5,7 +5,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Loading } from '@/components/ui/loading';
-import { fetchGameState, vote } from '@/lib/api/games';
+import {
+  fetchGameState,
+  reset,
+  reveal,
+  updateTimer,
+  vote,
+} from '@/lib/api/games';
 import {
   getCurrentPlayerId,
   getPlayerGamesFromCache,
@@ -13,7 +19,7 @@ import {
 } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import type { Game } from '@/types/game';
+import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
@@ -43,6 +49,9 @@ export function Poker({ gameId }: { gameId: string }) {
     null
   );
   const voteRequestIdRef = useRef(0);
+  const revealRequestIdRef = useRef(0);
+  const resetRequestIdRef = useRef(0);
+  const timerRequestIdRef = useRef(0);
   const refreshRequestIdRef = useRef(0);
   const lastGameStatusRef = useRef<Status | null>(null);
 
@@ -170,6 +179,66 @@ export function Poker({ gameId }: { gameId: string }) {
     };
   }, []);
 
+  const onReveal = useCallback(async () => {
+    if (!game || !currentPlayerId) return;
+    const requestId = ++revealRequestIdRef.current;
+    const previousGame = game;
+    setGame({ ...game, gameStatus: Status.Finished });
+
+    try {
+      await reveal(game.id, currentPlayerId);
+    } catch {
+      if (revealRequestIdRef.current !== requestId) return;
+      setGame(previousGame);
+    }
+  }, [game, currentPlayerId]);
+
+  const onReset = useCallback(async () => {
+    if (!game || !players || !currentPlayerId) return;
+    const requestId = ++resetRequestIdRef.current;
+    const previousGame = game;
+    const previousPlayers = players;
+    clearPendingVote();
+    setConfettiSeed(null);
+    setGame({ ...game, gameStatus: Status.Started });
+    setPlayers(
+      players.map((player) => ({
+        ...player,
+        status: Status.NotStarted,
+        value: 0,
+      }))
+    );
+
+    try {
+      await reset(game.id, currentPlayerId);
+    } catch {
+      if (resetRequestIdRef.current !== requestId) return;
+      setGame(previousGame);
+      setPlayers(previousPlayers);
+    }
+  }, [game, players, currentPlayerId, clearPendingVote]);
+
+  const onTimerUpdate = useCallback(
+    async (timer: TimerProps) => {
+      if (!game || !currentPlayerId) return;
+      const requestId = ++timerRequestIdRef.current;
+      const previousTimerProps = game.timerProps;
+      setGame((prev) =>
+        prev ? { ...prev, timerProps: { ...prev.timerProps, ...timer } } : prev
+      );
+
+      try {
+        await updateTimer(game.id, timer, currentPlayerId);
+      } catch {
+        if (timerRequestIdRef.current !== requestId) return;
+        setGame((prev) =>
+          prev ? { ...prev, timerProps: previousTimerProps } : prev
+        );
+      }
+    },
+    [game, currentPlayerId]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10">
@@ -228,6 +297,9 @@ export function Poker({ gameId }: { gameId: string }) {
       players={players}
       currentPlayerId={currentPlayerId}
       onVote={onVote}
+      onReveal={onReveal}
+      onReset={onReset}
+      onTimerUpdate={onTimerUpdate}
       voteError={voteError}
       confettiSeed={confettiSeed}
     />
