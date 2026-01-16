@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { type NextRequest, NextResponse } from 'next/server';
+import { after, type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
@@ -74,8 +74,8 @@ export async function DELETE(
     );
   }
 
-  await broadcastGameChanged(gameId, { type: 'player_removed' }).catch(
-    () => {}
+  after(() =>
+    broadcastGameChanged(gameId, { type: 'player_removed' }).catch(() => {})
   );
   return new NextResponse(null, { status: 204 });
 }

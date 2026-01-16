@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { cache } from 'react';
+
 import type { Locale } from './config';
 
 const dictionaries = {
@@ -9,6 +11,6 @@ const dictionaries = {
 
 export type Dictionary = Awaited<ReturnType<(typeof dictionaries)['en']>>;
 
-export function getDictionary(locale: Locale): Promise<Dictionary> {
+export const getDictionary = cache((locale: Locale): Promise<Dictionary> => {
   return dictionaries[locale]();
-}
+});

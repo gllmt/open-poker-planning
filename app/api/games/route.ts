@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
 import { generateToken, hashToken } from '@/lib/security/tokens';
@@ -83,7 +83,9 @@ export async function POST(request: Request) {
     );
   }
 
-  await broadcastGameChanged(gameId, { type: 'created' }).catch(() => {});
+  after(() =>
+    broadcastGameChanged(gameId, { type: 'created' }).catch(() => {})
+  );
 
   const response = NextResponse.json(
     {

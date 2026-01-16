@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { after, type NextRequest, NextResponse } from 'next/server';
 
 import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
@@ -62,7 +62,9 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to join' }, { status: 500 });
   }
 
-  await broadcastGameChanged(gameId, { type: 'player_joined' }).catch(() => {});
+  after(() =>
+    broadcastGameChanged(gameId, { type: 'player_joined' }).catch(() => {})
+  );
 
   const response = NextResponse.json(
     {
