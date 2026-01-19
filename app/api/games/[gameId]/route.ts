@@ -120,7 +120,8 @@ export async function GET(
   const { data: players, error: playersError } = await supabase
     .from('players')
     .select('*')
-    .eq('game_id', gameId);
+    .eq('game_id', gameId)
+    .order('created_at', { ascending: true });
 
   if (playersError) {
     return NextResponse.json(

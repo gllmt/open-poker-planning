@@ -69,7 +69,7 @@
   },
   "cardPicker": {
     "cta": "Cliquez sur la carte pour voter",
-    "notReady": "Session pas prête pour voter ! Attendez le moderateur."
+    "notReady": "Session terminée !"
   },
   "players": {
     "title": "Joueurs"
