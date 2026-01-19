@@ -103,6 +103,20 @@ export async function POST(
     );
   }
 
-  after(() => broadcastGameChanged(gameId, { type: 'vote' }).catch(() => {}));
+  const broadcastPayload = {
+    type: 'vote',
+    player: {
+      id: playerId,
+      status: 'Finished',
+      value: body.value,
+      emoji: body.emoji ?? undefined,
+    },
+    game: {
+      gameStatus: nextStatus,
+      ...(nextTimerProps ? { timerProps: nextTimerProps } : {}),
+    },
+  };
+
+  after(() => broadcastGameChanged(gameId, broadcastPayload).catch(() => {}));
   return NextResponse.json({ ok: true });
 }

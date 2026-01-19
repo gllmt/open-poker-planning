@@ -32,6 +32,53 @@ type PendingVote = {
   emoji?: string;
 };
 
+type VoteBroadcastPayload = {
+  type: 'vote';
+  player: {
+    id: string;
+    status: Status;
+    value?: number;
+    emoji?: string;
+  };
+  game?: {
+    gameStatus?: Status;
+    timerProps?: TimerProps | null;
+  };
+};
+
+const isStatusValue = (value: unknown): value is Status =>
+  value === Status.NotStarted ||
+  value === Status.Started ||
+  value === Status.InProgress ||
+  value === Status.Finished;
+
+const isVoteBroadcastPayload = (
+  payload: unknown
+): payload is VoteBroadcastPayload => {
+  if (!payload || typeof payload !== 'object') return false;
+  if ((payload as { type?: unknown }).type !== 'vote') return false;
+
+  const player = (payload as { player?: unknown }).player;
+  if (!player || typeof player !== 'object') return false;
+  const playerId = (player as { id?: unknown }).id;
+  const status = (player as { status?: unknown }).status;
+  if (typeof playerId !== 'string' || !isStatusValue(status)) return false;
+
+  const value = (player as { value?: unknown }).value;
+  if (value !== undefined && typeof value !== 'number') return false;
+  const emoji = (player as { emoji?: unknown }).emoji;
+  if (emoji !== undefined && typeof emoji !== 'string') return false;
+
+  const game = (payload as { game?: unknown }).game;
+  if (game !== undefined) {
+    if (!game || typeof game !== 'object') return false;
+    const gameStatus = (game as { gameStatus?: unknown }).gameStatus;
+    if (gameStatus !== undefined && !isStatusValue(gameStatus)) return false;
+  }
+
+  return true;
+};
+
 export function Poker({ gameId }: { gameId: string }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -55,10 +102,38 @@ export function Poker({ gameId }: { gameId: string }) {
   const timerRequestIdRef = useRef(0);
   const refreshRequestIdRef = useRef(0);
   const lastGameStatusRef = useRef<Status | null>(null);
+  const gameRef = useRef<Game | null>(null);
+  const playersRef = useRef<Player[] | null>(null);
+  const currentPlayerIdRef = useRef<string | undefined>(undefined);
 
   const clearPendingVote = useCallback(() => {
     pendingVoteRef.current = null;
   }, []);
+
+  const applyGameState = useCallback(
+    (nextGame: Game, nextPlayers: Player[]) => {
+      const previousStatus = lastGameStatusRef.current;
+      const isTie = isTieResult(nextGame, nextPlayers);
+      if (
+        previousStatus !== null &&
+        previousStatus !== Status.Finished &&
+        nextGame.gameStatus === Status.Finished &&
+        isTie
+      ) {
+        setConfettiSeed(`${nextGame.id}-${Date.now()}`);
+      }
+      if (
+        previousStatus === Status.Finished &&
+        nextGame.gameStatus !== Status.Finished
+      ) {
+        setConfettiSeed(null);
+      }
+      lastGameStatusRef.current = nextGame.gameStatus;
+      setGame(nextGame);
+      setPlayers(nextPlayers);
+    },
+    []
+  );
 
   const refresh = useCallback(async () => {
     const requestId = ++refreshRequestIdRef.current;
@@ -102,26 +177,7 @@ export function Poker({ gameId }: { gameId: string }) {
         }
       }
 
-      const previousStatus = lastGameStatusRef.current;
-      const isTie = isTieResult(serverGame, nextPlayers);
-      if (
-        previousStatus !== null &&
-        previousStatus !== Status.Finished &&
-        serverGame.gameStatus === Status.Finished &&
-        isTie
-      ) {
-        setConfettiSeed(`${serverGame.id}-${Date.now()}`);
-      }
-      if (
-        previousStatus === Status.Finished &&
-        serverGame.gameStatus !== Status.Finished
-      ) {
-        setConfettiSeed(null);
-      }
-      lastGameStatusRef.current = serverGame.gameStatus;
-
-      setGame(serverGame);
-      setPlayers(nextPlayers);
+      applyGameState(serverGame, nextPlayers);
 
       // Keep recent games metadata up-to-date
       const cached = getPlayerGamesFromCache().find((g) => g.id === gameId);
@@ -140,11 +196,79 @@ export function Poker({ gameId }: { gameId: string }) {
     } finally {
       if (refreshRequestIdRef.current === requestId) setLoading(false);
     }
-  }, [gameId, router, locale]);
+  }, [gameId, router, locale, applyGameState]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
+
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
+
+  useEffect(() => {
+    currentPlayerIdRef.current = currentPlayerId;
+  }, [currentPlayerId]);
+
+  const applyVoteBroadcast = useCallback(
+    (payload: VoteBroadcastPayload) => {
+      const currentGame = gameRef.current;
+      const currentPlayers = playersRef.current;
+      if (!currentGame || !currentPlayers) return false;
+
+      const playerUpdate = payload.player;
+      const knownPlayer = currentPlayers.find(
+        (player) => player.id === playerUpdate.id
+      );
+      if (!knownPlayer) return false;
+
+      const nextPlayers = currentPlayers.map((player) =>
+        player.id === playerUpdate.id
+          ? {
+              ...player,
+              status: playerUpdate.status,
+              value: playerUpdate.value,
+              emoji: playerUpdate.emoji,
+            }
+          : player
+      );
+
+      const nextGame =
+        payload.game !== undefined
+          ? {
+              ...currentGame,
+              gameStatus: payload.game.gameStatus ?? currentGame.gameStatus,
+              timerProps:
+                payload.game.timerProps === undefined
+                  ? currentGame.timerProps
+                  : (payload.game.timerProps ?? undefined),
+            }
+          : currentGame;
+
+      const playerId = currentPlayerIdRef.current;
+      if (playerId && playerUpdate.id === playerId) {
+        const pendingVote = pendingVoteRef.current;
+        if (pendingVote) {
+          const synced =
+            playerUpdate.status === Status.Finished &&
+            playerUpdate.value === pendingVote.value &&
+            (pendingVote.value !== -1 ||
+              playerUpdate.emoji === pendingVote.emoji);
+          if (synced) {
+            pendingVoteRef.current = null;
+          }
+        }
+      }
+
+      applyGameState(nextGame, nextPlayers);
+      return true;
+    },
+    [applyGameState]
+  );
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -154,9 +278,16 @@ export function Poker({ gameId }: { gameId: string }) {
 
     channel.on('broadcast', { event: 'game_changed' }, ({ payload }) => {
       const payloadType = (payload as { type?: unknown } | null)?.type;
-      if (payloadType === 'reset') {
-        clearPendingVote();
+      if (process.env.NODE_ENV === 'development') {
+        console.info('[realtime:client] game_changed', {
+          gameId,
+          type: payloadType ?? 'unknown',
+        });
       }
+      if (isVoteBroadcastPayload(payload)) {
+        if (applyVoteBroadcast(payload)) return;
+      }
+      if (payloadType === 'reset') clearPendingVote();
       refresh();
     });
 
@@ -165,7 +296,7 @@ export function Poker({ gameId }: { gameId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId, refresh, clearPendingVote]);
+  }, [gameId, refresh, clearPendingVote, applyVoteBroadcast]);
 
   useEffect(() => {
     if (!players || !currentPlayerId) return;
