@@ -1,6 +1,7 @@
 'use client';
 
 import { CircleQuestionMark, Coffee } from 'lucide-react';
+import { useMemo } from 'react';
 import { useI18n } from '@/components/i18n/use-i18n';
 import type { CardConfig } from '@/types/cards';
 import type { Game } from '@/types/game';
@@ -22,11 +23,16 @@ export function CardPicker({
   error?: string | null;
 }) {
   const { t } = useI18n();
-  const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
-  const cards = normalizeLegacyCards(game.gameType, baseCards);
-  const currentPlayer = players.find((p) => p.id === currentPlayerId);
-  const currentValue =
-    currentPlayer?.status === Status.Finished ? currentPlayer.value : undefined;
+  const cards = useMemo(() => {
+    const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
+    return normalizeLegacyCards(game.gameType, baseCards);
+  }, [game.cards, game.gameType]);
+  const currentValue = useMemo(() => {
+    const currentPlayer = players.find((p) => p.id === currentPlayerId);
+    return currentPlayer?.status === Status.Finished
+      ? currentPlayer.value
+      : undefined;
+  }, [players, currentPlayerId]);
 
   const play = (card: CardConfig) => {
     if (game.gameStatus === Status.Finished) return;

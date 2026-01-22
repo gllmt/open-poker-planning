@@ -32,6 +32,56 @@ type PendingVote = {
   emoji?: string;
 };
 
+type TimerBroadcastPayload = {
+  type: 'timer_updated';
+  game?: {
+    timerProps?: TimerProps | null;
+  };
+};
+
+type AutoRevealBroadcastPayload = {
+  type: 'auto_reveal_updated';
+  game?: {
+    autoReveal?: boolean;
+  };
+};
+
+type GameStatusBroadcastPayload = {
+  type: 'revealed' | 'reset';
+  game?: {
+    gameStatus?: Status;
+    timerProps?: TimerProps | null;
+  };
+  players?: {
+    reset?: boolean;
+  };
+};
+
+type PlayerJoinedBroadcastPayload = {
+  type: 'player_joined';
+  player: {
+    id: string;
+    name: string;
+    status: Status;
+    value?: number;
+    emoji?: string;
+  };
+};
+
+type PlayerRemovedBroadcastPayload = {
+  type: 'player_removed';
+  player: {
+    id: string;
+  };
+};
+
+type StoryUpdatedBroadcastPayload = {
+  type: 'story_updated';
+  game?: {
+    storyName?: string | null;
+  };
+};
+
 type VoteBroadcastPayload = {
   type: 'vote';
   player: {
@@ -52,14 +102,17 @@ const isStatusValue = (value: unknown): value is Status =>
   value === Status.InProgress ||
   value === Status.Finished;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 const isVoteBroadcastPayload = (
   payload: unknown
 ): payload is VoteBroadcastPayload => {
-  if (!payload || typeof payload !== 'object') return false;
-  if ((payload as { type?: unknown }).type !== 'vote') return false;
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'vote') return false;
 
   const player = (payload as { player?: unknown }).player;
-  if (!player || typeof player !== 'object') return false;
+  if (!isRecord(player)) return false;
   const playerId = (player as { id?: unknown }).id;
   const status = (player as { status?: unknown }).status;
   if (typeof playerId !== 'string' || !isStatusValue(status)) return false;
@@ -71,13 +124,121 @@ const isVoteBroadcastPayload = (
 
   const game = (payload as { game?: unknown }).game;
   if (game !== undefined) {
-    if (!game || typeof game !== 'object') return false;
+    if (!isRecord(game)) return false;
     const gameStatus = (game as { gameStatus?: unknown }).gameStatus;
     if (gameStatus !== undefined && !isStatusValue(gameStatus)) return false;
   }
 
   return true;
 };
+
+const isTimerBroadcastPayload = (
+  payload: unknown
+): payload is TimerBroadcastPayload => {
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'timer_updated') return false;
+  const game = (payload as { game?: unknown }).game;
+  if (game === undefined) return true;
+  if (!isRecord(game)) return false;
+  const timerProps = (game as { timerProps?: unknown }).timerProps;
+  if (timerProps === undefined || timerProps === null) return true;
+  return typeof timerProps === 'object';
+};
+
+const isAutoRevealBroadcastPayload = (
+  payload: unknown
+): payload is AutoRevealBroadcastPayload => {
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'auto_reveal_updated') return false;
+  const game = (payload as { game?: unknown }).game;
+  if (game === undefined) return true;
+  if (!isRecord(game)) return false;
+  const autoReveal = (game as { autoReveal?: unknown }).autoReveal;
+  return typeof autoReveal === 'boolean';
+};
+
+const isGameStatusBroadcastPayload = (
+  payload: unknown
+): payload is GameStatusBroadcastPayload => {
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'revealed' && payload.type !== 'reset') return false;
+  const game = (payload as { game?: unknown }).game;
+  if (game === undefined) return true;
+  if (!isRecord(game)) return false;
+  const gameStatus = (game as { gameStatus?: unknown }).gameStatus;
+  if (gameStatus !== undefined && !isStatusValue(gameStatus)) return false;
+  const timerProps = (game as { timerProps?: unknown }).timerProps;
+  if (
+    timerProps !== undefined &&
+    timerProps !== null &&
+    typeof timerProps !== 'object'
+  )
+    return false;
+  return true;
+};
+
+const isPlayerJoinedBroadcastPayload = (
+  payload: unknown
+): payload is PlayerJoinedBroadcastPayload => {
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'player_joined') return false;
+  const player = (payload as { player?: unknown }).player;
+  if (!isRecord(player)) return false;
+  const playerId = (player as { id?: unknown }).id;
+  const name = (player as { name?: unknown }).name;
+  const status = (player as { status?: unknown }).status;
+  if (typeof playerId !== 'string' || typeof name !== 'string') return false;
+  if (!isStatusValue(status)) return false;
+  const value = (player as { value?: unknown }).value;
+  if (value !== undefined && typeof value !== 'number') return false;
+  const emoji = (player as { emoji?: unknown }).emoji;
+  if (emoji !== undefined && typeof emoji !== 'string') return false;
+  return true;
+};
+
+const isPlayerRemovedBroadcastPayload = (
+  payload: unknown
+): payload is PlayerRemovedBroadcastPayload => {
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'player_removed') return false;
+  const player = (payload as { player?: unknown }).player;
+  if (!isRecord(player)) return false;
+  const playerId = (player as { id?: unknown }).id;
+  return typeof playerId === 'string';
+};
+
+const isStoryUpdatedBroadcastPayload = (
+  payload: unknown
+): payload is StoryUpdatedBroadcastPayload => {
+  if (!isRecord(payload)) return false;
+  if (payload.type !== 'story_updated') return false;
+  const game = (payload as { game?: unknown }).game;
+  if (!isRecord(game)) return false;
+  const storyName = (game as { storyName?: unknown }).storyName;
+  return storyName === null || typeof storyName === 'string';
+};
+
+const buildGameStatusUpdate = (payload: GameStatusBroadcastPayload) => {
+  const update: { gameStatus?: Status; timerProps?: TimerProps | null } = {};
+  if (payload.game?.gameStatus !== undefined) {
+    update.gameStatus = payload.game.gameStatus;
+  }
+  if (payload.game?.timerProps !== undefined) {
+    update.timerProps = payload.game.timerProps ?? null;
+  }
+  return update;
+};
+
+const hasGameStatusUpdate = (payload: GameStatusBroadcastPayload) =>
+  payload.game?.gameStatus !== undefined ||
+  payload.game?.timerProps !== undefined;
+
+const resetPlayersForRound = (players: Player[]) =>
+  players.map((player) => ({
+    ...player,
+    status: Status.NotStarted,
+    value: 0,
+  }));
 
 export function Poker({ gameId }: { gameId: string }) {
   const router = useRouter();
@@ -133,6 +294,48 @@ export function Poker({ gameId }: { gameId: string }) {
       setPlayers(nextPlayers);
     },
     []
+  );
+
+  const applyGameUpdate = useCallback(
+    (update: {
+      game?: {
+        gameStatus?: Status;
+        timerProps?: TimerProps | null;
+        autoReveal?: boolean;
+        storyName?: string | null;
+      };
+      players?: (current: Player[]) => Player[];
+      clearPendingVote?: boolean;
+    }) => {
+      const currentGame = gameRef.current;
+      const currentPlayers = playersRef.current;
+      if (!currentGame || !currentPlayers) return false;
+
+      const nextPlayers = update.players
+        ? update.players(currentPlayers)
+        : currentPlayers;
+
+      const nextGame = update.game
+        ? (() => {
+            const { timerProps, storyName, ...gameRest } = update.game;
+            return {
+              ...currentGame,
+              ...gameRest,
+              ...(timerProps !== undefined
+                ? { timerProps: timerProps ?? undefined }
+                : {}),
+              ...(storyName !== undefined
+                ? { storyName: storyName ?? undefined }
+                : {}),
+            };
+          })()
+        : currentGame;
+
+      if (update.clearPendingVote) clearPendingVote();
+      applyGameState(nextGame, nextPlayers);
+      return true;
+    },
+    [applyGameState, clearPendingVote]
   );
 
   const refresh = useCallback(async () => {
@@ -270,6 +473,119 @@ export function Poker({ gameId }: { gameId: string }) {
     [applyGameState]
   );
 
+  const applyPlayerJoinedBroadcast = useCallback(
+    (payload: PlayerJoinedBroadcastPayload) =>
+      applyGameUpdate({
+        players: (currentPlayers) => {
+          if (
+            currentPlayers.some((player) => player.id === payload.player.id)
+          ) {
+            return currentPlayers;
+          }
+          return [
+            ...currentPlayers,
+            {
+              id: payload.player.id,
+              name: payload.player.name,
+              status: payload.player.status,
+              value: payload.player.value ?? 0,
+              emoji: payload.player.emoji ?? undefined,
+            },
+          ];
+        },
+      }),
+    [applyGameUpdate]
+  );
+
+  const applyPlayerRemovedBroadcast = useCallback(
+    (payload: PlayerRemovedBroadcastPayload) =>
+      applyGameUpdate({
+        players: (currentPlayers) => {
+          const nextPlayers = currentPlayers.filter(
+            (player) => player.id !== payload.player.id
+          );
+          return nextPlayers.length === currentPlayers.length
+            ? currentPlayers
+            : nextPlayers;
+        },
+      }),
+    [applyGameUpdate]
+  );
+
+  const applyStoryUpdatedBroadcast = useCallback(
+    (payload: StoryUpdatedBroadcastPayload) => {
+      const storyName = payload.game?.storyName;
+      if (storyName === undefined) return false;
+      return applyGameUpdate({
+        game: { storyName },
+      });
+    },
+    [applyGameUpdate]
+  );
+
+  const applyTimerBroadcast = useCallback(
+    (payload: TimerBroadcastPayload) => {
+      const timerProps = payload.game?.timerProps;
+      if (timerProps === undefined) return false;
+      return applyGameUpdate({
+        game: { timerProps: timerProps ?? null },
+      });
+    },
+    [applyGameUpdate]
+  );
+
+  const applyAutoRevealBroadcast = useCallback(
+    (payload: AutoRevealBroadcastPayload) => {
+      const autoReveal = payload.game?.autoReveal;
+      if (autoReveal === undefined) return false;
+      return applyGameUpdate({
+        game: { autoReveal },
+      });
+    },
+    [applyGameUpdate]
+  );
+
+  const applyGameStatusBroadcast = useCallback(
+    (payload: GameStatusBroadcastPayload) => {
+      const shouldResetPlayers =
+        payload.type === 'reset' && payload.players?.reset;
+      if (!shouldResetPlayers && !hasGameStatusUpdate(payload)) return false;
+      return applyGameUpdate({
+        game: buildGameStatusUpdate(payload),
+        players: shouldResetPlayers ? resetPlayersForRound : undefined,
+        clearPendingVote: payload.type === 'reset',
+      });
+    },
+    [applyGameUpdate]
+  );
+
+  const handleBroadcastPayload = useCallback(
+    (payload: unknown) => {
+      if (isVoteBroadcastPayload(payload)) return applyVoteBroadcast(payload);
+      if (isPlayerJoinedBroadcastPayload(payload))
+        return applyPlayerJoinedBroadcast(payload);
+      if (isPlayerRemovedBroadcastPayload(payload))
+        return applyPlayerRemovedBroadcast(payload);
+      if (isStoryUpdatedBroadcastPayload(payload))
+        return applyStoryUpdatedBroadcast(payload);
+      if (isTimerBroadcastPayload(payload)) return applyTimerBroadcast(payload);
+      if (isAutoRevealBroadcastPayload(payload))
+        return applyAutoRevealBroadcast(payload);
+      if (isGameStatusBroadcastPayload(payload))
+        return applyGameStatusBroadcast(payload);
+      return false;
+    },
+    [
+      applyVoteBroadcast,
+      applyPlayerJoinedBroadcast,
+      applyPlayerRemovedBroadcast,
+      applyStoryUpdatedBroadcast,
+      applyTimerBroadcast,
+      applyAutoRevealBroadcast,
+      applyGameStatusBroadcast,
+    ]
+  );
+
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     const channel = supabase.channel(`game:${gameId}`, {
@@ -284,9 +600,7 @@ export function Poker({ gameId }: { gameId: string }) {
           type: payloadType ?? 'unknown',
         });
       }
-      if (isVoteBroadcastPayload(payload)) {
-        if (applyVoteBroadcast(payload)) return;
-      }
+      if (handleBroadcastPayload(payload)) return;
       if (payloadType === 'reset') clearPendingVote();
       refresh();
     });
@@ -296,7 +610,7 @@ export function Poker({ gameId }: { gameId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId, refresh, clearPendingVote, applyVoteBroadcast]);
+  }, [gameId, refresh, clearPendingVote, handleBroadcastPayload]);
 
   useEffect(() => {
     if (!players || !currentPlayerId) return;

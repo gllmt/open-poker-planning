@@ -83,9 +83,10 @@ export async function POST(
   }
 
   after(() =>
-    broadcastGameChanged(gameId, { type: 'auto_reveal_updated' }).catch(
-      () => {}
-    )
+    broadcastGameChanged(gameId, {
+      type: 'auto_reveal_updated',
+      game: { autoReveal: body.autoReveal },
+    }).catch(() => {})
   );
   return NextResponse.json({ ok: true });
 }

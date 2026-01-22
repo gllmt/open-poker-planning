@@ -75,7 +75,10 @@ export async function DELETE(
   }
 
   after(() =>
-    broadcastGameChanged(gameId, { type: 'player_removed' }).catch(() => {})
+    broadcastGameChanged(gameId, {
+      type: 'player_removed',
+      player: { id: playerId },
+    }).catch(() => {})
   );
   return new NextResponse(null, { status: 204 });
 }

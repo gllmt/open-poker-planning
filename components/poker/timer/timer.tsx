@@ -1,11 +1,12 @@
 'use client';
 
 import { Hourglass } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
 } from 'react';
 
@@ -13,7 +14,10 @@ import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import type { TimerProps as GameTimerProps } from '@/types/game';
 
-import { TimerProgress } from './timer-progress-popup';
+const TimerProgress = dynamic(
+  () => import('./timer-progress-popup').then((m) => m.TimerProgress),
+  { ssr: false }
+);
 
 type VisibilityStore = {
   getSnapshot: () => boolean;
@@ -98,15 +102,16 @@ export function Timer({
   );
 
   const legacyMigrationRef = useRef(false);
-  const visibilityStore = useMemo(
-    () => createVisibilityStore(timerVisible),
-    [timerVisible]
-  );
+  const [visibilityStore] = useState(() => createVisibilityStore(timerVisible));
   const localTimerVisible = useSyncExternalStore(
     visibilityStore.subscribe,
     visibilityStore.getSnapshot,
     visibilityStore.getSnapshot
   );
+
+  useEffect(() => {
+    visibilityStore.setServerValue(timerVisible);
+  }, [timerVisible, visibilityStore]);
 
   useEffect(() => {
     if (startedAt !== undefined || pausedAt !== undefined) return;

@@ -5,6 +5,7 @@ import { cookieNames, cookieOptions } from '@/lib/security/cookies';
 import { generateToken, hashToken } from '@/lib/security/tokens';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { broadcastGameChanged } from '@/lib/supabase/broadcast';
+import { Status } from '@/types/status';
 
 type JoinBody = {
   playerName: string;
@@ -63,7 +64,15 @@ export async function POST(
   }
 
   after(() =>
-    broadcastGameChanged(gameId, { type: 'player_joined' }).catch(() => {})
+    broadcastGameChanged(gameId, {
+      type: 'player_joined',
+      player: {
+        id: playerId,
+        name: body.playerName,
+        status: Status.NotStarted,
+        value: 0,
+      },
+    }).catch(() => {})
   );
 
   const response = NextResponse.json(

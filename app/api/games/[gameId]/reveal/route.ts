@@ -9,6 +9,12 @@ import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 
 type RevealBody = { callerPlayerId?: string };
 
+type GameAuthRow = {
+  admin_token_hash: string;
+  is_allow_members_to_manage_session: boolean;
+  timer_props: unknown | null;
+};
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ gameId: string }> }
@@ -20,7 +26,9 @@ export async function POST(
   const supabase = createSupabaseAdminClient();
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('*')
+    .select(
+      'id, admin_token_hash, is_allow_members_to_manage_session, timer_props'
+    )
     .eq('id', gameId)
     .maybeSingle();
 
@@ -28,14 +36,15 @@ export async function POST(
     return NextResponse.json({ error: 'Game not found' }, { status: 404 });
   }
 
-  const nextTimerProps = resetTimerProps(game.timer_props);
+  const authGame = game as GameAuthRow;
+  const nextTimerProps = resetTimerProps(authGame.timer_props);
 
   const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
   const isAdmin =
-    adminToken && tokenMatchesHash(adminToken, game.admin_token_hash);
+    adminToken && tokenMatchesHash(adminToken, authGame.admin_token_hash);
 
   if (!isAdmin) {
-    if (!game.is_allow_members_to_manage_session || !body.callerPlayerId) {
+    if (!authGame.is_allow_members_to_manage_session || !body.callerPlayerId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -71,8 +80,14 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to reveal' }, { status: 500 });
   }
 
-  after(() =>
-    broadcastGameChanged(gameId, { type: 'revealed' }).catch(() => {})
-  );
+  const broadcastPayload = {
+    type: 'revealed',
+    game: {
+      gameStatus: 'Finished',
+      ...(nextTimerProps ? { timerProps: nextTimerProps } : {}),
+    },
+  };
+
+  after(() => broadcastGameChanged(gameId, broadcastPayload).catch(() => {}));
   return NextResponse.json({ ok: true });
 }

@@ -28,30 +28,32 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const supabase = createSupabaseAdminClient();
-
-  const { data: player, error: playerError } = await supabase
+  const playerPromise = supabase
     .from('players')
     .select('player_token_hash')
     .eq('game_id', gameId)
     .eq('id', playerId)
     .maybeSingle();
+  const gamePromise = supabase
+    .from('games')
+    .select('id, game_status, auto_reveal, timer_props')
+    .eq('id', gameId)
+    .maybeSingle();
 
+  const [
+    { data: player, error: playerError },
+    { data: game, error: gameError },
+  ] = await Promise.all([playerPromise, gamePromise]);
+
+  if (gameError || !game) {
+    return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+  }
   if (
     playerError ||
     !player?.player_token_hash ||
     !tokenMatchesHash(playerToken, player.player_token_hash)
   ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: game, error: gameError } = await supabase
-    .from('games')
-    .select('id, game_status, auto_reveal, timer_props')
-    .eq('id', gameId)
-    .maybeSingle();
-
-  if (gameError || !game) {
-    return NextResponse.json({ error: 'Game not found' }, { status: 404 });
   }
 
   if (game.game_status === 'Finished') {

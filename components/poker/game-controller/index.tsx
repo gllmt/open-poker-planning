@@ -10,6 +10,7 @@ import {
   Share,
   Trash,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -25,10 +26,14 @@ import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
 import { useGameAverage } from '../hooks/use-game-average';
-import { ConfettiOverlay } from '../results/confetti-overlay';
 import { ResultsSection } from '../results/results-section';
 import { Timer } from '../timer/timer';
 import { AutoRevealToggle } from './auto-reveal-toggle';
+
+const ConfettiOverlay = dynamic(
+  () => import('../results/confetti-overlay').then((m) => m.ConfettiOverlay),
+  { ssr: false }
+);
 
 export function GameController({
   game,

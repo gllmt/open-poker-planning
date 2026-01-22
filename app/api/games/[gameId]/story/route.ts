@@ -55,7 +55,10 @@ export async function POST(
   }
 
   after(() =>
-    broadcastGameChanged(gameId, { type: 'story_updated' }).catch(() => {})
+    broadcastGameChanged(gameId, {
+      type: 'story_updated',
+      game: { storyName: body.storyName || null },
+    }).catch(() => {})
   );
   return NextResponse.json({ ok: true });
 }

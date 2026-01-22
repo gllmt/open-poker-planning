@@ -80,7 +80,10 @@ export async function POST(
   }
 
   after(() =>
-    broadcastGameChanged(gameId, { type: 'timer_updated' }).catch(() => {})
+    broadcastGameChanged(gameId, {
+      type: 'timer_updated',
+      game: { timerProps: body.timerProps ?? null },
+    }).catch(() => {})
   );
   return NextResponse.json({ ok: true });
 }
