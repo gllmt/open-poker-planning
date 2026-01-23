@@ -2,9 +2,9 @@ import 'server-only';
 
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-import { createSupabaseAdminClient } from './admin';
+import type { BroadcastPayload } from '@/types/broadcast';
 
-type BroadcastPayload = Record<string, unknown>;
+import { createSupabaseAdminClient } from './admin';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -99,7 +99,7 @@ async function getBroadcastChannel(gameId: string) {
 
 export async function broadcastGameChanged(
   gameId: string,
-  payload: BroadcastPayload = {}
+  payload: BroadcastPayload
 ) {
   if (isDev) {
     const payloadType = (payload as { type?: unknown } | null)?.type;

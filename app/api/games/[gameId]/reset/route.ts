@@ -6,6 +6,9 @@ import { cookieNames } from '@/lib/security/cookies';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { broadcastGameChanged } from '@/lib/supabase/broadcast';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
+import type { GameStatusBroadcastPayload } from '@/types/broadcast';
+import type { TimerProps } from '@/types/game';
+import { Status } from '@/types/status';
 
 type ResetBody = { callerPlayerId?: string };
 
@@ -37,7 +40,10 @@ export async function POST(
   }
 
   const authGame = game as GameAuthRow;
-  const nextTimerProps = resetTimerProps(authGame.timer_props);
+  const nextTimerProps = resetTimerProps(authGame.timer_props) as
+    | TimerProps
+    | null
+    | undefined;
 
   const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
   const isAdmin =
@@ -98,11 +104,11 @@ export async function POST(
   const broadcastPayload = {
     type: 'reset',
     game: {
-      gameStatus: 'Started',
+      gameStatus: Status.Started,
       ...(nextTimerProps ? { timerProps: nextTimerProps } : {}),
     },
     players: { reset: true },
-  };
+  } satisfies GameStatusBroadcastPayload;
 
   after(() => broadcastGameChanged(gameId, broadcastPayload).catch(() => {}));
   return NextResponse.json({ ok: true });

@@ -13,6 +13,15 @@ import {
   vote,
 } from '@/lib/api/games';
 import {
+  isAutoRevealBroadcastPayload,
+  isGameStatusBroadcastPayload,
+  isPlayerJoinedBroadcastPayload,
+  isPlayerRemovedBroadcastPayload,
+  isStoryUpdatedBroadcastPayload,
+  isTimerBroadcastPayload,
+  isVoteBroadcastPayload,
+} from '@/lib/broadcast/guards';
+import {
   getCurrentPlayerId,
   getPlayerGamesFromCache,
   upsertPlayerGame,
@@ -20,6 +29,15 @@ import {
 import { withLocale } from '@/lib/i18n/paths';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
+import type {
+  AutoRevealBroadcastPayload,
+  GameStatusBroadcastPayload,
+  PlayerJoinedBroadcastPayload,
+  PlayerRemovedBroadcastPayload,
+  StoryUpdatedBroadcastPayload,
+  TimerBroadcastPayload,
+  VoteBroadcastPayload,
+} from '@/types/broadcast';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
@@ -30,192 +48,6 @@ import { isTieResult } from './hooks/use-confetti';
 type PendingVote = {
   value: number;
   emoji?: string;
-};
-
-type TimerBroadcastPayload = {
-  type: 'timer_updated';
-  game?: {
-    timerProps?: TimerProps | null;
-  };
-};
-
-type AutoRevealBroadcastPayload = {
-  type: 'auto_reveal_updated';
-  game?: {
-    autoReveal?: boolean;
-  };
-};
-
-type GameStatusBroadcastPayload = {
-  type: 'revealed' | 'reset';
-  game?: {
-    gameStatus?: Status;
-    timerProps?: TimerProps | null;
-  };
-  players?: {
-    reset?: boolean;
-  };
-};
-
-type PlayerJoinedBroadcastPayload = {
-  type: 'player_joined';
-  player: {
-    id: string;
-    name: string;
-    status: Status;
-    value?: number;
-    emoji?: string;
-  };
-};
-
-type PlayerRemovedBroadcastPayload = {
-  type: 'player_removed';
-  player: {
-    id: string;
-  };
-};
-
-type StoryUpdatedBroadcastPayload = {
-  type: 'story_updated';
-  game?: {
-    storyName?: string | null;
-  };
-};
-
-type VoteBroadcastPayload = {
-  type: 'vote';
-  player: {
-    id: string;
-    status: Status;
-    value?: number;
-    emoji?: string;
-  };
-  game?: {
-    gameStatus?: Status;
-    timerProps?: TimerProps | null;
-  };
-};
-
-const isStatusValue = (value: unknown): value is Status =>
-  value === Status.NotStarted ||
-  value === Status.Started ||
-  value === Status.InProgress ||
-  value === Status.Finished;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const isVoteBroadcastPayload = (
-  payload: unknown
-): payload is VoteBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'vote') return false;
-
-  const player = (payload as { player?: unknown }).player;
-  if (!isRecord(player)) return false;
-  const playerId = (player as { id?: unknown }).id;
-  const status = (player as { status?: unknown }).status;
-  if (typeof playerId !== 'string' || !isStatusValue(status)) return false;
-
-  const value = (player as { value?: unknown }).value;
-  if (value !== undefined && typeof value !== 'number') return false;
-  const emoji = (player as { emoji?: unknown }).emoji;
-  if (emoji !== undefined && typeof emoji !== 'string') return false;
-
-  const game = (payload as { game?: unknown }).game;
-  if (game !== undefined) {
-    if (!isRecord(game)) return false;
-    const gameStatus = (game as { gameStatus?: unknown }).gameStatus;
-    if (gameStatus !== undefined && !isStatusValue(gameStatus)) return false;
-  }
-
-  return true;
-};
-
-const isTimerBroadcastPayload = (
-  payload: unknown
-): payload is TimerBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'timer_updated') return false;
-  const game = (payload as { game?: unknown }).game;
-  if (game === undefined) return true;
-  if (!isRecord(game)) return false;
-  const timerProps = (game as { timerProps?: unknown }).timerProps;
-  if (timerProps === undefined || timerProps === null) return true;
-  return typeof timerProps === 'object';
-};
-
-const isAutoRevealBroadcastPayload = (
-  payload: unknown
-): payload is AutoRevealBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'auto_reveal_updated') return false;
-  const game = (payload as { game?: unknown }).game;
-  if (game === undefined) return true;
-  if (!isRecord(game)) return false;
-  const autoReveal = (game as { autoReveal?: unknown }).autoReveal;
-  return typeof autoReveal === 'boolean';
-};
-
-const isGameStatusBroadcastPayload = (
-  payload: unknown
-): payload is GameStatusBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'revealed' && payload.type !== 'reset') return false;
-  const game = (payload as { game?: unknown }).game;
-  if (game === undefined) return true;
-  if (!isRecord(game)) return false;
-  const gameStatus = (game as { gameStatus?: unknown }).gameStatus;
-  if (gameStatus !== undefined && !isStatusValue(gameStatus)) return false;
-  const timerProps = (game as { timerProps?: unknown }).timerProps;
-  if (
-    timerProps !== undefined &&
-    timerProps !== null &&
-    typeof timerProps !== 'object'
-  )
-    return false;
-  return true;
-};
-
-const isPlayerJoinedBroadcastPayload = (
-  payload: unknown
-): payload is PlayerJoinedBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'player_joined') return false;
-  const player = (payload as { player?: unknown }).player;
-  if (!isRecord(player)) return false;
-  const playerId = (player as { id?: unknown }).id;
-  const name = (player as { name?: unknown }).name;
-  const status = (player as { status?: unknown }).status;
-  if (typeof playerId !== 'string' || typeof name !== 'string') return false;
-  if (!isStatusValue(status)) return false;
-  const value = (player as { value?: unknown }).value;
-  if (value !== undefined && typeof value !== 'number') return false;
-  const emoji = (player as { emoji?: unknown }).emoji;
-  if (emoji !== undefined && typeof emoji !== 'string') return false;
-  return true;
-};
-
-const isPlayerRemovedBroadcastPayload = (
-  payload: unknown
-): payload is PlayerRemovedBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'player_removed') return false;
-  const player = (payload as { player?: unknown }).player;
-  if (!isRecord(player)) return false;
-  const playerId = (player as { id?: unknown }).id;
-  return typeof playerId === 'string';
-};
-
-const isStoryUpdatedBroadcastPayload = (
-  payload: unknown
-): payload is StoryUpdatedBroadcastPayload => {
-  if (!isRecord(payload)) return false;
-  if (payload.type !== 'story_updated') return false;
-  const game = (payload as { game?: unknown }).game;
-  if (!isRecord(game)) return false;
-  const storyName = (game as { storyName?: unknown }).storyName;
-  return storyName === null || typeof storyName === 'string';
 };
 
 const buildGameStatusUpdate = (payload: GameStatusBroadcastPayload) => {
@@ -290,6 +122,8 @@ export function Poker({ gameId }: { gameId: string }) {
         setConfettiSeed(null);
       }
       lastGameStatusRef.current = nextGame.gameStatus;
+      gameRef.current = nextGame;
+      playersRef.current = nextPlayers;
       setGame(nextGame);
       setPlayers(nextPlayers);
     },
@@ -631,16 +465,19 @@ export function Poker({ gameId }: { gameId: string }) {
     const requestId = ++revealRequestIdRef.current;
     const previousGame = game;
     const nextTimerProps = resetTimerProps(game.timerProps) ?? undefined;
-    setGame({
+    const nextGame = {
       ...game,
       gameStatus: Status.Finished,
       timerProps: nextTimerProps,
-    });
+    };
+    gameRef.current = nextGame;
+    setGame(nextGame);
 
     try {
       await reveal(game.id, currentPlayerId);
     } catch {
       if (revealRequestIdRef.current !== requestId) return;
+      gameRef.current = previousGame;
       setGame(previousGame);
     }
   }, [game, currentPlayerId]);
@@ -653,23 +490,27 @@ export function Poker({ gameId }: { gameId: string }) {
     clearPendingVote();
     setConfettiSeed(null);
     const nextTimerProps = resetTimerProps(game.timerProps) ?? undefined;
-    setGame({
+    const nextGame = {
       ...game,
       gameStatus: Status.Started,
       timerProps: nextTimerProps,
-    });
-    setPlayers(
-      players.map((player) => ({
-        ...player,
-        status: Status.NotStarted,
-        value: 0,
-      }))
-    );
+    };
+    const nextPlayers = players.map((player) => ({
+      ...player,
+      status: Status.NotStarted,
+      value: 0,
+    }));
+    gameRef.current = nextGame;
+    playersRef.current = nextPlayers;
+    setGame(nextGame);
+    setPlayers(nextPlayers);
 
     try {
       await reset(game.id, currentPlayerId);
     } catch {
       if (resetRequestIdRef.current !== requestId) return;
+      gameRef.current = previousGame;
+      playersRef.current = previousPlayers;
       setGame(previousGame);
       setPlayers(previousPlayers);
     }
@@ -680,17 +521,29 @@ export function Poker({ gameId }: { gameId: string }) {
       if (!game || !currentPlayerId) return;
       const requestId = ++timerRequestIdRef.current;
       const previousTimerProps = game.timerProps;
-      setGame((prev) =>
-        prev ? { ...prev, timerProps: { ...prev.timerProps, ...timer } } : prev
-      );
+      setGame((prev) => {
+        if (!prev) return prev;
+        const nextGame = {
+          ...prev,
+          timerProps: { ...prev.timerProps, ...timer },
+        };
+        gameRef.current = nextGame;
+        return nextGame;
+      });
 
       try {
         await updateTimer(game.id, timer, currentPlayerId);
-      } catch {
+      } catch (error) {
         if (timerRequestIdRef.current !== requestId) return;
-        setGame((prev) =>
-          prev ? { ...prev, timerProps: previousTimerProps } : prev
-        );
+        setGame((prev) => {
+          if (!prev) return prev;
+          const nextGame = { ...prev, timerProps: previousTimerProps };
+          gameRef.current = nextGame;
+          return nextGame;
+        });
+        throw error instanceof Error
+          ? error
+          : new Error('Failed to update timer');
       }
     },
     [game, currentPlayerId]
@@ -720,11 +573,13 @@ export function Poker({ gameId }: { gameId: string }) {
 
     setPlayers((prev) => {
       if (!prev) return prev;
-      return prev.map((p) =>
+      const nextPlayers = prev.map((p) =>
         p.id === currentPlayerId
           ? { ...p, value, emoji, status: Status.Finished }
           : p
       );
+      playersRef.current = nextPlayers;
+      return nextPlayers;
     });
 
     if (voteDebounceTimeoutRef.current)

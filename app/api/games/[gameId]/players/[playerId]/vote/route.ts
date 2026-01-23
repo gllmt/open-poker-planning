@@ -6,6 +6,9 @@ import { cookieNames } from '@/lib/security/cookies';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { broadcastGameChanged } from '@/lib/supabase/broadcast';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
+import type { VoteBroadcastPayload } from '@/types/broadcast';
+import type { TimerProps } from '@/types/game';
+import { Status } from '@/types/status';
 
 type VoteBody = {
   value: number;
@@ -74,7 +77,7 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to vote' }, { status: 500 });
   }
 
-  let nextStatus: 'Started' | 'In Progress' | 'Finished' = 'In Progress';
+  let nextStatus: Status = Status.InProgress;
   if (game.auto_reveal) {
     const { data: players, error: playersError } = await supabase
       .from('players')
@@ -82,13 +85,13 @@ export async function POST(
       .eq('game_id', gameId);
     if (!playersError && Array.isArray(players) && players.length > 0) {
       const allFinished = players.every((p) => p.status === 'Finished');
-      if (allFinished) nextStatus = 'Finished';
+      if (allFinished) nextStatus = Status.Finished;
     }
   }
 
   const nextTimerProps =
-    game.auto_reveal && nextStatus === 'Finished'
-      ? resetTimerProps(game.timer_props)
+    game.auto_reveal && nextStatus === Status.Finished
+      ? (resetTimerProps(game.timer_props) as TimerProps | null | undefined)
       : null;
   const updatePayload: Record<string, unknown> = { game_status: nextStatus };
   if (nextTimerProps) updatePayload.timer_props = nextTimerProps;
@@ -109,7 +112,7 @@ export async function POST(
     type: 'vote',
     player: {
       id: playerId,
-      status: 'Finished',
+      status: Status.Finished,
       value: body.value,
       emoji: body.emoji ?? undefined,
     },
@@ -117,7 +120,7 @@ export async function POST(
       gameStatus: nextStatus,
       ...(nextTimerProps ? { timerProps: nextTimerProps } : {}),
     },
-  };
+  } satisfies VoteBroadcastPayload;
 
   after(() => broadcastGameChanged(gameId, broadcastPayload).catch(() => {}));
   return NextResponse.json({ ok: true });

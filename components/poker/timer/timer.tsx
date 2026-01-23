@@ -81,7 +81,7 @@ export function Timer({
     currentSeconds?: number;
     timerPaused?: boolean;
   };
-  onTimerUpdate: (timer: GameTimerProps) => void;
+  onTimerUpdate: (timer: GameTimerProps) => Promise<void>;
   onTimerComplete?: () => void;
 }) {
   const { t } = useI18n();
@@ -96,8 +96,14 @@ export function Timer({
     timerPaused,
   } = timerProps;
 
-  const onTimerStateUpdate = useCallback(
+  const commitTimerUpdate = useCallback(
     (update: GameTimerProps) => onTimerUpdate(update),
+    [onTimerUpdate]
+  );
+  const fireAndForgetTimerUpdate = useCallback(
+    (update: GameTimerProps) => {
+      void onTimerUpdate(update).catch(() => {});
+    },
     [onTimerUpdate]
   );
 
@@ -121,7 +127,7 @@ export function Timer({
 
     if (timerPaused === false) {
       const legacyStartedAt = Date.now() - currentSeconds * 1000;
-      onTimerStateUpdate({
+      fireAndForgetTimerUpdate({
         startedAt: legacyStartedAt,
         pausedAt: null,
         totalSeconds,
@@ -131,7 +137,7 @@ export function Timer({
       return;
     }
 
-    onTimerStateUpdate({
+    fireAndForgetTimerUpdate({
       startedAt: null,
       pausedAt: currentSeconds,
       totalSeconds,
@@ -146,34 +152,42 @@ export function Timer({
     totalSeconds,
     soundOn,
     timerVisible,
-    onTimerStateUpdate,
+    fireAndForgetTimerUpdate,
   ]);
 
   const normalizedStartedAt = startedAt ?? null;
   const normalizedPausedAt =
     pausedAt ?? (typeof currentSeconds === 'number' ? currentSeconds : null);
 
-  const onTimerOpen = useCallback(() => {
+  const onTimerOpen = useCallback(async () => {
     visibilityStore.setOverride(true);
-    onTimerStateUpdate({
-      startedAt: null,
-      pausedAt: 0,
-      totalSeconds: 300,
-      soundOn: true,
-      timerVisible: true,
-    });
-  }, [onTimerStateUpdate, visibilityStore]);
+    try {
+      await commitTimerUpdate({
+        startedAt: null,
+        pausedAt: 0,
+        totalSeconds: 300,
+        soundOn: true,
+        timerVisible: true,
+      });
+    } catch {
+      visibilityStore.setOverride(null);
+    }
+  }, [commitTimerUpdate, visibilityStore]);
 
-  const onTimerClose = useCallback(() => {
+  const onTimerClose = useCallback(async () => {
     visibilityStore.setOverride(false);
-    onTimerStateUpdate({
-      startedAt: null,
-      pausedAt: 0,
-      totalSeconds: 300,
-      soundOn: true,
-      timerVisible: false,
-    });
-  }, [onTimerStateUpdate, visibilityStore]);
+    try {
+      await commitTimerUpdate({
+        startedAt: null,
+        pausedAt: 0,
+        totalSeconds: 300,
+        soundOn: true,
+        timerVisible: false,
+      });
+    } catch {
+      visibilityStore.setOverride(null);
+    }
+  }, [commitTimerUpdate, visibilityStore]);
 
   if (!localTimerVisible) {
     if (!isMod) return null;
@@ -204,7 +218,10 @@ export function Timer({
       onTimerClose={onTimerClose}
       isMod={isMod}
       onTimerStateUpdate={(update) =>
-        onTimerStateUpdate({ ...update, timerVisible: localTimerVisible })
+        fireAndForgetTimerUpdate({
+          ...update,
+          timerVisible: localTimerVisible,
+        })
       }
       soundOn={soundOn}
       onTimerComplete={onTimerComplete}

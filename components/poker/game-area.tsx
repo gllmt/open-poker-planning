@@ -22,7 +22,7 @@ export function GameArea({
   onVote: (value: number, emoji?: string) => void;
   onReveal: () => void;
   onReset: () => void;
-  onTimerUpdate: (timer: TimerProps) => void;
+  onTimerUpdate: (timer: TimerProps) => Promise<void>;
   voteError?: string | null;
   confettiSeed?: string | null;
 }) {

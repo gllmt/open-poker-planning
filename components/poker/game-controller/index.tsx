@@ -50,7 +50,7 @@ export function GameController({
   confettiSeed?: string | null;
   onReveal: () => void;
   onReset: () => void;
-  onTimerUpdate: (timer: TimerProps) => void;
+  onTimerUpdate: (timer: TimerProps) => Promise<void>;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -175,7 +175,7 @@ export function GameController({
   const timerProps = { isMod, ...(game.timerProps ?? {}) };
 
   return (
-    <div className="flex flex-col items-center w-full md:w-auto">
+    <div className="flex flex-col items-center w-full md:w-[450px]">
       <Card className="w-full max-w-xl my-5 gap-0 py-0">
         <CardHeader className="border-border flex flex-wrap items-center gap-3 border-b px-4 py-3">
           <CardTitle className="text-lg font-semibold truncate grow">

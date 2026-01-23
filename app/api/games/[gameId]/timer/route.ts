@@ -5,6 +5,7 @@ import { tokenMatchesHash } from '@/lib/security/authorize';
 import { cookieNames } from '@/lib/security/cookies';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { broadcastGameChanged } from '@/lib/supabase/broadcast';
+import type { TimerProps } from '@/types/game';
 
 type TimerBody = {
   timerProps: unknown;
@@ -67,9 +68,10 @@ export async function POST(
     }
   }
 
+  const timerProps = (body.timerProps ?? null) as TimerProps | null;
   const { error: updateError } = await supabase
     .from('games')
-    .update({ timer_props: body.timerProps ?? null })
+    .update({ timer_props: timerProps })
     .eq('id', gameId);
 
   if (updateError) {
@@ -82,7 +84,7 @@ export async function POST(
   after(() =>
     broadcastGameChanged(gameId, {
       type: 'timer_updated',
-      game: { timerProps: body.timerProps ?? null },
+      game: { timerProps },
     }).catch(() => {})
   );
   return NextResponse.json({ ok: true });

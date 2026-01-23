@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "lints": "pnpm run biome:check && pnpm run lint && tsc --noEmit",
     "lint:biome": "biome lint .",
     "biome:check": "biome check .",
@@ -36,6 +37,7 @@
     "eslint-config-next": "16.1.4",
     "tailwindcss": "^4.1.18",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }
