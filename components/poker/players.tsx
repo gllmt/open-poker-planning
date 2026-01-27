@@ -1,5 +1,6 @@
 import { UserRound } from 'lucide-react';
 import { useI18n } from '@/components/i18n/use-i18n';
+import { isModerator } from '@/lib/is-moderator';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { PlayerCard } from './player-card';
@@ -14,6 +15,12 @@ export function Players({
   currentPlayerId: string;
 }) {
   const { t } = useI18n();
+  const isCurrentPlayerModerator = isModerator(
+    game.createdById,
+    currentPlayerId,
+    game.isAllowMembersToManageSession
+  );
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 p-3 w-full md:w-auto md:mt-5 md:mb-auto">
       <div className="flex w-full items-center justify-between gap-3">
@@ -27,7 +34,9 @@ export function Players({
         {players.map((player) => (
           <PlayerCard
             key={player.id}
-            game={game}
+            gameId={game.id}
+            gameStatus={game.gameStatus}
+            isCurrentPlayerModerator={isCurrentPlayerModerator}
             player={player}
             currentPlayerId={currentPlayerId}
           />

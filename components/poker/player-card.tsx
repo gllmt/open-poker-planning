@@ -1,35 +1,33 @@
 'use client';
 
 import { Check, CircleUserRound } from 'lucide-react';
+import { memo } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { removePlayer } from '@/lib/api/games';
-import { isModerator } from '@/lib/is-moderator';
-import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-export function PlayerCard({
-  game,
+export const PlayerCard = memo(function PlayerCard({
+  gameId,
+  gameStatus,
+  isCurrentPlayerModerator,
   player,
   currentPlayerId,
 }: {
-  game: Game;
+  gameId: string;
+  gameStatus: Status;
+  isCurrentPlayerModerator: boolean;
   player: Player;
   currentPlayerId: string;
 }) {
   const { t } = useI18n();
-  const canRemove =
-    isModerator(
-      game.createdById,
-      currentPlayerId,
-      game.isAllowMembersToManageSession
-    ) && player.id !== currentPlayerId;
+  const canRemove = isCurrentPlayerModerator && player.id !== currentPlayerId;
 
   const onRemove = async () => {
-    await removePlayer(game.id, player.id, currentPlayerId);
+    await removePlayer(gameId, player.id, currentPlayerId);
   };
 
   const hasVoted = player.status === Status.Finished;
@@ -50,7 +48,7 @@ export function PlayerCard({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {game.gameStatus !== Status.Finished && (
+        {gameStatus !== Status.Finished && (
           <span className="flex size-5 items-center justify-center">
             {hasVoted ? (
               <Check className="size-4 text-emerald-500" aria-hidden="true" />
@@ -72,4 +70,4 @@ export function PlayerCard({
       </div>
     </div>
   );
-}
+});
