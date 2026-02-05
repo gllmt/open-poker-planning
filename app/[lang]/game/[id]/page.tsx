@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-
 import { Poker } from '@/components/poker/poker';
+import { PokerErrorBoundary } from '@/components/poker/poker-error-boundary';
 
 export const metadata: Metadata = {
   robots: {
@@ -17,7 +17,9 @@ export default async function GamePage({
   const { id } = await params;
   return (
     <div className="px-2">
-      <Poker gameId={id} />
+      <PokerErrorBoundary>
+        <Poker gameId={id} />
+      </PokerErrorBoundary>
     </div>
   );
 }

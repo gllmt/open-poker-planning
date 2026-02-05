@@ -6,6 +6,11 @@ const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : null;
 const supabaseWsOrigin = supabaseOrigin
   ? supabaseOrigin.replace(/^http/, "ws")
   : null;
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+const convexOrigin = convexUrl ? new URL(convexUrl).origin : null;
+const convexWsOrigin = convexOrigin
+  ? convexOrigin.replace(/^http/, "ws")
+  : null;
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -24,6 +29,10 @@ const contentSecurityPolicy = [
     supabaseWsOrigin,
     "https://*.supabase.co",
     "wss://*.supabase.co",
+    convexOrigin,
+    convexWsOrigin,
+    "https://*.convex.cloud",
+    "wss://*.convex.cloud",
   ]
     .filter(Boolean)
     .join(" "),

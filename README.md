@@ -1,17 +1,18 @@
-# Free Planning Poker (Next.js + Supabase)
+# Free Planning Poker (Next.js + Convex)
 
-Real-time planning poker built with **Next.js App Router** and **Supabase Postgres + Realtime**.
+Real-time planning poker built with **Next.js App Router** and **Convex**.
 
 ## Setup
 
-1) Create a Supabase project, then run the SQL in `supabase/schema.sql`.
+1) Run `pnpm install`.
 
-2) Create `.env.local` from `.env.example`:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (browser, used only for Realtime broadcast)
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only, used by Route Handlers)
+2) Initialize Convex (creates `convex/_generated` and fills `.env.local`):
+- `npx convex dev`
+
+3) Create `.env.local` from `.env.example` for optional settings:
+- `NEXT_PUBLIC_CONVEX_URL` (public)
+- `CONVEX_DEPLOYMENT` (server-only)
 - Optional: `SITE_ACCESS_CODE` (server-only) to enable the global access-code gate at `/access`
-- Optional: `REALTIME_CHANNEL_TTL_MS` (server-only) idle TTL for broadcast channels in ms (defaults to 900000)
 - Optional: `SITE_URL` (server-only) absolute URL used for SEO metadata and sitemap
 
 ## Commands
@@ -24,9 +25,8 @@ Real-time planning poker built with **Next.js App Router** and **Supabase Postgr
 ## How It Works (Security)
 
 - No login: access is **token-based**.
-- DB is **private** (RLS enabled, no public policies); clients never query Postgres directly.
-- All reads/writes go through `app/api/**` using the Supabase **Service Role** key.
-- Realtime uses a Supabase **broadcast channel** to notify clients to refetch state; broadcasts contain no sensitive data.
+- DB is managed by **Convex**; all reads/writes go through `app/api/**`.
+- Realtime uses a **Convex query subscription** to detect updates and refetch state.
 
 ## Usage Notes
 

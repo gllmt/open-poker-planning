@@ -17,9 +17,14 @@ async function jsonOrThrow<T>(res: Response): Promise<T> {
   return data as T;
 }
 
-export async function createGame(
-  payload: NewGame
-): Promise<{ gameId: string; joinToken: string; playerId: string }> {
+export async function createGame(payload: NewGame): Promise<{
+  gameId: string;
+  joinToken: string;
+  joinTokenHash: string;
+  playerId: string;
+  playerTokenHash: string;
+  adminTokenHash: string;
+}> {
   const res = await fetch('/api/games', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -38,7 +43,11 @@ export async function joinGame(
   gameId: string,
   token: string,
   playerName: string
-): Promise<{ playerId: string }> {
+): Promise<{
+  playerId: string;
+  playerTokenHash: string;
+  joinTokenHash: string;
+}> {
   const res = await fetch(`/api/games/${encodeURIComponent(gameId)}/join`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

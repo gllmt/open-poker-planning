@@ -9,10 +9,12 @@ export function Players({
   game,
   players,
   currentPlayerId,
+  onRemovePlayer,
 }: {
   game: Game;
   players: Player[];
   currentPlayerId: string;
+  onRemovePlayer: (playerId: string) => Promise<void>;
 }) {
   const { t } = useI18n();
   const isCurrentPlayerModerator = isModerator(
@@ -34,11 +36,11 @@ export function Players({
         {players.map((player) => (
           <PlayerCard
             key={player.id}
-            gameId={game.id}
             gameStatus={game.gameStatus}
             isCurrentPlayerModerator={isCurrentPlayerModerator}
             player={player}
             currentPlayerId={currentPlayerId}
+            onRemovePlayer={onRemovePlayer}
           />
         ))}
       </div>
