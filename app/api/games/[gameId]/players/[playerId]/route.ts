@@ -1,16 +1,13 @@
+import { fetchMutation } from 'convex/nextjs';
 import { cookies } from 'next/headers';
-import { after, type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-import { tokenMatchesHash } from '@/lib/security/authorize';
+import { api } from '@/convex/_generated/api';
+import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames } from '@/lib/security/cookies';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { broadcastGameChanged } from '@/lib/supabase/broadcast';
+import { hashToken } from '@/lib/security/tokens';
 
 type RemoveBody = { callerPlayerId?: string };
-type GameAuthRow = {
-  admin_token_hash: string;
-  is_allow_members_to_manage_session: boolean;
-};
 
 export async function DELETE(
   request: NextRequest,
@@ -20,65 +17,34 @@ export async function DELETE(
   const body = (await request.json().catch(() => ({}))) as RemoveBody;
 
   const cookieStore = await cookies();
-  const supabase = createSupabaseAdminClient();
-  const { data: game, error: gameError } = await supabase
-    .from('games')
-    .select('id, admin_token_hash, is_allow_members_to_manage_session')
-    .eq('id', gameId)
-    .maybeSingle();
-
-  if (gameError || !game) {
-    return NextResponse.json({ error: 'Game not found' }, { status: 404 });
-  }
-
-  const authGame = game as GameAuthRow;
   const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
-  const isAdmin =
-    adminToken && tokenMatchesHash(adminToken, authGame.admin_token_hash);
+  const adminTokenHash = adminToken ? hashToken(adminToken) : undefined;
 
-  if (!isAdmin) {
-    if (!authGame.is_allow_members_to_manage_session || !body.callerPlayerId) {
+  const playerToken = body.callerPlayerId
+    ? cookieStore.get(cookieNames.playerToken(gameId))?.value
+    : undefined;
+  const playerTokenHash = playerToken ? hashToken(playerToken) : undefined;
+
+  try {
+    await fetchMutation(api.games.removePlayer, {
+      gameId,
+      playerId,
+      adminTokenHash,
+      callerPlayerId: body.callerPlayerId,
+      playerTokenHash,
+    });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    const code = getConvexErrorCode(error);
+    if (code === 'NOT_FOUND') {
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+    }
+    if (code === 'UNAUTHORIZED') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const playerToken = cookieStore.get(cookieNames.playerToken(gameId))?.value;
-    if (!playerToken)
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { data: caller, error } = await supabase
-      .from('players')
-      .select('player_token_hash')
-      .eq('game_id', gameId)
-      .eq('id', body.callerPlayerId)
-      .maybeSingle();
-
-    if (
-      error ||
-      !caller?.player_token_hash ||
-      !tokenMatchesHash(playerToken, caller.player_token_hash)
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-  }
-
-  const { error: deleteError } = await supabase
-    .from('players')
-    .delete()
-    .eq('game_id', gameId)
-    .eq('id', playerId);
-
-  if (deleteError) {
     return NextResponse.json(
       { error: 'Failed to remove player' },
       { status: 500 }
     );
   }
-
-  after(() =>
-    broadcastGameChanged(gameId, {
-      type: 'player_removed',
-      player: { id: playerId },
-    }).catch(() => {})
-  );
-  return new NextResponse(null, { status: 204 });
 }

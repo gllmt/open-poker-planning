@@ -59,10 +59,14 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const { playerId } = await joinGame(joinGameId, inviteToken, playerName);
+      const { playerId, playerTokenHash, joinTokenHash } = await joinGame(
+        joinGameId,
+        inviteToken,
+        playerName
+      );
       setRecentPlayerName(playerName);
 
-      // We don’t know the full game metadata yet; it will be fetched on the game page.
+      // We don't know the full game metadata yet; it will be fetched on the game page.
       upsertPlayerGame({
         id: joinGameId,
         name: joinGameId,
@@ -70,6 +74,8 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
         createdById: '',
         playerId,
         joinToken: inviteToken,
+        joinTokenHash,
+        playerTokenHash,
       });
 
       router.push(withLocale(`/game/${joinGameId}`, locale));

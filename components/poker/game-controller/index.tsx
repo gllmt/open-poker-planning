@@ -17,7 +17,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { deleteGame, setAutoReveal } from '@/lib/api/games';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
@@ -43,6 +42,8 @@ export function GameController({
   onReveal,
   onReset,
   onTimerUpdate,
+  onAutoReveal,
+  onDeleteGame,
 }: {
   game: Game;
   players: Player[];
@@ -51,6 +52,8 @@ export function GameController({
   onReveal: () => void;
   onReset: () => void;
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
+  onAutoReveal: (value: boolean) => Promise<void>;
+  onDeleteGame: () => Promise<void>;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -123,13 +126,13 @@ export function GameController({
     window.prompt(t('game.invitePrompt'), inviteLink);
   };
 
-  const onAutoReveal = useCallback(
+  const handleAutoReveal = useCallback(
     async (value: boolean) => {
       if (autoRevealPending) return;
       setAutoRevealValue(value);
       setAutoRevealPending(true);
       try {
-        await setAutoReveal(game.id, value, currentPlayerId);
+        await onAutoReveal(value);
         setAutoRevealPendingSync(true);
       } catch {
         setAutoRevealValue(baseAutoReveal);
@@ -138,7 +141,7 @@ export function GameController({
         setAutoRevealPending(false);
       }
     },
-    [autoRevealPending, baseAutoReveal, currentPlayerId, game.id]
+    [autoRevealPending, baseAutoReveal, onAutoReveal]
   );
 
   const handleTimerComplete = useCallback(() => {
@@ -168,7 +171,7 @@ export function GameController({
   const handleRemoveGame = async () => {
     const confirm = window.confirm(t('game.confirmDelete'));
     if (!confirm) return;
-    await deleteGame(game.id, currentPlayerId);
+    await onDeleteGame();
     router.push(withLocale('/', locale));
   };
 
@@ -203,7 +206,7 @@ export function GameController({
               <AutoRevealToggle
                 autoReveal={autoRevealValue}
                 disabled={autoRevealPending}
-                onAutoReveal={onAutoReveal}
+                onAutoReveal={handleAutoReveal}
               />
             </div>
           )}

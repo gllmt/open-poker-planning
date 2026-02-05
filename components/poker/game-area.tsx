@@ -13,6 +13,9 @@ export function GameArea({
   onReveal,
   onReset,
   onTimerUpdate,
+  onAutoReveal,
+  onDeleteGame,
+  onRemovePlayer,
   voteError,
   confettiSeed,
 }: {
@@ -23,6 +26,9 @@ export function GameArea({
   onReveal: () => void;
   onReset: () => void;
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
+  onAutoReveal: (value: boolean) => Promise<void>;
+  onDeleteGame: () => Promise<void>;
+  onRemovePlayer: (playerId: string) => Promise<void>;
   voteError?: string | null;
   confettiSeed?: string | null;
 }) {
@@ -37,11 +43,14 @@ export function GameArea({
           onReveal={onReveal}
           onReset={onReset}
           onTimerUpdate={onTimerUpdate}
+          onAutoReveal={onAutoReveal}
+          onDeleteGame={onDeleteGame}
         />
         <Players
           game={game}
           players={players}
           currentPlayerId={currentPlayerId}
+          onRemovePlayer={onRemovePlayer}
         />
       </div>
       <div className="text-center flex justify-center pb-4">

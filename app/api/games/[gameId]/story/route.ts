@@ -1,10 +1,11 @@
+import { fetchMutation } from 'convex/nextjs';
 import { cookies } from 'next/headers';
-import { after, type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-import { tokenMatchesHash } from '@/lib/security/authorize';
+import { api } from '@/convex/_generated/api';
+import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames } from '@/lib/security/cookies';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { broadcastGameChanged } from '@/lib/supabase/broadcast';
+import { hashToken } from '@/lib/security/tokens';
 
 type StoryBody = {
   storyName: string;
@@ -23,42 +24,30 @@ export async function POST(
 
   const cookieStore = await cookies();
   const playerToken = cookieStore.get(cookieNames.playerToken(gameId))?.value;
-  if (!playerToken)
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const supabase = createSupabaseAdminClient();
-  const { data: player, error: playerError } = await supabase
-    .from('players')
-    .select('player_token_hash')
-    .eq('game_id', gameId)
-    .eq('id', body.callerPlayerId)
-    .maybeSingle();
-
-  if (
-    playerError ||
-    !player?.player_token_hash ||
-    !tokenMatchesHash(playerToken, player.player_token_hash)
-  ) {
+  if (!playerToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const playerTokenHash = hashToken(playerToken);
 
-  const { error: updateError } = await supabase
-    .from('games')
-    .update({ story_name: body.storyName || null })
-    .eq('id', gameId);
-
-  if (updateError) {
+  try {
+    await fetchMutation(api.games.updateStory, {
+      gameId,
+      callerPlayerId: body.callerPlayerId,
+      playerTokenHash,
+      storyName: body.storyName ?? '',
+    });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const code = getConvexErrorCode(error);
+    if (code === 'NOT_FOUND') {
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+    }
+    if (code === 'UNAUTHORIZED') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json(
       { error: 'Failed to update story' },
       { status: 500 }
     );
   }
-
-  after(() =>
-    broadcastGameChanged(gameId, {
-      type: 'story_updated',
-      game: { storyName: body.storyName || null },
-    }).catch(() => {})
-  );
-  return NextResponse.json({ ok: true });
 }

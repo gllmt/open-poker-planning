@@ -1,43 +1,18 @@
 'use client';
 
+import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Loading } from '@/components/ui/loading';
+import { api } from '@/convex/_generated/api';
 import {
-  fetchGameState,
-  reset,
-  reveal,
-  updateTimer,
-  vote,
-} from '@/lib/api/games';
-import {
-  isAutoRevealBroadcastPayload,
-  isGameStatusBroadcastPayload,
-  isPlayerJoinedBroadcastPayload,
-  isPlayerRemovedBroadcastPayload,
-  isStoryUpdatedBroadcastPayload,
-  isTimerBroadcastPayload,
-  isVoteBroadcastPayload,
-} from '@/lib/broadcast/guards';
-import {
-  getCurrentPlayerId,
   getPlayerGamesFromCache,
   upsertPlayerGame,
 } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
-import type {
-  AutoRevealBroadcastPayload,
-  GameStatusBroadcastPayload,
-  PlayerJoinedBroadcastPayload,
-  PlayerRemovedBroadcastPayload,
-  StoryUpdatedBroadcastPayload,
-  TimerBroadcastPayload,
-  VoteBroadcastPayload,
-} from '@/types/broadcast';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
@@ -49,28 +24,6 @@ type PendingVote = {
   value: number;
   emoji?: string;
 };
-
-const buildGameStatusUpdate = (payload: GameStatusBroadcastPayload) => {
-  const update: { gameStatus?: Status; timerProps?: TimerProps | null } = {};
-  if (payload.game?.gameStatus !== undefined) {
-    update.gameStatus = payload.game.gameStatus;
-  }
-  if (payload.game?.timerProps !== undefined) {
-    update.timerProps = payload.game.timerProps ?? null;
-  }
-  return update;
-};
-
-const hasGameStatusUpdate = (payload: GameStatusBroadcastPayload) =>
-  payload.game?.gameStatus !== undefined ||
-  payload.game?.timerProps !== undefined;
-
-const resetPlayersForRound = (players: Player[]) =>
-  players.map((player) => ({
-    ...player,
-    status: Status.NotStarted,
-    value: 0,
-  }));
 
 export function Poker({ gameId }: { gameId: string }) {
   const router = useRouter();
@@ -84,6 +37,13 @@ export function Poker({ gameId }: { gameId: string }) {
   );
   const [voteError, setVoteError] = useState<string | null>(null);
   const [confettiSeed, setConfettiSeed] = useState<string | null>(null);
+  const [auth, setAuth] = useState<{
+    playerId: string;
+    joinTokenHash: string;
+    playerTokenHash: string;
+    adminTokenHash?: string;
+  } | null>(null);
+  const [queryError, setQueryError] = useState<string | null>(null);
 
   const pendingVoteRef = useRef<PendingVote | null>(null);
   const voteDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -93,11 +53,17 @@ export function Poker({ gameId }: { gameId: string }) {
   const revealRequestIdRef = useRef(0);
   const resetRequestIdRef = useRef(0);
   const timerRequestIdRef = useRef(0);
-  const refreshRequestIdRef = useRef(0);
   const lastGameStatusRef = useRef<Status | null>(null);
   const gameRef = useRef<Game | null>(null);
   const playersRef = useRef<Player[] | null>(null);
-  const currentPlayerIdRef = useRef<string | undefined>(undefined);
+
+  const voteMutation = useMutation(api.games.vote);
+  const revealMutation = useMutation(api.games.reveal);
+  const resetMutation = useMutation(api.games.reset);
+  const updateTimerMutation = useMutation(api.games.updateTimer);
+  const setAutoRevealMutation = useMutation(api.games.setAutoReveal);
+  const removePlayerMutation = useMutation(api.games.removePlayer);
+  const deleteGameMutation = useMutation(api.games.deleteGame);
 
   const clearPendingVote = useCallback(() => {
     pendingVoteRef.current = null;
@@ -130,65 +96,12 @@ export function Poker({ gameId }: { gameId: string }) {
     []
   );
 
-  const applyGameUpdate = useCallback(
-    (update: {
-      game?: {
-        gameStatus?: Status;
-        timerProps?: TimerProps | null;
-        autoReveal?: boolean;
-        storyName?: string | null;
-      };
-      players?: (current: Player[]) => Player[];
-      clearPendingVote?: boolean;
-    }) => {
-      const currentGame = gameRef.current;
-      const currentPlayers = playersRef.current;
-      if (!currentGame || !currentPlayers) return false;
-
-      const nextPlayers = update.players
-        ? update.players(currentPlayers)
-        : currentPlayers;
-
-      const nextGame = update.game
-        ? (() => {
-            const { timerProps, storyName, ...gameRest } = update.game;
-            return {
-              ...currentGame,
-              ...gameRest,
-              ...(timerProps !== undefined
-                ? { timerProps: timerProps ?? undefined }
-                : {}),
-              ...(storyName !== undefined
-                ? { storyName: storyName ?? undefined }
-                : {}),
-            };
-          })()
-        : currentGame;
-
-      if (update.clearPendingVote) clearPendingVote();
-      applyGameState(nextGame, nextPlayers);
-      return true;
-    },
-    [applyGameState, clearPendingVote]
-  );
-
-  const refresh = useCallback(async () => {
-    const requestId = ++refreshRequestIdRef.current;
-    const playerId = getCurrentPlayerId(gameId);
-    if (!playerId) {
-      if (refreshRequestIdRef.current === requestId)
-        router.push(withLocale(`/join/${gameId}`, locale));
-      return;
-    }
-
-    setCurrentPlayerId(playerId);
-
-    try {
-      const { game: serverGame, players: serverPlayers } = await fetchGameState(
-        { gameId, playerId }
-      );
-      if (refreshRequestIdRef.current !== requestId) return;
+  const applyServerState = useCallback(
+    (serverGame: Game, serverPlayers: Player[], playerId: string) => {
       let nextPlayers = serverPlayers;
+      if (pendingVoteRef.current && serverGame.gameStatus === Status.Started) {
+        pendingVoteRef.current = null;
+      }
       const pendingVote = pendingVoteRef.current;
 
       if (pendingVote) {
@@ -216,7 +129,6 @@ export function Poker({ gameId }: { gameId: string }) {
 
       applyGameState(serverGame, nextPlayers);
 
-      // Keep recent games metadata up-to-date
       const cached = getPlayerGamesFromCache().find((g) => g.id === gameId);
       upsertPlayerGame({
         id: serverGame.id,
@@ -225,19 +137,61 @@ export function Poker({ gameId }: { gameId: string }) {
         createdById: serverGame.createdById,
         playerId,
         joinToken: cached?.joinToken,
+        joinTokenHash: cached?.joinTokenHash,
+        playerTokenHash: cached?.playerTokenHash,
+        adminTokenHash: cached?.adminTokenHash,
         isAllowMembersToManageSession: serverGame.isAllowMembersToManageSession,
       });
-    } catch {
-      if (refreshRequestIdRef.current === requestId)
-        router.push(withLocale(`/join/${gameId}`, locale));
-    } finally {
-      if (refreshRequestIdRef.current === requestId) setLoading(false);
-    }
-  }, [gameId, router, locale, applyGameState]);
+    },
+    [applyGameState, gameId]
+  );
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    const cached = getPlayerGamesFromCache().find((g) => g.id === gameId);
+
+    if (!cached?.playerId || !cached.joinTokenHash || !cached.playerTokenHash) {
+      router.push(withLocale(`/join/${gameId}`, locale));
+      return;
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- init from localStorage
+    setAuth({
+      playerId: cached.playerId,
+      joinTokenHash: cached.joinTokenHash,
+      playerTokenHash: cached.playerTokenHash,
+      adminTokenHash: cached.adminTokenHash,
+    });
+    setCurrentPlayerId(cached.playerId);
+  }, [gameId, locale, router]);
+
+  const queryArgs = auth
+    ? { gameId, joinTokenHash: auth.joinTokenHash }
+    : 'skip';
+
+  const gameState = useQuery(api.games.getGameState, queryArgs);
+
+  useEffect(() => {
+    if (!auth || gameState) return;
+
+    // Timeout to detect if query never resolves (e.g., network issues)
+    const timeout = setTimeout(() => {
+      if (loading && !gameState) {
+        setQueryError('Failed to load game data. Please refresh the page.');
+        setLoading(false);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [auth, loading, gameState]);
+
+  useEffect(() => {
+    if (!gameState || !auth) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- sync from Convex subscription */
+    if (queryError) setQueryError(null);
+    applyServerState(gameState.game, gameState.players, auth.playerId);
+    setLoading(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [gameState, auth, applyServerState, queryError]);
 
   useEffect(() => {
     gameRef.current = game;
@@ -246,205 +200,6 @@ export function Poker({ gameId }: { gameId: string }) {
   useEffect(() => {
     playersRef.current = players;
   }, [players]);
-
-  useEffect(() => {
-    currentPlayerIdRef.current = currentPlayerId;
-  }, [currentPlayerId]);
-
-  const applyVoteBroadcast = useCallback(
-    (payload: VoteBroadcastPayload) => {
-      const currentGame = gameRef.current;
-      const currentPlayers = playersRef.current;
-      if (!currentGame || !currentPlayers) return false;
-
-      const playerUpdate = payload.player;
-      const knownPlayer = currentPlayers.find(
-        (player) => player.id === playerUpdate.id
-      );
-      if (!knownPlayer) return false;
-
-      const nextPlayers = currentPlayers.map((player) =>
-        player.id === playerUpdate.id
-          ? {
-              ...player,
-              status: playerUpdate.status,
-              value: playerUpdate.value,
-              emoji: playerUpdate.emoji,
-            }
-          : player
-      );
-
-      const nextGame =
-        payload.game !== undefined
-          ? {
-              ...currentGame,
-              gameStatus: payload.game.gameStatus ?? currentGame.gameStatus,
-              timerProps:
-                payload.game.timerProps === undefined
-                  ? currentGame.timerProps
-                  : (payload.game.timerProps ?? undefined),
-            }
-          : currentGame;
-
-      const playerId = currentPlayerIdRef.current;
-      if (playerId && playerUpdate.id === playerId) {
-        const pendingVote = pendingVoteRef.current;
-        if (pendingVote) {
-          const synced =
-            playerUpdate.status === Status.Finished &&
-            playerUpdate.value === pendingVote.value &&
-            (pendingVote.value !== -1 ||
-              playerUpdate.emoji === pendingVote.emoji);
-          if (synced) {
-            pendingVoteRef.current = null;
-          }
-        }
-      }
-
-      applyGameState(nextGame, nextPlayers);
-      return true;
-    },
-    [applyGameState]
-  );
-
-  const applyPlayerJoinedBroadcast = useCallback(
-    (payload: PlayerJoinedBroadcastPayload) =>
-      applyGameUpdate({
-        players: (currentPlayers) => {
-          if (
-            currentPlayers.some((player) => player.id === payload.player.id)
-          ) {
-            return currentPlayers;
-          }
-          return [
-            ...currentPlayers,
-            {
-              id: payload.player.id,
-              name: payload.player.name,
-              status: payload.player.status,
-              value: payload.player.value ?? 0,
-              emoji: payload.player.emoji ?? undefined,
-            },
-          ];
-        },
-      }),
-    [applyGameUpdate]
-  );
-
-  const applyPlayerRemovedBroadcast = useCallback(
-    (payload: PlayerRemovedBroadcastPayload) =>
-      applyGameUpdate({
-        players: (currentPlayers) => {
-          const nextPlayers = currentPlayers.filter(
-            (player) => player.id !== payload.player.id
-          );
-          return nextPlayers.length === currentPlayers.length
-            ? currentPlayers
-            : nextPlayers;
-        },
-      }),
-    [applyGameUpdate]
-  );
-
-  const applyStoryUpdatedBroadcast = useCallback(
-    (payload: StoryUpdatedBroadcastPayload) => {
-      const storyName = payload.game?.storyName;
-      if (storyName === undefined) return false;
-      return applyGameUpdate({
-        game: { storyName },
-      });
-    },
-    [applyGameUpdate]
-  );
-
-  const applyTimerBroadcast = useCallback(
-    (payload: TimerBroadcastPayload) => {
-      const timerProps = payload.game?.timerProps;
-      if (timerProps === undefined) return false;
-      return applyGameUpdate({
-        game: { timerProps: timerProps ?? null },
-      });
-    },
-    [applyGameUpdate]
-  );
-
-  const applyAutoRevealBroadcast = useCallback(
-    (payload: AutoRevealBroadcastPayload) => {
-      const autoReveal = payload.game?.autoReveal;
-      if (autoReveal === undefined) return false;
-      return applyGameUpdate({
-        game: { autoReveal },
-      });
-    },
-    [applyGameUpdate]
-  );
-
-  const applyGameStatusBroadcast = useCallback(
-    (payload: GameStatusBroadcastPayload) => {
-      const shouldResetPlayers =
-        payload.type === 'reset' && payload.players?.reset;
-      if (!shouldResetPlayers && !hasGameStatusUpdate(payload)) return false;
-      return applyGameUpdate({
-        game: buildGameStatusUpdate(payload),
-        players: shouldResetPlayers ? resetPlayersForRound : undefined,
-        clearPendingVote: payload.type === 'reset',
-      });
-    },
-    [applyGameUpdate]
-  );
-
-  const handleBroadcastPayload = useCallback(
-    (payload: unknown) => {
-      if (isVoteBroadcastPayload(payload)) return applyVoteBroadcast(payload);
-      if (isPlayerJoinedBroadcastPayload(payload))
-        return applyPlayerJoinedBroadcast(payload);
-      if (isPlayerRemovedBroadcastPayload(payload))
-        return applyPlayerRemovedBroadcast(payload);
-      if (isStoryUpdatedBroadcastPayload(payload))
-        return applyStoryUpdatedBroadcast(payload);
-      if (isTimerBroadcastPayload(payload)) return applyTimerBroadcast(payload);
-      if (isAutoRevealBroadcastPayload(payload))
-        return applyAutoRevealBroadcast(payload);
-      if (isGameStatusBroadcastPayload(payload))
-        return applyGameStatusBroadcast(payload);
-      return false;
-    },
-    [
-      applyVoteBroadcast,
-      applyPlayerJoinedBroadcast,
-      applyPlayerRemovedBroadcast,
-      applyStoryUpdatedBroadcast,
-      applyTimerBroadcast,
-      applyAutoRevealBroadcast,
-      applyGameStatusBroadcast,
-    ]
-  );
-
-  useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    const channel = supabase.channel(`game:${gameId}`, {
-      config: { broadcast: { ack: false, self: true } },
-    });
-
-    channel.on('broadcast', { event: 'game_changed' }, ({ payload }) => {
-      const payloadType = (payload as { type?: unknown } | null)?.type;
-      if (process.env.NODE_ENV === 'development') {
-        console.info('[realtime:client] game_changed', {
-          gameId,
-          type: payloadType ?? 'unknown',
-        });
-      }
-      if (handleBroadcastPayload(payload)) return;
-      if (payloadType === 'reset') clearPendingVote();
-      refresh();
-    });
-
-    channel.subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [gameId, refresh, clearPendingVote, handleBroadcastPayload]);
 
   useEffect(() => {
     if (!players || !currentPlayerId) return;
@@ -460,7 +215,7 @@ export function Poker({ gameId }: { gameId: string }) {
   }, []);
 
   const onReveal = useCallback(async () => {
-    if (!game || !currentPlayerId) return;
+    if (!game || !currentPlayerId || !auth) return;
     if (game.gameStatus === Status.Finished) return;
     const requestId = ++revealRequestIdRef.current;
     const previousGame = game;
@@ -474,16 +229,21 @@ export function Poker({ gameId }: { gameId: string }) {
     setGame(nextGame);
 
     try {
-      await reveal(game.id, currentPlayerId);
+      await revealMutation({
+        gameId: game.id,
+        adminTokenHash: auth.adminTokenHash,
+        callerPlayerId: auth.playerId,
+        playerTokenHash: auth.playerTokenHash,
+      });
     } catch {
       if (revealRequestIdRef.current !== requestId) return;
       gameRef.current = previousGame;
       setGame(previousGame);
     }
-  }, [game, currentPlayerId]);
+  }, [game, currentPlayerId, auth, revealMutation]);
 
   const onReset = useCallback(async () => {
-    if (!game || !players || !currentPlayerId) return;
+    if (!game || !players || !currentPlayerId || !auth) return;
     const requestId = ++resetRequestIdRef.current;
     const previousGame = game;
     const previousPlayers = players;
@@ -506,7 +266,12 @@ export function Poker({ gameId }: { gameId: string }) {
     setPlayers(nextPlayers);
 
     try {
-      await reset(game.id, currentPlayerId);
+      await resetMutation({
+        gameId: game.id,
+        adminTokenHash: auth.adminTokenHash,
+        callerPlayerId: auth.playerId,
+        playerTokenHash: auth.playerTokenHash,
+      });
     } catch {
       if (resetRequestIdRef.current !== requestId) return;
       gameRef.current = previousGame;
@@ -514,11 +279,11 @@ export function Poker({ gameId }: { gameId: string }) {
       setGame(previousGame);
       setPlayers(previousPlayers);
     }
-  }, [game, players, currentPlayerId, clearPendingVote]);
+  }, [game, players, currentPlayerId, auth, clearPendingVote, resetMutation]);
 
   const onTimerUpdate = useCallback(
     async (timer: TimerProps) => {
-      if (!game || !currentPlayerId) return;
+      if (!game || !currentPlayerId || !auth) return;
       const requestId = ++timerRequestIdRef.current;
       const previousTimerProps = game.timerProps;
       setGame((prev) => {
@@ -532,7 +297,13 @@ export function Poker({ gameId }: { gameId: string }) {
       });
 
       try {
-        await updateTimer(game.id, timer, currentPlayerId);
+        await updateTimerMutation({
+          gameId: game.id,
+          timerProps: timer,
+          adminTokenHash: auth.adminTokenHash,
+          callerPlayerId: auth.playerId,
+          playerTokenHash: auth.playerTokenHash,
+        });
       } catch (error) {
         if (timerRequestIdRef.current !== requestId) return;
         setGame((prev) => {
@@ -546,13 +317,66 @@ export function Poker({ gameId }: { gameId: string }) {
           : new Error('Failed to update timer');
       }
     },
-    [game, currentPlayerId]
+    [game, currentPlayerId, auth, updateTimerMutation]
   );
+
+  const onAutoReveal = useCallback(
+    async (value: boolean) => {
+      if (!auth) return;
+      await setAutoRevealMutation({
+        gameId,
+        autoReveal: value,
+        adminTokenHash: auth.adminTokenHash,
+        callerPlayerId: auth.playerId,
+        playerTokenHash: auth.playerTokenHash,
+      });
+    },
+    [auth, gameId, setAutoRevealMutation]
+  );
+
+  const onRemovePlayer = useCallback(
+    async (playerId: string) => {
+      if (!auth) return;
+      await removePlayerMutation({
+        gameId,
+        playerId,
+        adminTokenHash: auth.adminTokenHash,
+        callerPlayerId: auth.playerId,
+        playerTokenHash: auth.playerTokenHash,
+      });
+    },
+    [auth, gameId, removePlayerMutation]
+  );
+
+  const onDeleteGame = useCallback(async () => {
+    if (!auth) return;
+    await deleteGameMutation({
+      gameId,
+      adminTokenHash: auth.adminTokenHash,
+      callerPlayerId: auth.playerId,
+      playerTokenHash: auth.playerTokenHash,
+    });
+  }, [auth, gameId, deleteGameMutation]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10">
         <Loading />
+      </div>
+    );
+  }
+
+  if (queryError) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-sm text-destructive">{queryError}</p>
+        <button
+          type="button"
+          className="mt-4 text-sm underline"
+          onClick={() => window.location.reload()}
+        >
+          {t('common.retry') || 'Retry'}
+        </button>
       </div>
     );
   }
@@ -566,10 +390,13 @@ export function Poker({ gameId }: { gameId: string }) {
   }
 
   const onVote = (value: number, emoji?: string) => {
+    if (!game || !currentPlayerId || !auth) return;
     if (game.gameStatus === Status.Finished) return;
 
     pendingVoteRef.current = { value, emoji };
     setVoteError(null);
+
+    const previousPlayers = playersRef.current;
 
     setPlayers((prev) => {
       if (!prev) return prev;
@@ -592,14 +419,21 @@ export function Poker({ gameId }: { gameId: string }) {
       const pendingVote = pendingVoteRef.current;
       if (!pendingVote || !playerId) return;
 
-      vote(gameId, playerId, pendingVote.value, pendingVote.emoji).catch(
-        (e) => {
-          if (voteRequestIdRef.current !== requestId) return;
-          pendingVoteRef.current = null;
-          setVoteError(e instanceof Error ? e.message : t('game.voteFailed'));
-          refresh().catch(() => {});
+      voteMutation({
+        gameId,
+        playerId,
+        playerTokenHash: auth.playerTokenHash,
+        value: pendingVote.value,
+        emoji: pendingVote.emoji,
+      }).catch((e) => {
+        if (voteRequestIdRef.current !== requestId) return;
+        pendingVoteRef.current = null;
+        setVoteError(e instanceof Error ? e.message : t('game.voteFailed'));
+        if (previousPlayers) {
+          playersRef.current = previousPlayers;
+          setPlayers(previousPlayers);
         }
-      );
+      });
     }, 150);
   };
 
@@ -612,6 +446,9 @@ export function Poker({ gameId }: { gameId: string }) {
       onReveal={onReveal}
       onReset={onReset}
       onTimerUpdate={onTimerUpdate}
+      onAutoReveal={onAutoReveal}
+      onDeleteGame={onDeleteGame}
+      onRemovePlayer={onRemovePlayer}
       voteError={voteError}
       confettiSeed={confettiSeed}
     />
