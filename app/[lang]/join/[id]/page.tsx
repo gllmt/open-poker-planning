@@ -13,14 +13,26 @@ export const metadata: Metadata = {
   },
 };
 
+function readSearchParam(
+  value: string | string[] | undefined
+): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function JoinGamePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; id: string }>;
+  searchParams: Promise<{
+    token?: string | string[];
+  }>;
 }) {
   const { lang, id } = await params;
   const locale = isLocale(lang) ? lang : i18n.defaultLocale;
   const dictionary = await getDictionary(locale);
+  const resolvedSearchParams = await searchParams;
+  const initialInviteToken = readSearchParam(resolvedSearchParams?.token) ?? '';
   return (
     <div className="flex flex-col items-center w-full py-8 flex-1 px-4">
       <div className="w-full max-w-5xl flex justify-center">
@@ -33,7 +45,10 @@ export default async function JoinGamePage({
               </div>
             }
           >
-            <JoinGame initialGameId={id} />
+            <JoinGame
+              initialGameId={id}
+              initialInviteToken={initialInviteToken}
+            />
           </Suspense>
         </div>
       </div>

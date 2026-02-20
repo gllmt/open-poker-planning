@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useReducer } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,11 @@ const GAME_TYPE_OPTIONS = [
   { type: GameType.Custom, labelKey: 'createGame.custom' },
 ] as const;
 
+const CUSTOM_OPTION_IDS = Array.from(
+  { length: 15 },
+  (_, index) => `custom-option-${index + 1}`
+);
+
 const CARD_PREVIEW_BY_TYPE: Partial<Record<GameType, string>> = {
   [GameType.Fibonacci]: getCards(GameType.Fibonacci)
     .map((card) => card.displayValue)
@@ -47,50 +52,113 @@ const CARD_PREVIEW_BY_TYPE: Partial<Record<GameType, string>> = {
     .join(' · '),
 };
 
+type CreateGameState = {
+  gameName: string;
+  createdBy: string;
+  gameType: GameType;
+  allowMembersToManageSession: boolean;
+  customOptions: string[];
+  loading: boolean;
+  error: string | null;
+};
+
+type CreateGameAction =
+  | { type: 'set-game-name'; value: string }
+  | { type: 'set-created-by'; value: string }
+  | { type: 'set-game-type'; value: GameType }
+  | { type: 'toggle-allow-members' }
+  | { type: 'set-custom-option'; index: number; value: string }
+  | { type: 'set-loading'; value: boolean }
+  | { type: 'set-error'; value: string | null };
+
+function initCreateGameState(defaultName: string): CreateGameState {
+  return {
+    gameName: defaultName,
+    createdBy: '',
+    gameType: GameType.Fibonacci,
+    allowMembersToManageSession: false,
+    customOptions: Array(15).fill(''),
+    loading: false,
+    error: null,
+  };
+}
+
+function createGameReducer(
+  state: CreateGameState,
+  action: CreateGameAction
+): CreateGameState {
+  switch (action.type) {
+    case 'set-game-name':
+      return { ...state, gameName: action.value };
+    case 'set-created-by':
+      return { ...state, createdBy: action.value };
+    case 'set-game-type':
+      return { ...state, gameType: action.value };
+    case 'toggle-allow-members':
+      return {
+        ...state,
+        allowMembersToManageSession: !state.allowMembersToManageSession,
+      };
+    case 'set-custom-option': {
+      const next = [...state.customOptions];
+      next[action.index] = action.value;
+      return { ...state, customOptions: next };
+    }
+    case 'set-loading':
+      return { ...state, loading: action.value };
+    case 'set-error':
+      return { ...state, error: action.value };
+    default:
+      return state;
+  }
+}
+
 export function CreateGame() {
   const router = useRouter();
   const { locale, t } = useI18n();
 
-  const [gameName, setGameName] = useState(() => t('createGame.defaultName'));
-  const [createdBy, setCreatedBy] = useState<string>('');
-  const [gameType, setGameType] = useState<GameType>(GameType.Fibonacci);
-  const [allowMembersToManageSession, setAllowMembersToManageSession] =
-    useState(false);
-  const [customOptions, setCustomOptions] = useState(() => Array(15).fill(''));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(
+    createGameReducer,
+    t('createGame.defaultName'),
+    initCreateGameState
+  );
 
   useEffect(() => {
     const recent = getRecentPlayerName();
-    if (recent && !createdBy) setCreatedBy(recent);
-  }, [createdBy]);
+    if (recent && !state.createdBy) {
+      dispatch({ type: 'set-created-by', value: recent });
+    }
+  }, [state.createdBy]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setError(null);
+    dispatch({ type: 'set-error', value: null });
 
-    if (gameType === GameType.Custom) {
-      const count = customOptions.reduce(
+    if (state.gameType === GameType.Custom) {
+      const count = state.customOptions.reduce(
         (acc, option) => (option?.trim() ? acc + 1 : acc),
         0
       );
       if (count < 2) {
-        setError(t('createGame.errorCustomOptions'));
+        dispatch({
+          type: 'set-error',
+          value: t('createGame.errorCustomOptions'),
+        });
         return;
       }
     }
 
-    setLoading(true);
+    dispatch({ type: 'set-loading', value: true });
     try {
       const payload: NewGame = {
-        name: gameName,
-        createdBy,
-        gameType,
-        isAllowMembersToManageSession: allowMembersToManageSession,
+        name: state.gameName,
+        createdBy: state.createdBy,
+        gameType: state.gameType,
+        isAllowMembersToManageSession: state.allowMembersToManageSession,
         cards:
-          gameType === GameType.Custom
-            ? getCustomCards(customOptions)
-            : getCards(gameType),
+          state.gameType === GameType.Custom
+            ? getCustomCards(state.customOptions)
+            : getCards(state.gameType),
       };
 
       const {
@@ -102,34 +170,34 @@ export function CreateGame() {
         adminTokenHash,
       } = await createGame(payload);
 
-      setRecentPlayerName(createdBy);
+      setRecentPlayerName(state.createdBy);
       upsertPlayerGame({
         id: gameId,
-        name: gameName,
-        createdBy,
+        name: state.gameName,
+        createdBy: state.createdBy,
         createdById: playerId,
         playerId,
         joinToken,
         joinTokenHash,
         playerTokenHash,
         adminTokenHash,
-        isAllowMembersToManageSession: allowMembersToManageSession,
+        isAllowMembersToManageSession: state.allowMembersToManageSession,
       });
 
       router.push(withLocale(`/game/${gameId}`, locale));
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : t('createGame.errorCreateFailed')
-      );
+      dispatch({
+        type: 'set-error',
+        value:
+          e instanceof Error ? e.message : t('createGame.errorCreateFailed'),
+      });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'set-loading', value: false });
     }
   };
 
   const handleCustomOptionChange = (index: number, value: string) => {
-    const next = [...customOptions];
-    next[index] = value;
-    setCustomOptions(next);
+    dispatch({ type: 'set-custom-option', index, value });
   };
 
   return (
@@ -148,8 +216,10 @@ export function CreateGame() {
                 id="gameName"
                 required
                 type="text"
-                value={gameName}
-                onChange={(event) => setGameName(event.target.value)}
+                value={state.gameName}
+                onChange={(event) =>
+                  dispatch({ type: 'set-game-name', value: event.target.value })
+                }
               />
             </Field>
 
@@ -161,8 +231,13 @@ export function CreateGame() {
                 id="createdBy"
                 required
                 type="text"
-                value={createdBy}
-                onChange={(event) => setCreatedBy(event.target.value)}
+                value={state.createdBy}
+                onChange={(event) =>
+                  dispatch({
+                    type: 'set-created-by',
+                    value: event.target.value,
+                  })
+                }
               />
             </Field>
 
@@ -189,8 +264,10 @@ export function CreateGame() {
                             className="peer sr-only"
                             name="gameType"
                             value={type}
-                            checked={gameType === type}
-                            onChange={() => setGameType(type)}
+                            checked={state.gameType === type}
+                            onChange={() =>
+                              dispatch({ type: 'set-game-type', value: type })
+                            }
                           />
                           <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition" />
                           <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full opacity-0 transition peer-checked:opacity-100" />
@@ -206,15 +283,15 @@ export function CreateGame() {
               </div>
             </fieldset>
 
-            {gameType === GameType.Custom && (
+            {state.gameType === GameType.Custom && (
               <div className="flex flex-wrap gap-2">
-                {customOptions.map((option, index) => (
+                {CUSTOM_OPTION_IDS.map((optionId, index) => (
                   <Input
-                    key={index}
+                    key={optionId}
                     type="text"
                     maxLength={3}
                     className="h-8 w-12 px-2 text-center text-xs"
-                    value={option}
+                    value={state.customOptions[index] ?? ''}
                     onChange={(event) =>
                       handleCustomOptionChange(index, event.target.value)
                     }
@@ -228,8 +305,8 @@ export function CreateGame() {
                 <input
                   type="checkbox"
                   className="peer sr-only"
-                  checked={allowMembersToManageSession}
-                  onChange={() => setAllowMembersToManageSession((v) => !v)}
+                  checked={state.allowMembersToManageSession}
+                  onChange={() => dispatch({ type: 'toggle-allow-members' })}
                 />
                 <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-sm border transition" />
                 <span className="text-primary-foreground pointer-events-none absolute text-[10px] font-semibold leading-none opacity-0 transition peer-checked:opacity-100">
@@ -239,13 +316,15 @@ export function CreateGame() {
               <span>{t('createGame.allowMembers')}</span>
             </label>
 
-            {error && <p className="text-destructive text-xs">{error}</p>}
+            {state.error && (
+              <p className="text-destructive text-xs">{state.error}</p>
+            )}
           </FieldGroup>
         </CardContent>
 
         <CardFooter className="justify-end">
-          <Button type="submit" disabled={loading}>
-            {loading ? t('common.creating') : t('common.create')}
+          <Button type="submit" disabled={state.loading}>
+            {state.loading ? t('common.creating') : t('common.create')}
           </Button>
         </CardFooter>
       </Card>

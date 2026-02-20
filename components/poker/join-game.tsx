@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { redirect, useRouter } from 'next/navigation';
+import { type FormEvent, useEffect, useReducer } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -23,66 +23,132 @@ import {
 } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 
-export function JoinGame({ initialGameId }: { initialGameId?: string }) {
+type JoinGameState = {
+  joinGameId: string;
+  inviteToken: string;
+  playerName: string;
+  error: string | null;
+  loading: boolean;
+  redirectToGameId: string | null;
+};
+
+type JoinGameAction =
+  | { type: 'set-join-game-id'; value: string }
+  | { type: 'set-invite-token'; value: string }
+  | { type: 'set-player-name'; value: string }
+  | { type: 'set-error'; value: string | null }
+  | { type: 'set-loading'; value: boolean }
+  | { type: 'set-redirect-game-id'; value: string | null };
+
+function initJoinGameState({
+  initialGameId,
+  initialInviteToken,
+}: {
+  initialGameId?: string;
+  initialInviteToken?: string;
+}): JoinGameState {
+  return {
+    joinGameId: initialGameId ?? '',
+    inviteToken: initialInviteToken ?? '',
+    playerName: '',
+    error: null,
+    loading: false,
+    redirectToGameId: null,
+  };
+}
+
+function joinGameReducer(
+  state: JoinGameState,
+  action: JoinGameAction
+): JoinGameState {
+  switch (action.type) {
+    case 'set-join-game-id':
+      return { ...state, joinGameId: action.value };
+    case 'set-invite-token':
+      return { ...state, inviteToken: action.value };
+    case 'set-player-name':
+      return { ...state, playerName: action.value };
+    case 'set-error':
+      return { ...state, error: action.value };
+    case 'set-loading':
+      return { ...state, loading: action.value };
+    case 'set-redirect-game-id':
+      return { ...state, redirectToGameId: action.value };
+    default:
+      return state;
+  }
+}
+
+export function JoinGame({
+  initialGameId,
+  initialInviteToken,
+}: {
+  initialGameId?: string;
+  initialInviteToken?: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { locale, t } = useI18n();
-
-  const initialToken = useMemo(
-    () => searchParams.get('token') || '',
-    [searchParams]
+  const [state, dispatch] = useReducer(
+    joinGameReducer,
+    { initialGameId, initialInviteToken },
+    initJoinGameState
   );
-
-  const [joinGameId, setJoinGameId] = useState(initialGameId || '');
-  const [inviteToken, setInviteToken] = useState(initialToken);
-  const [playerName, setPlayerName] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const recent = getRecentPlayerName();
-    if (recent && !playerName) setPlayerName(recent);
-  }, [playerName]);
+    if (recent && !state.playerName) {
+      dispatch({ type: 'set-player-name', value: recent });
+    }
+  }, [state.playerName]);
 
   useEffect(() => {
-    if (!joinGameId) return;
-    const existingPlayerId = getCurrentPlayerId(joinGameId);
+    if (!state.joinGameId) return;
+    const existingPlayerId = getCurrentPlayerId(state.joinGameId);
     if (!existingPlayerId) return;
 
-    fetchGameState({ gameId: joinGameId, playerId: existingPlayerId })
-      .then(() => router.push(withLocale(`/game/${joinGameId}`, locale)))
+    fetchGameState({ gameId: state.joinGameId, playerId: existingPlayerId })
+      .then(() =>
+        dispatch({ type: 'set-redirect-game-id', value: state.joinGameId })
+      )
       .catch(() => {});
-  }, [joinGameId, router, locale]);
+  }, [state.joinGameId]);
+
+  if (state.redirectToGameId) {
+    redirect(withLocale(`/game/${state.redirectToGameId}`, locale));
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setError(null);
-    setLoading(true);
+    dispatch({ type: 'set-error', value: null });
+    dispatch({ type: 'set-loading', value: true });
     try {
       const { playerId, playerTokenHash, joinTokenHash } = await joinGame(
-        joinGameId,
-        inviteToken,
-        playerName
+        state.joinGameId,
+        state.inviteToken,
+        state.playerName
       );
-      setRecentPlayerName(playerName);
+      setRecentPlayerName(state.playerName);
 
       // We don't know the full game metadata yet; it will be fetched on the game page.
       upsertPlayerGame({
-        id: joinGameId,
-        name: joinGameId,
+        id: state.joinGameId,
+        name: state.joinGameId,
         createdBy: '',
         createdById: '',
         playerId,
-        joinToken: inviteToken,
+        joinToken: state.inviteToken,
         joinTokenHash,
         playerTokenHash,
       });
 
-      router.push(withLocale(`/game/${joinGameId}`, locale));
+      router.push(withLocale(`/game/${state.joinGameId}`, locale));
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('joinGame.errorJoinFailed'));
+      dispatch({
+        type: 'set-error',
+        value: e instanceof Error ? e.message : t('joinGame.errorJoinFailed'),
+      });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'set-loading', value: false });
     }
   };
 
@@ -104,8 +170,13 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
                   required
                   type="text"
                   placeholder={t('joinGame.sessionIdPlaceholder')}
-                  value={joinGameId}
-                  onChange={(e) => setJoinGameId(e.target.value)}
+                  value={state.joinGameId}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'set-join-game-id',
+                      value: event.target.value,
+                    })
+                  }
                 />
               </Field>
 
@@ -118,8 +189,13 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
                   required
                   type="text"
                   placeholder={t('joinGame.inviteTokenPlaceholder')}
-                  value={inviteToken}
-                  onChange={(e) => setInviteToken(e.target.value)}
+                  value={state.inviteToken}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'set-invite-token',
+                      value: event.target.value,
+                    })
+                  }
                 />
               </Field>
 
@@ -132,17 +208,24 @@ export function JoinGame({ initialGameId }: { initialGameId?: string }) {
                   required
                   type="text"
                   placeholder={t('joinGame.yourNamePlaceholder')}
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
+                  value={state.playerName}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'set-player-name',
+                      value: event.target.value,
+                    })
+                  }
                 />
               </Field>
 
-              {error && <p className="text-destructive text-xs">{error}</p>}
+              {state.error && (
+                <p className="text-destructive text-xs">{state.error}</p>
+              )}
             </FieldGroup>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button type="submit" disabled={loading}>
-              {loading ? t('common.joining') : t('common.join')}
+            <Button type="submit" disabled={state.loading}>
+              {state.loading ? t('common.joining') : t('common.join')}
             </Button>
           </CardFooter>
         </Card>

@@ -55,6 +55,7 @@ const createConfettiPieces = (seed: string) => {
       'linear';
 
     return {
+      id: `${seed}-${index}`,
       left: `${left.toFixed(2)}%`,
       delay: `${delay.toFixed(2)}s`,
       duration: `${duration.toFixed(2)}s`,
@@ -77,9 +78,9 @@ export function ConfettiOverlay({ seed }: { seed: string }) {
       className="pointer-events-none fixed inset-0 z-40 overflow-hidden motion-reduce:hidden"
       aria-hidden="true"
     >
-      {confettiPieces.map((piece, index) => (
+      {confettiPieces.map((piece) => (
         <span
-          key={`${piece.left}-${index}`}
+          key={piece.id}
           className="confetti-piece"
           style={
             {
