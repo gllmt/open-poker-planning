@@ -10,7 +10,7 @@ const RecentGames = dynamic(
 
 export function HomePage() {
   return (
-    <div className="flex flex-col md:flex-row items-center w-full justify-center animate-fade-in-down px-4 gap-10">
+    <div className="flex flex-col md:flex-row items-center w-full max-w-4xl justify-center animate-fade-in-down px-4 gap-10">
       <div className="w-full md:w-1/2 max-w-xl flex flex-col gap-6 pt-8">
         <div className="w-full">
           <CreateGame />

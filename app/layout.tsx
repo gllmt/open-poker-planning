@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Noto_Sans } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import Script from 'next/script';
 
@@ -9,7 +9,11 @@ import { isTheme, THEME_COOKIE_NAME } from '@/lib/theme/constants';
 
 import './globals.css';
 
-const notoSans = Noto_Sans({ variable: '--font-sans' });
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+});
 
 const themeScript =
   "(function(){try{var root=document.documentElement;var stored=localStorage.getItem('theme');var match=document.cookie.match(/(?:^|; )pp_theme=(light|dark)(?:;|$)/);var cookieTheme=match?match[1]:null;var theme=(stored==='light'||stored==='dark')?stored:((cookieTheme==='light'||cookieTheme==='dark')?cookieTheme:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));root.classList.remove('light','dark');root.classList.add(theme);}catch(e){}})();";
@@ -30,8 +34,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: '#f8f9fc' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1b2e' },
   ],
 };
 
@@ -51,7 +55,7 @@ export default async function RootLayout({
       <head>
         <script>{themeScript}</script>
       </head>
-      <body className={`${notoSans.variable} antialiased`}>
+      <body className={`${inter.variable} antialiased`}>
         {children}
         <Script
           src="https://umami.pierreguillemot.dev/script.js"

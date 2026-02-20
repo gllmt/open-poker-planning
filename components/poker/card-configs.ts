@@ -2,17 +2,17 @@ import type { CardConfig } from '@/types/cards';
 import { GameType } from '@/types/game';
 
 const palette = {
-  zero: '#5eead4',
-  question: '#a78bfa',
-  coffee: '#fdba74',
-  xxs: '#f9a8d4',
-  blue1: '#93c5fd',
-  blue2: '#7dd3fc',
-  green1: '#86efac',
-  yellow1: '#fde68a',
-  red1: '#fca5a5',
-  red2: '#f87171',
-  purple1: '#c4b5fd',
+  zero: '#c7d9f8',
+  question: '#d4c8f2',
+  coffee: '#e8d5b8',
+  xxs: '#d8e8f8',
+  blue1: '#bdd4f5',
+  blue2: '#9bbde8',
+  green1: '#b8e0cc',
+  yellow1: '#f0e0a8',
+  red1: '#f2c8c0',
+  red2: '#eaafaa',
+  purple1: '#ccc0e8',
 };
 
 const legacyNeutralCardColor = '#e7edf3';

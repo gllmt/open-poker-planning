@@ -83,10 +83,13 @@ export function ResultsSection({
                   <td className="px-3 py-2 text-right">
                     <span
                       className={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${
-                        hasVoted
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                        !hasVoted ? 'bg-muted text-muted-foreground' : ''
                       }`}
+                      style={
+                        hasVoted && card?.color
+                          ? { backgroundColor: card.color, color: '#1e293b' }
+                          : undefined
+                      }
                       title={displayValue || t('results.noVote')}
                     >
                       {voteContent}

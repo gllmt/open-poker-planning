@@ -1,9 +1,11 @@
 'use client';
 
+import { Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 
@@ -15,13 +17,12 @@ export function RecentGames() {
   if (!recentGames.length) {
     return (
       <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t('recentGames.title')}</CardTitle>
-        </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm">
-            {t('recentGames.empty')}
-          </p>
+          <EmptyState
+            icon={<Clock className="size-6 text-muted-foreground" />}
+            title={t('recentGames.title')}
+            description={t('recentGames.empty')}
+          />
         </CardContent>
       </Card>
     );

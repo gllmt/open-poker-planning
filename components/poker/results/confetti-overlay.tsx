@@ -2,14 +2,14 @@ import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
 
 const confettiColors = [
-  '#f59e0b',
-  '#10b981',
   '#3b82f6',
-  '#f97316',
-  '#ec4899',
-  '#22c55e',
-  '#a855f7',
-  '#14b8a6',
+  '#6366f1',
+  '#818cf8',
+  '#93c5fd',
+  '#c7d2fe',
+  '#e0e7ff',
+  '#f8fafc',
+  '#cbd5e1',
 ];
 
 const CONFETTI_COUNT = 240;

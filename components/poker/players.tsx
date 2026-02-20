@@ -24,7 +24,7 @@ export function Players({
   );
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 p-3 w-full md:w-auto md:mt-5 md:mb-auto">
+    <div className="flex flex-col gap-3 rounded-xl bg-card shadow-[var(--shadow-sm)] dark:border dark:border-border/50 p-3 w-full md:w-[220px] md:mt-5 md:mb-auto">
       <div className="flex w-full items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{t('players.title')}</h2>
         <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">

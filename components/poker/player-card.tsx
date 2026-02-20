@@ -1,6 +1,5 @@
 'use client';
 
-import { Check, CircleUserRound } from 'lucide-react';
 import { memo } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
@@ -8,6 +7,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
 
 export const PlayerCard = memo(function PlayerCard({
   gameStatus,
@@ -32,7 +39,6 @@ export const PlayerCard = memo(function PlayerCard({
   const hasVoted = player.status === Status.Finished;
   const isDimmed = gameStatus !== Status.Finished && !hasVoted;
   const cardOpacityClass = isDimmed ? 'opacity-60' : 'opacity-100';
-  const voteIconClass = hasVoted ? 'opacity-100' : 'opacity-0';
 
   return (
     <div
@@ -41,8 +47,8 @@ export const PlayerCard = memo(function PlayerCard({
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="sm" className="shrink-0">
           <AvatarImage src={undefined} alt={player.name} />
-          <AvatarFallback className="bg-background/70 text-muted-foreground">
-            <CircleUserRound className="size-4" aria-hidden="true" />
+          <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+            {getInitials(player.name)}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
@@ -54,9 +60,10 @@ export const PlayerCard = memo(function PlayerCard({
       <div className="flex items-center gap-3">
         {gameStatus !== Status.Finished && (
           <span className="flex size-5 items-center justify-center">
-            <Check
-              className={`size-4 text-emerald-500 transition-opacity duration-200 ${voteIconClass}`}
-              aria-hidden="true"
+            <span
+              className={`size-2 rounded-full bg-primary transition-all duration-200 ${
+                hasVoted ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+              }`}
             />
           </span>
         )}

@@ -10,10 +10,10 @@ export function Toolbar() {
   const { locale, t } = useI18n();
 
   return (
-    <header className="border-border/80 bg-background/80 sticky top-0 z-50 flex w-full items-center justify-between border-b px-4 py-2 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="border-border/50 bg-background/80 sticky top-0 z-50 flex h-[48px] w-full items-center justify-between border-b px-4 py-2.5 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
       <div className="inline-flex items-center">
         <Link href={withLocale('/', locale)} className="flex items-center">
-          <span className="md:text-2xl text-sm font-normal">
+          <span className="text-base font-semibold tracking-tight">
             {t('toolbar.brand')}
           </span>
         </Link>
@@ -22,13 +22,13 @@ export function Toolbar() {
       <nav className="inline-flex items-center justify-end gap-1">
         <Link
           href={withLocale('/', locale)}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg px-3 py-2 text-sm font-medium transition"
         >
           {t('toolbar.new')}
         </Link>
         <Link
           href={withLocale('/join', locale)}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full px-3 py-2 text-sm font-medium transition"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg px-3 py-2 text-sm font-medium transition"
         >
           {t('toolbar.join')}
         </Link>

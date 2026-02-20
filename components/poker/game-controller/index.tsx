@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ToastContainer, useToast } from '@/components/ui/toast';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
@@ -57,7 +58,7 @@ export function GameController({
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
-  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  const { toasts, toast, dismiss } = useToast();
   const baseAutoReveal = game.autoReveal ?? false;
   const [autoRevealValue, setAutoRevealValue] = useState(baseAutoReveal);
   const [autoRevealPending, setAutoRevealPending] = useState(false);
@@ -95,8 +96,7 @@ export function GameController({
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(inviteLink);
-        setShowCopiedMessage(true);
-        setTimeout(() => setShowCopiedMessage(false), 5000);
+        toast(t('game.inviteCopied'));
         return;
       }
     } catch {}
@@ -117,8 +117,7 @@ export function GameController({
       document.body.removeChild(textarea);
 
       if (ok) {
-        setShowCopiedMessage(true);
-        setTimeout(() => setShowCopiedMessage(false), 5000);
+        toast(t('game.inviteCopied'));
         return;
       }
     } catch {}
@@ -252,13 +251,6 @@ export function GameController({
             >
               <Share className="size-5" aria-hidden="true" />
             </ControllerButton>
-
-            {/* TODO: Add story editor for new feature with story history soon! */}
-            {/* <StoryEditor
-              gameId={game.id}
-              playerId={currentPlayerId}
-              storyName={game.storyName ?? ''}
-            /> */}
           </div>
           <ResultsSection
             game={game}
@@ -269,18 +261,7 @@ export function GameController({
         </CardContent>
       </Card>
 
-      {showCopiedMessage && (
-        <div className="fixed top-6 right-6 z-50">
-          <div
-            className="bg-card border-border text-card-foreground shadow-lg px-4 py-3 text-xs rounded-xl ring-1 ring-foreground/10"
-            role="alert"
-          >
-            <span className="block font-semibold">
-              {t('game.inviteCopied')}
-            </span>
-          </div>
-        </div>
-      )}
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
       {confettiSeed ? (
         <ConfettiOverlay key={confettiSeed} seed={confettiSeed} />
       ) : null}
@@ -307,7 +288,7 @@ function ControllerButton({
         onClick={onClick}
         className="rounded-full"
         title={label}
-        size="icon"
+        size="icon-lg"
         variant={variant}
       >
         <span className="text-2xl">{children}</span>

@@ -33,8 +33,8 @@ export function GameArea({
   confettiSeed?: string | null;
 }) {
   return (
-    <>
-      <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-center">
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="flex flex-col md:flex-row gap-6 w-full justify-center items-center">
         <GameController
           game={game}
           players={players}
@@ -62,6 +62,6 @@ export function GameArea({
           error={voteError}
         />
       </div>
-    </>
+    </div>
   );
 }

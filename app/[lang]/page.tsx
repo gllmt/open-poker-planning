@@ -17,23 +17,23 @@ export default async function Home({
   const features = dictionary.home.features;
   return (
     <div className="flex flex-col items-center gap-10 px-4 pb-12">
-      <section className="w-full max-w-5xl pt-10 text-center">
+      <section className="w-full max-w-4xl pt-16 pb-12 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {dictionary.home.eyebrow}
         </p>
-        <h1 className="mt-3 text-3xl font-semibold md:text-4xl">
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-4xl">
           {dictionary.home.title}
         </h1>
-        <p className="mt-4 text-base text-muted-foreground">
+        <p className="mt-4 text-base text-muted-foreground max-w-2xl mx-auto">
           {dictionary.home.description}
         </p>
-        <div className="mt-6">
+        <div className="mt-8">
           <p className="text-sm font-medium">{dictionary.home.featureTitle}</p>
-          <ul className="mt-3 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
+          <ul className="mt-3 grid gap-3 text-sm text-muted-foreground md:grid-cols-2 max-w-2xl mx-auto">
             {features.map((feature) => (
               <li
                 key={feature}
-                className="rounded-md border border-border/50 bg-card/40 p-3 text-left"
+                className="rounded-lg border border-border/50 bg-card/40 p-3 text-left"
               >
                 {feature}
               </li>
@@ -52,7 +52,7 @@ export default async function Home({
       >
         <HomePage />
       </Suspense>
-      <footer className="w-full max-w-5xl pt-12 text-center text-xs text-muted-foreground">
+      <footer className="w-full max-w-4xl pt-12 text-center text-xs text-muted-foreground">
         <a
           href="https://github.com/gllmt"
           target="_blank"

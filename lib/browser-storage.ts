@@ -42,6 +42,7 @@ function safeGetCookie(name: string): string | null {
 function safeSetCookie(name: string, value: string) {
   if (typeof document === 'undefined') return;
   try {
+    // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API has limited browser support; document.cookie is the reliable cross-browser method
     document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${THEME_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
   } catch {}
 }

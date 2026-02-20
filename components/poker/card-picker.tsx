@@ -51,7 +51,7 @@ export function CardPicker({
           {error}
         </div>
       )}
-      <div className="flex flex-wrap justify-center gap-6 py-4">
+      <div className="flex flex-wrap justify-center gap-4 py-4">
         {cards.map((card) => {
           const isSelected = currentValue === card.value;
           return (
@@ -62,14 +62,14 @@ export function CardPicker({
               disabled={game.gameStatus === Status.Finished}
               className={`
                 cursor-pointer select-none transition-all duration-300 ease-out will-change-transform
-                rounded-md border-2 border-transparent bg-card shadow-sm text-slate-900 dark:text-white
+                rounded-xl border-2 border-transparent bg-card shadow-[var(--shadow-sm)] text-slate-800
                 flex flex-col items-center justify-center
-                hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-md
+                hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-[var(--shadow-md)]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
-                w-20 h-[110px] md:w-[130px] md:h-[180px]
+                w-20 h-[110px] md:w-[120px] md:h-[168px]
                 ${
                   isSelected
-                    ? 'ring-4 ring-primary/70 dark:ring-primary/80 scale-[1.04] shadow-md'
+                    ? 'ring-2 ring-primary -translate-y-1 shadow-[0_4px_20px_var(--color-primary)/25]'
                     : ''
                 }
                 ${game.gameStatus === Status.Finished ? 'opacity-50 cursor-not-allowed' : ''}
