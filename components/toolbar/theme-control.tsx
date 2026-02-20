@@ -9,17 +9,19 @@ import {
   getTheme,
   setTheme as persistTheme,
 } from '@/lib/browser-storage';
+import type { Theme } from '@/lib/theme/constants';
 
 export function ThemeControl() {
   const { t } = useI18n();
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => getTheme());
+  const [theme, setTheme] = useState<Theme>(() => getTheme());
   const [hasStoredTheme, setHasStoredTheme] = useState(
     () => getStoredTheme() !== null
   );
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle('dark', theme === 'dark');
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
     if (hasStoredTheme) {
       persistTheme(theme);
     }

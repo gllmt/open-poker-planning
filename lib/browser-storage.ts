@@ -1,8 +1,14 @@
+import {
+  isTheme,
+  THEME_COOKIE_MAX_AGE_SECONDS,
+  THEME_COOKIE_NAME,
+  THEME_STORAGE_KEY,
+  type Theme,
+} from '@/lib/theme/constants';
 import type { PlayerGame } from '@/types/player';
 
 const PLAYER_GAMES_KEY = 'playerGames';
 const RECENT_PLAYER_NAME_KEY = 'recentPlayerName';
-const THEME_KEY = 'theme';
 
 function safeGetItem(key: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -20,6 +26,26 @@ function safeSetItem(key: string, value: string) {
   } catch {}
 }
 
+function safeGetCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  try {
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = document.cookie.match(
+      new RegExp(`(?:^|; )${escapedName}=([^;]*)`)
+    );
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSetCookie(name: string, value: string) {
+  if (typeof document === 'undefined') return;
+  try {
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${THEME_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+  } catch {}
+}
+
 export function getRecentPlayerName(): string | null {
   return safeGetItem(RECENT_PLAYER_NAME_KEY);
 }
@@ -28,12 +54,15 @@ export function setRecentPlayerName(name: string) {
   safeSetItem(RECENT_PLAYER_NAME_KEY, name);
 }
 
-export function getStoredTheme(): 'light' | 'dark' | null {
-  const value = safeGetItem(THEME_KEY);
-  return value === 'dark' || value === 'light' ? value : null;
+export function getStoredTheme(): Theme | null {
+  const storageValue = safeGetItem(THEME_STORAGE_KEY);
+  if (isTheme(storageValue)) return storageValue;
+
+  const cookieValue = safeGetCookie(THEME_COOKIE_NAME);
+  return isTheme(cookieValue) ? cookieValue : null;
 }
 
-export function getSystemTheme(): 'light' | 'dark' {
+export function getSystemTheme(): Theme {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
     return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -41,12 +70,13 @@ export function getSystemTheme(): 'light' | 'dark' {
     : 'light';
 }
 
-export function getTheme(): 'light' | 'dark' {
+export function getTheme(): Theme {
   return getStoredTheme() ?? getSystemTheme();
 }
 
-export function setTheme(theme: 'light' | 'dark') {
-  safeSetItem(THEME_KEY, theme);
+export function setTheme(theme: Theme) {
+  safeSetItem(THEME_STORAGE_KEY, theme);
+  safeSetCookie(THEME_COOKIE_NAME, theme);
 }
 
 export function getPlayerGamesFromCache(): PlayerGame[] {
