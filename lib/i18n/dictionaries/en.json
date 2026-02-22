@@ -1,9 +1,9 @@
 {
   "meta": {
-    "title": "Planning Poker | Free Agile Estimation",
+    "title": "Open poker planning | Free Agile Estimation",
     "description": "Free planning poker for agile teams. Create a session, invite your team, and estimate stories in real time.",
-    "siteName": "Planning Poker",
-    "ogAlt": "Planning Poker - free real-time planning poker for agile teams"
+    "siteName": "Open poker planning",
+    "ogAlt": "Open poker planning - free real-time planning poker for agile teams"
   },
   "home": {
     "eyebrow": "Open source planning poker",
@@ -32,7 +32,7 @@
     "avgWithColon": "Avg:"
   },
   "toolbar": {
-    "brand": "Planning Poker",
+    "brand": "Open poker planning",
     "new": "New",
     "join": "Join"
   },
@@ -76,7 +76,8 @@
   },
   "playerCard": {
     "removeTitle": "Remove",
-    "removeButton": "Remove player"
+    "removeButton": "Remove player",
+    "ownerTitle": "Moderator"
   },
   "game": {
     "status": {
@@ -94,6 +95,11 @@
     "delete": "Delete",
     "exit": "Exit",
     "invite": "Invite",
+    "startRound": "Start Round",
+    "revealCards": "Reveal Cards",
+    "restartRound": "Restart Round",
+    "votesProgress": "{voted}/{total} voted",
+    "waitingVotes": "Waiting for other players... ({voted}/{total} have voted)",
     "autoReveal": "Auto Reveal",
     "autoRevealHint": "Auto Reveal when all members finished voting",
     "gameNotFound": "Game not found",
@@ -113,6 +119,7 @@
   },
   "timer": {
     "disabled": "Timer disabled",
+    "activate": "Enable timer",
     "show": "Show timer",
     "start": "Start timer",
     "soundEnabled": "Sound enabled",
@@ -124,6 +131,9 @@
     "total": "Total {minutes}:{seconds}",
     "startTitle": "Start timer",
     "pauseTitle": "Pause timer",
+    "pause": "Pause",
+    "startAction": "Start",
+    "pauseAction": "Pause",
     "closeTitle": "Close timer",
     "resetTitle": "Reset timer",
     "minusMinute": "Minus 1 minute",

@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, CircleUserRound } from 'lucide-react';
+import { Check, CircleUserRound, Crown, UserMinus } from 'lucide-react';
 import { memo } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
@@ -11,12 +11,14 @@ import { Status } from '@/types/status';
 
 export const PlayerCard = memo(function PlayerCard({
   gameStatus,
+  isSessionOwner,
   isCurrentPlayerModerator,
   player,
   currentPlayerId,
   onRemovePlayer,
 }: {
   gameStatus: Status;
+  isSessionOwner: boolean;
   isCurrentPlayerModerator: boolean;
   player: Player;
   currentPlayerId: string;
@@ -36,15 +38,29 @@ export const PlayerCard = memo(function PlayerCard({
 
   return (
     <div
-      className={`flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 text-card-foreground max-w-content transition-opacity duration-200 ease-out ${cardOpacityClass}`}
+      className={`max-w-content flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-card-foreground transition-all duration-200 ease-out ${
+        isDimmed
+          ? 'border-transparent bg-muted/40'
+          : 'border-border/70 bg-background/75 shadow-xs'
+      } ${cardOpacityClass}`}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <Avatar size="sm" className="shrink-0">
-          <AvatarImage src={undefined} alt={player.name} />
-          <AvatarFallback className="bg-background/70 text-muted-foreground">
-            <CircleUserRound className="size-4" aria-hidden="true" />
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar size="sm" className="shrink-0">
+            <AvatarImage src={undefined} alt={player.name} />
+            <AvatarFallback className="bg-primary/15 text-primary">
+              <CircleUserRound className="size-4" aria-hidden="true" />
+            </AvatarFallback>
+          </Avatar>
+          {isSessionOwner && (
+            <span
+              className="bg-amber-400 text-white absolute -right-1 -top-1 inline-flex size-4 items-center justify-center rounded-full"
+              title={t('playerCard.ownerTitle')}
+            >
+              <Crown className="size-2.5" aria-hidden="true" />
+            </span>
+          )}
+        </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold" title={player.name}>
             {player.name}
@@ -65,11 +81,12 @@ export const PlayerCard = memo(function PlayerCard({
             type="button"
             title={t('playerCard.removeTitle')}
             variant="outline"
-            size="sm"
-            className="text-destructive hover:text-destructive"
+            size="icon-xs"
+            className="rounded-full text-destructive hover:text-destructive"
             onClick={onRemove}
           >
-            {t('playerCard.removeButton')}
+            <UserMinus className="size-3.5" aria-hidden="true" />
+            <span className="sr-only">{t('playerCard.removeButton')}</span>
           </Button>
         )}
       </div>

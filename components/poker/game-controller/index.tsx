@@ -1,14 +1,15 @@
 'use client';
 
 import {
+  Check,
   CircleCheckBig,
   CircleDot,
   Eye,
   Hourglass,
   LogOut,
+  Play,
   RefreshCcw,
   Share,
-  Trash,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -16,7 +17,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
@@ -43,7 +43,6 @@ export function GameController({
   onReset,
   onTimerUpdate,
   onAutoReveal,
-  onDeleteGame,
 }: {
   game: Game;
   players: Player[];
@@ -53,7 +52,6 @@ export function GameController({
   onReset: () => void;
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
-  onDeleteGame: () => Promise<void>;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -62,6 +60,7 @@ export function GameController({
   const [autoRevealValue, setAutoRevealValue] = useState(baseAutoReveal);
   const [autoRevealPending, setAutoRevealPending] = useState(false);
   const [autoRevealPendingSync, setAutoRevealPendingSync] = useState(false);
+  const [roundStartedUi, setRoundStartedUi] = useState(false);
 
   const isMod = isModerator(
     game.createdById,
@@ -80,6 +79,16 @@ export function GameController({
     game.gameStatus === Status.Finished && averageValue
       ? averageValue.toFixed(2)
       : '-';
+
+  const votedCount = useMemo(
+    () => players.filter((player) => player.status === Status.Finished).length,
+    [players]
+  );
+  const totalPlayers = players.length;
+  const votesProgressLabel = t('game.votesProgress', {
+    voted: votedCount,
+    total: totalPlayers,
+  });
 
   const copyInviteLink = async () => {
     if (!joinToken) {
@@ -166,154 +175,166 @@ export function GameController({
     autoRevealValue,
     baseAutoReveal,
   ]);
+
+  useEffect(() => {
+    if (game.gameStatus === Status.NotStarted) {
+      setRoundStartedUi(false);
+      return;
+    }
+    if (game.gameStatus === Status.InProgress) {
+      setRoundStartedUi(true);
+      return;
+    }
+    if (game.gameStatus === Status.Finished) {
+      return;
+    }
+    if (game.gameStatus === Status.Started && votedCount > 0) {
+      setRoundStartedUi(true);
+    }
+  }, [game.gameStatus, votedCount]);
+
   const leaveGame = () => router.push(withLocale('/', locale));
 
-  const handleRemoveGame = async () => {
-    const confirm = window.confirm(t('game.confirmDelete'));
-    if (!confirm) return;
-    await onDeleteGame();
-    router.push(withLocale('/', locale));
+  const timerProps = { isMod, ...(game.timerProps ?? {}) };
+  const isFinished = game.gameStatus === Status.Finished;
+  const roundReadyToReveal =
+    game.gameStatus === Status.InProgress || roundStartedUi;
+  const primaryActionLabel = isFinished
+    ? t('game.restartRound')
+    : roundReadyToReveal
+      ? t('game.revealCards')
+      : t('game.startRound');
+  const handlePrimaryAction = () => {
+    if (isFinished) {
+      setRoundStartedUi(false);
+      onReset();
+      return;
+    }
+    if (roundReadyToReveal) {
+      onReveal();
+      return;
+    }
+    setRoundStartedUi(true);
+    onReset();
   };
 
-  const timerProps = { isMod, ...(game.timerProps ?? {}) };
-
   return (
-    <div className="flex flex-col items-center w-full md:w-[450px]">
-      <Card className="w-full max-w-xl my-5 gap-0 py-0">
-        <CardHeader className="border-border flex flex-wrap items-center gap-3 border-b px-4 py-3">
-          <CardTitle className="text-lg font-semibold truncate grow">
+    <section className="flex h-full min-h-[24rem] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-sm">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
+        <div className="min-w-0 space-y-2">
+          <h1
+            className="truncate text-lg font-semibold md:text-xl"
+            title={game.name}
+          >
             {game.name}
-          </CardTitle>
-          <span className="text-sm font-medium">
-            {getStatusLabel(game.gameStatus, t)}{' '}
+          </h1>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
+              game.gameStatus
+            )}`}
+          >
             {getGameStatusIcon(game.gameStatus)}
+            {getStatusLabel(game.gameStatus, t)}
           </span>
-        </CardHeader>
+        </div>
 
-        <CardContent className="px-4 pb-4 pt-3">
-          <div className="pb-3">
-            <Timer
-              timerProps={timerProps}
-              onTimerUpdate={onTimerUpdate}
-              onTimerComplete={handleTimerComplete}
-            />
-          </div>
-          {isMod && (
-            <div
-              className="flex justify-end pb-3"
-              title={t('game.autoRevealHint')}
-            >
-              <AutoRevealToggle
-                autoReveal={autoRevealValue}
-                disabled={autoRevealPending}
-                onAutoReveal={handleAutoReveal}
-              />
-            </div>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            onClick={copyInviteLink}
+            variant="secondary"
+            className="rounded-xl"
+          >
+            <Share className="size-4" aria-hidden="true" />
+            {t('game.invite')}
+          </Button>
+          <Button
+            type="button"
+            onClick={leaveGame}
+            variant="outline"
+            className="rounded-xl text-destructive hover:text-destructive"
+          >
+            <LogOut className="size-4" aria-hidden="true" />
+            {t('game.exit')}
+          </Button>
+        </div>
+      </header>
 
-          <div className="flex flex-wrap justify-center gap-6 pb-2">
-            {isMod && (
-              <>
-                <ControllerButton
-                  onClick={onReveal}
-                  label={t('game.reveal')}
-                  variant="secondary"
-                >
-                  <Eye className="size-5" aria-hidden="true" />
-                </ControllerButton>
-                <ControllerButton
-                  onClick={onReset}
-                  label={t('game.restart')}
-                  variant="outline"
-                >
+      <div className="flex-1 overflow-y-auto bg-muted/20 px-5 py-5">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+          <Timer
+            timerProps={timerProps}
+            onTimerUpdate={onTimerUpdate}
+            onTimerComplete={handleTimerComplete}
+          />
+
+          {isMod ? (
+            <div className="space-y-3">
+              <Button
+                type="button"
+                onClick={handlePrimaryAction}
+                className={`h-14 w-full rounded-xl text-base font-semibold shadow-sm ${
+                  roundReadyToReveal
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : ''
+                }`}
+              >
+                {isFinished ? (
                   <RefreshCcw className="size-5" aria-hidden="true" />
-                </ControllerButton>
-                <ControllerButton
-                  onClick={handleRemoveGame}
-                  label={t('game.delete')}
-                  variant="destructive"
-                >
-                  <Trash className="size-5" aria-hidden="true" />
-                </ControllerButton>
-              </>
-            )}
+                ) : roundReadyToReveal ? (
+                  <Eye className="size-5" aria-hidden="true" />
+                ) : (
+                  <Play className="size-5" aria-hidden="true" />
+                )}
+                <span>{primaryActionLabel}</span>
+                {roundReadyToReveal && !isFinished && (
+                  <span className="rounded-md bg-emerald-800/80 px-2 py-0.5 text-xs font-medium">
+                    {votesProgressLabel}
+                  </span>
+                )}
+              </Button>
 
-            <ControllerButton
-              onClick={leaveGame}
-              label={t('game.exit')}
-              variant="outline"
-            >
-              <LogOut className="size-5" aria-hidden="true" />
-            </ControllerButton>
-            <ControllerButton
-              onClick={copyInviteLink}
-              label={t('game.invite')}
-              variant="secondary"
-            >
-              <Share className="size-5" aria-hidden="true" />
-            </ControllerButton>
+              <div className="flex items-center justify-end px-1">
+                <AutoRevealToggle
+                  autoReveal={autoRevealValue}
+                  disabled={autoRevealPending}
+                  onAutoReveal={handleAutoReveal}
+                />
+              </div>
+            </div>
+          ) : roundReadyToReveal && !isFinished ? (
+            <div className="text-muted-foreground rounded-xl border border-border/70 bg-background/60 px-4 py-4 text-center text-sm">
+              {t('game.waitingVotes', {
+                voted: votedCount,
+                total: totalPlayers,
+              })}
+            </div>
+          ) : null}
 
-            {/* TODO: Add story editor for new feature with story history soon! */}
-            {/* <StoryEditor
-              gameId={game.id}
-              playerId={currentPlayerId}
-              storyName={game.storyName ?? ''}
-            /> */}
-          </div>
           <ResultsSection
             game={game}
             players={players}
             averageLabel={averageLabel}
             showAverage={canShowAverage}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {showCopiedMessage && (
-        <div className="fixed top-6 right-6 z-50">
-          <div
-            className="bg-card border-border text-card-foreground shadow-lg px-4 py-3 text-xs rounded-xl ring-1 ring-foreground/10"
-            role="alert"
-          >
-            <span className="block font-semibold">
-              {t('game.inviteCopied')}
-            </span>
-          </div>
+        <div
+          aria-live="polite"
+          className="pointer-events-none fixed right-4 top-20 z-50"
+        >
+          <output className="bg-card text-card-foreground ring-foreground/10 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-xs shadow-lg ring-1">
+            <Check className="text-primary size-4" aria-hidden="true" />
+            <span className="font-medium">{t('game.inviteCopied')}</span>
+          </output>
         </div>
       )}
       {confettiSeed ? (
         <ConfettiOverlay key={confettiSeed} seed={confettiSeed} />
       ) : null}
-    </div>
-  );
-}
-
-function ControllerButton({
-  onClick,
-  label,
-  variant = 'outline',
-  children,
-}: {
-  onClick: () => void;
-  label: string;
-  variant?: React.ComponentProps<typeof Button>['variant'];
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center">
-      <Button
-        type="button"
-        aria-label={label}
-        onClick={onClick}
-        className="rounded-full"
-        title={label}
-        size="icon"
-        variant={variant}
-      >
-        <span className="text-2xl">{children}</span>
-      </Button>
-      <span className="text-muted-foreground text-xs mt-1">{label}</span>
-    </div>
+    </section>
   );
 }
 
@@ -327,6 +348,17 @@ function getGameStatusIcon(gameStatus: string) {
       );
     default:
       return <CircleDot className="inline-block size-4" aria-hidden="true" />;
+  }
+}
+
+function getStatusBadgeClass(status: Status) {
+  switch (status) {
+    case Status.InProgress:
+      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300';
+    case Status.Finished:
+      return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300';
+    default:
+      return 'bg-muted text-muted-foreground';
   }
 }
 

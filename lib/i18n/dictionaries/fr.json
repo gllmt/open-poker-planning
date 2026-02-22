@@ -1,21 +1,16 @@
 {
   "meta": {
-    "title": "Planning Poker | Estimation agile gratuite",
+    "title": "Open poker planning | Estimation agile gratuite",
     "description": "Planning poker gratuit pour équipes agiles. Créez une session, invitez votre équipe, estimez en temps réel.",
-    "siteName": "Planning Poker",
-    "ogAlt": "Planning Poker - planning poker gratuit en temps réel pour équipes agiles"
+    "siteName": "Open poker planning",
+    "ogAlt": "Open poker planning - planning poker gratuit en temps réel pour équipes agiles"
   },
   "home": {
     "eyebrow": "Planning poker open source",
-    "title": "Estimez plus vite avec un planning poker en temps réel",
-    "description": "Créez une session en quelques secondes, invitez votre équipe via un lien, et révélez les votes ensemble.",
+    "title": "Estimez vos tâches en équipe en temps réel.",
+    "description": "Pas d'inscription requise. Créez une session, partagez le lien et commencez à voter en quelques secondes avec votre équipe.",
     "featureTitle": "Pourquoi les équipes l'utilisent",
-    "features": [
-      "Vote en temps réel avec révélation instantanée",
-      "Jeux Fibonacci, ou personnalisés",
-      "Liens d'invitation partageables et contrôle d'accès",
-      "Privé par défaut, sans compte requis"
-    ]
+    "features": ["Sans compte", "Temps Réel", "Multi-decks", "100% Gratuit"]
   },
   "common": {
     "loading": "Chargement",
@@ -32,7 +27,7 @@
     "avgWithColon": "Moyenne :"
   },
   "toolbar": {
-    "brand": "Planning Poker",
+    "brand": "Open poker planning",
     "new": "Nouveau",
     "join": "Rejoindre"
   },
@@ -76,7 +71,8 @@
   },
   "playerCard": {
     "removeTitle": "Retirer",
-    "removeButton": "Retirer le joueur"
+    "removeButton": "Retirer le joueur",
+    "ownerTitle": "Modérateur"
   },
   "game": {
     "status": {
@@ -94,6 +90,11 @@
     "delete": "Supprimer",
     "exit": "Quitter",
     "invite": "Inviter",
+    "startRound": "Démarrer le round",
+    "revealCards": "Révéler les cartes",
+    "restartRound": "Relancer un round",
+    "votesProgress": "{voted}/{total} voté",
+    "waitingVotes": "En attente des autres joueurs... ({voted}/{total} ont voté)",
     "autoReveal": "Révéler automatiquement",
     "autoRevealHint": "Révéler automatiquement quand tous les joueurs ont voté",
     "gameNotFound": "Session introuvable",
@@ -113,6 +114,7 @@
   },
   "timer": {
     "disabled": "Minuteur désactivé",
+    "activate": "Activer le timer",
     "show": "Afficher le minuteur",
     "start": "Démarrer le minuteur",
     "soundEnabled": "Son active",
@@ -124,6 +126,9 @@
     "total": "Total {minutes}:{seconds}",
     "startTitle": "Démarrer le minuteur",
     "pauseTitle": "Mettre en pause",
+    "pause": "Pause",
+    "startAction": "Start",
+    "pauseAction": "Pause",
     "closeTitle": "Fermer le minuteur",
     "resetTitle": "Réinitialiser le minuteur",
     "minusMinute": "Moins 1 minute",

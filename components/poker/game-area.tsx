@@ -14,7 +14,6 @@ export function GameArea({
   onReset,
   onTimerUpdate,
   onAutoReveal,
-  onDeleteGame,
   onRemovePlayer,
   voteError,
   confettiSeed,
@@ -27,14 +26,13 @@ export function GameArea({
   onReset: () => void;
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
-  onDeleteGame: () => Promise<void>;
   onRemovePlayer: (playerId: string) => Promise<void>;
   voteError?: string | null;
   confettiSeed?: string | null;
 }) {
   return (
-    <>
-      <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-center">
+    <div className="flex min-h-[calc(100vh-8.5rem)] flex-col gap-5 pb-6">
+      <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <GameController
           game={game}
           players={players}
@@ -44,7 +42,6 @@ export function GameArea({
           onReset={onReset}
           onTimerUpdate={onTimerUpdate}
           onAutoReveal={onAutoReveal}
-          onDeleteGame={onDeleteGame}
         />
         <Players
           game={game}
@@ -53,15 +50,13 @@ export function GameArea({
           onRemovePlayer={onRemovePlayer}
         />
       </div>
-      <div className="text-center flex justify-center pb-4">
-        <CardPicker
-          game={game}
-          players={players}
-          currentPlayerId={currentPlayerId}
-          onVote={onVote}
-          error={voteError}
-        />
-      </div>
-    </>
+      <CardPicker
+        game={game}
+        players={players}
+        currentPlayerId={currentPlayerId}
+        onVote={onVote}
+        error={voteError}
+      />
+    </div>
   );
 }

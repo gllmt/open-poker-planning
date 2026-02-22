@@ -24,19 +24,20 @@ export function Players({
   );
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 p-3 w-full md:w-auto md:mt-5 md:mb-auto">
-      <div className="flex w-full items-center justify-between gap-3">
+    <aside className="flex h-full min-h-[24rem] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-sm">
+      <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
         <h2 className="text-lg font-semibold">{t('players.title')}</h2>
-        <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
-          <UserRound className="size-4" />
+        <div className="bg-muted/75 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold">
+          <UserRound className="size-4" aria-hidden="true" />
           <span>{players.length}</span>
         </div>
       </div>
-      <div className="flex w-full flex-col gap-2">
+      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
         {players.map((player) => (
           <PlayerCard
             key={player.id}
             gameStatus={game.gameStatus}
+            isSessionOwner={player.id === game.createdById}
             isCurrentPlayerModerator={isCurrentPlayerModerator}
             player={player}
             currentPlayerId={currentPlayerId}
@@ -44,6 +45,6 @@ export function Players({
           />
         ))}
       </div>
-    </div>
+    </aside>
   );
 }

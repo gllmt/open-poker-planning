@@ -19,7 +19,7 @@ export function Poker({ gameId }: { gameId: string }) {
 
   if (controller.loading) {
     return (
-      <div className="flex items-center justify-center p-10">
+      <div className="flex min-h-[50vh] items-center justify-center p-10">
         <Loading />
       </div>
     );
@@ -27,11 +27,11 @@ export function Poker({ gameId }: { gameId: string }) {
 
   if (controller.queryError) {
     return (
-      <div className="p-6 text-center">
+      <div className="mx-auto max-w-lg rounded-2xl border border-destructive/25 bg-destructive/10 p-6 text-center">
         <p className="text-sm text-destructive">{controller.queryError}</p>
         <button
           type="button"
-          className="mt-4 text-sm underline"
+          className="focus-visible:ring-ring/50 mt-4 rounded-lg px-3 py-1.5 text-sm underline underline-offset-2 focus-visible:ring-2 focus-visible:outline-none"
           onClick={() => window.location.reload()}
         >
           {t('common.retry') || 'Retry'}
@@ -42,7 +42,7 @@ export function Poker({ gameId }: { gameId: string }) {
 
   if (!controller.game || !controller.players || !controller.currentPlayerId) {
     return (
-      <div className="p-6 text-center">
+      <div className="mx-auto max-w-lg rounded-2xl border border-border/70 bg-card/95 p-6 text-center shadow-sm">
         <p className="text-sm">{t('game.gameNotFound')}</p>
       </div>
     );
@@ -58,7 +58,6 @@ export function Poker({ gameId }: { gameId: string }) {
       onReset={controller.onReset}
       onTimerUpdate={controller.onTimerUpdate}
       onAutoReveal={controller.onAutoReveal}
-      onDeleteGame={controller.onDeleteGame}
       onRemovePlayer={controller.onRemovePlayer}
       voteError={controller.voteError}
       confettiSeed={controller.confettiSeed}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Hourglass } from 'lucide-react';
+import { Clock3 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import {
   useCallback,
@@ -192,21 +192,17 @@ export function Timer({
   if (!localTimerVisible) {
     if (!isMod) return null;
     return (
-      <div className="border-border bg-card text-card-foreground flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2">
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <Hourglass className="size-4" aria-hidden="true" />
-          <span>{t('timer.disabled')}</span>
-        </div>
-        <Button
-          onClick={onTimerOpen}
-          title={t('timer.show')}
-          type="button"
-          size="sm"
-          variant="ghost"
-        >
-          {t('timer.start')}
-        </Button>
-      </div>
+      <Button
+        onClick={onTimerOpen}
+        title={t('timer.activate')}
+        type="button"
+        size="lg"
+        variant="outline"
+        className="text-muted-foreground hover:text-foreground hover:border-border h-12 w-full rounded-xl border-dashed"
+      >
+        <Clock3 className="size-4" aria-hidden="true" />
+        {t('timer.activate')}
+      </Button>
     );
   }
 

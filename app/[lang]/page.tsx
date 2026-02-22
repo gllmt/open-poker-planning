@@ -1,3 +1,4 @@
+import { CheckCircle2 } from 'lucide-react';
 import { Suspense } from 'react';
 
 import { HomePage } from '@/components/poker/home-page';
@@ -16,26 +17,29 @@ export default async function Home({
   const dictionary = await getDictionary(locale);
   const features = dictionary.home.features;
   return (
-    <div className="flex flex-col items-center gap-10 px-4 pb-12">
-      <section className="w-full max-w-5xl pt-10 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 pb-14 pt-8">
+      <section className="mx-auto w-full max-w-4xl space-y-5 text-center">
+        {/* <p className="text-primary text-xs font-semibold uppercase tracking-[0.24em]">
           {dictionary.home.eyebrow}
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold md:text-4xl">
+        </p> */}
+        <h1 className="text-4xl font-semibold text-balance md:text-5xl">
           {dictionary.home.title}
         </h1>
-        <p className="mt-4 text-base text-muted-foreground">
+        <p className="mx-auto max-w-3xl text-base text-muted-foreground md:text-lg">
           {dictionary.home.description}
         </p>
-        <div className="mt-6">
-          <p className="text-sm font-medium">{dictionary.home.featureTitle}</p>
-          <ul className="mt-3 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
-            {features.map((feature) => (
+        <div className="pt-2">
+          {/* <p className="text-sm font-medium tracking-wide">
+            {dictionary.home.featureTitle}
+          </p> */}
+          <ul className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {features.slice(0, 4).map((feature) => (
               <li
                 key={feature}
-                className="rounded-md border border-border/50 bg-card/40 p-3 text-left"
+                className="bg-primary/10 text-primary ring-primary/15 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium ring-1"
               >
-                {feature}
+                <CheckCircle2 className="size-4" aria-hidden="true" />
+                <span className="truncate">{feature}</span>
               </li>
             ))}
           </ul>
@@ -52,12 +56,12 @@ export default async function Home({
       >
         <HomePage />
       </Suspense>
-      <footer className="w-full max-w-5xl pt-12 text-center text-xs text-muted-foreground">
+      <footer className="w-full pt-8 text-center text-xs text-muted-foreground">
         <a
           href="https://github.com/gllmt"
           target="_blank"
           rel="noreferrer"
-          className="underline underline-offset-2 hover:text-primary/80 transition"
+          className="hover:text-primary inline-flex items-center justify-center rounded-full px-2 py-1 underline underline-offset-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
         >
           GitHub
         </a>

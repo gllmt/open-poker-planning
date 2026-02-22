@@ -30,21 +30,26 @@ export function ResultsSection({
   if (game.gameStatus !== Status.Finished) return null;
 
   return (
-    <div className="mt-4 border-t border-border/60 pt-3">
+    <section className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4 shadow-xs">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{t('results.title')}</h3>
+        <h3 className="text-base font-semibold">{t('results.title')}</h3>
         {showAverage && (
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">{t('results.avg')}</span>
-            <Badge variant="secondary" className="font-semibold">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground text-xs">
+              {t('results.avg')}
+            </span>
+            <Badge
+              variant="secondary"
+              className="bg-primary/15 text-primary rounded-lg px-2.5 py-1 font-semibold"
+            >
               {averageLabel}
             </Badge>
           </div>
         )}
       </div>
-      <div className="mt-2 overflow-hidden rounded-xl border border-border/60">
+      <div className="mt-3 overflow-hidden rounded-xl border border-border/60">
         <table className="w-full text-sm">
-          <thead className="bg-muted/40">
+          <thead className="bg-muted/35">
             <tr>
               <th className="px-3 py-2 text-left font-medium text-muted-foreground">
                 {t('results.player')}
@@ -76,7 +81,7 @@ export function ResultsSection({
               );
 
               return (
-                <tr key={player.id} className="bg-background">
+                <tr key={player.id} className="bg-background/80">
                   <td className="px-3 py-2">
                     <span className="text-sm font-medium">{player.name}</span>
                   </td>
@@ -84,7 +89,7 @@ export function ResultsSection({
                     <span
                       className={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${
                         hasVoted
-                          ? 'bg-primary text-primary-foreground'
+                          ? 'bg-primary/20 text-primary'
                           : 'bg-muted text-muted-foreground'
                       }`}
                       title={displayValue || t('results.noVote')}
@@ -98,6 +103,6 @@ export function ResultsSection({
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

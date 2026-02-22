@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useReducer } from 'react';
 
@@ -12,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { createGame } from '@/lib/api/games';
 import {
@@ -201,63 +201,95 @@ export function CreateGame() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex justify-center">
-      <Card className="w-full max-w-xl">
-        <CardHeader className="text-center">
-          <CardTitle>{t('createGame.title')}</CardTitle>
+    <form onSubmit={handleSubmit} className="w-full">
+      <Card className="ring-primary/15 w-full border border-border/70 bg-card/95 shadow-sm">
+        <CardHeader className="border-b border-border/60 pb-5">
+          <CardTitle className="text-xl font-semibold tracking-tight md:text-2xl">
+            {t('createGame.title')}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <FieldGroup className="gap-5">
-            <Field>
-              <FieldLabel htmlFor="gameName">
-                {t('createGame.sessionName')}
-              </FieldLabel>
-              <Input
-                id="gameName"
-                required
-                type="text"
-                value={state.gameName}
-                onChange={(event) =>
-                  dispatch({ type: 'set-game-name', value: event.target.value })
-                }
-              />
-            </Field>
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <label
+                  className="block pb-1 text-sm font-medium"
+                  htmlFor="gameName"
+                >
+                  {t('createGame.sessionName')}{' '}
+                  <span className="text-destructive" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <Input
+                  id="gameName"
+                  name="gameName"
+                  required
+                  type="text"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder={`${t('createGame.defaultName')}…`}
+                  className="h-11 rounded-xl border-border/70 bg-background/70 px-4"
+                  value={state.gameName}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'set-game-name',
+                      value: event.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  className="block pb-1 text-sm font-medium"
+                  htmlFor="createdBy"
+                >
+                  {t('createGame.yourName')}{' '}
+                  <span className="text-destructive" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <Input
+                  id="createdBy"
+                  name="createdBy"
+                  required
+                  type="text"
+                  autoComplete="nickname"
+                  placeholder="Alex…"
+                  className="h-11 rounded-xl border-border/70 bg-background/70 px-4"
+                  value={state.createdBy}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'set-created-by',
+                      value: event.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
 
-            <Field>
-              <FieldLabel htmlFor="createdBy">
-                {t('createGame.yourName')}
-              </FieldLabel>
-              <Input
-                id="createdBy"
-                required
-                type="text"
-                value={state.createdBy}
-                onChange={(event) =>
-                  dispatch({
-                    type: 'set-created-by',
-                    value: event.target.value,
-                  })
-                }
-              />
-            </Field>
-
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium tracking-wide">
                 {t('createGame.sizingType')}
               </legend>
-              <div className="flex flex-col gap-2">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {GAME_TYPE_OPTIONS.map(({ type, labelKey }) => {
                   const preview =
                     type === GameType.Custom
                       ? t('createGame.customHint')
                       : (CARD_PREVIEW_BY_TYPE[type] ?? '');
+                  const selected = state.gameType === type;
 
                   return (
                     <label
                       key={type}
-                      className="flex flex-col gap-1 text-sm cursor-pointer"
+                      className={`ring-primary/40 focus-within:ring-primary/50 flex cursor-pointer flex-col gap-1 rounded-2xl border p-4 text-sm transition-colors focus-within:ring-2 ${
+                        selected
+                          ? 'border-primary/60 bg-primary/10'
+                          : 'border-border/70 bg-background/60 hover:border-primary/35 hover:bg-primary/5'
+                      }`}
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 font-semibold">
                         <span className="relative flex size-4 items-center justify-center">
                           <input
                             type="radio"
@@ -269,12 +301,12 @@ export function CreateGame() {
                               dispatch({ type: 'set-game-type', value: type })
                             }
                           />
-                          <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition" />
+                          <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition-colors" />
                           <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full opacity-0 transition peer-checked:opacity-100" />
                         </span>
                         <span>{t(labelKey)}</span>
                       </span>
-                      <span className="text-muted-foreground pl-6 text-xs">
+                      <span className="text-muted-foreground min-h-[2.25rem] pl-6 text-xs">
                         {preview}
                       </span>
                     </label>
@@ -284,25 +316,38 @@ export function CreateGame() {
             </fieldset>
 
             {state.gameType === GameType.Custom && (
-              <div className="flex flex-wrap gap-2">
-                {CUSTOM_OPTION_IDS.map((optionId, index) => (
-                  <Input
-                    key={optionId}
-                    type="text"
-                    maxLength={3}
-                    className="h-8 w-12 px-2 text-center text-xs"
-                    value={state.customOptions[index] ?? ''}
-                    onChange={(event) =>
-                      handleCustomOptionChange(index, event.target.value)
-                    }
-                  />
-                ))}
+              <div className="bg-muted/35 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 space-y-3 rounded-xl border border-border/70 p-4">
+                <p className="text-sm font-medium">
+                  {t('createGame.customHint')}
+                </p>
+                <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
+                  {CUSTOM_OPTION_IDS.map((optionId, index) => (
+                    <Input
+                      key={optionId}
+                      name={optionId}
+                      type="text"
+                      maxLength={3}
+                      autoComplete="off"
+                      placeholder={`${index + 1}`}
+                      className="h-9 rounded-lg border-border/70 bg-background text-center text-xs"
+                      value={state.customOptions[index] ?? ''}
+                      onChange={(event) =>
+                        handleCustomOptionChange(index, event.target.value)
+                      }
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
-            <label className="flex items-center gap-2 text-sm">
+            <label
+              htmlFor="allow-members"
+              className="text-foreground/95 inline-flex items-center gap-2 text-sm font-medium"
+            >
               <span className="relative flex size-4 items-center justify-center">
                 <input
+                  id="allow-members"
+                  name="allowMembersToManageSession"
                   type="checkbox"
                   className="peer sr-only"
                   checked={state.allowMembersToManageSession}
@@ -317,14 +362,37 @@ export function CreateGame() {
             </label>
 
             {state.error && (
-              <p className="text-destructive text-xs">{state.error}</p>
+              <output
+                aria-live="polite"
+                className="text-destructive block rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs"
+              >
+                {state.error}
+              </output>
             )}
-          </FieldGroup>
+          </div>
         </CardContent>
 
-        <CardFooter className="justify-end">
-          <Button type="submit" disabled={state.loading}>
-            {state.loading ? t('common.creating') : t('common.create')}
+        <CardFooter className="justify-start border-t border-border/60">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={state.loading}
+            className="group h-11 rounded-4xl px-6"
+          >
+            {state.loading ? (
+              <>
+                <span
+                  className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"
+                  aria-hidden="true"
+                />
+                {t('common.creating')}
+              </>
+            ) : (
+              <>
+                {t('common.create')}
+                <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </>
+            )}
           </Button>
         </CardFooter>
       </Card>

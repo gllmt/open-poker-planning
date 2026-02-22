@@ -158,6 +158,12 @@
   animation: fade-in-down 1s ease-out;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-down {
+    animation: none;
+  }
+}
+
 .confetti-piece {
   position: absolute;
   top: -10%;

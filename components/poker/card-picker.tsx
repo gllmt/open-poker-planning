@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleQuestionMark, Coffee } from 'lucide-react';
+import { Check, CircleQuestionMark, Coffee } from 'lucide-react';
 import { useMemo } from 'react';
 import { useI18n } from '@/components/i18n/use-i18n';
 import type { CardConfig } from '@/types/cards';
@@ -38,20 +38,37 @@ export function CardPicker({
     if (game.gameStatus === Status.Finished) return;
     onVote(card.value, card.value === -1 ? 'coffee' : undefined);
   };
+  const canVote = game.gameStatus !== Status.Finished;
 
   return (
-    <div className="w-full max-w-full animate-fade-in-down">
-      <div className="text-center text-lg font-semibold my-4">
-        {game.gameStatus !== Status.Finished
-          ? t('cardPicker.cta')
-          : t('cardPicker.notReady')}
+    <section
+      className={`animate-fade-in-down rounded-2xl border border-border/70 bg-card/95 p-5 shadow-sm transition-opacity ${
+        canVote ? 'opacity-100' : 'pointer-events-none opacity-70'
+      }`}
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-muted-foreground text-sm font-semibold tracking-wide">
+          {canVote ? t('cardPicker.cta') : t('cardPicker.notReady')}
+        </h3>
+        {currentValue !== undefined && canVote && (
+          <span
+            className="text-primary inline-flex items-center gap-1 text-sm font-semibold"
+            aria-live="polite"
+          >
+            <Check className="size-4" aria-hidden="true" />
+            {currentValue}
+          </span>
+        )}
       </div>
       {error && (
-        <div className="text-center text-destructive text-xs -mt-2 mb-2">
+        <output
+          aria-live="polite"
+          className="text-destructive mb-3 block rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs"
+        >
           {error}
-        </div>
+        </output>
       )}
-      <div className="flex flex-wrap justify-center gap-6 py-4">
+      <div className="flex items-center gap-3 overflow-x-auto pb-2">
         {cards.map((card) => {
           const isSelected = currentValue === card.value;
           return (
@@ -59,61 +76,51 @@ export function CardPicker({
               key={card.value}
               type="button"
               aria-pressed={isSelected}
-              disabled={game.gameStatus === Status.Finished}
-              className={`
-                cursor-pointer select-none transition-all duration-300 ease-out will-change-transform
-                rounded-md border-2 border-transparent bg-card shadow-sm text-slate-900 dark:text-white
-                flex flex-col items-center justify-center
-                hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-md
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
-                w-20 h-[110px] md:w-[130px] md:h-[180px]
-                ${
-                  isSelected
-                    ? 'ring-4 ring-primary/70 dark:ring-primary/80 scale-[1.04] shadow-md'
-                    : ''
-                }
-                ${game.gameStatus === Status.Finished ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
+              disabled={!canVote}
+              className={`focus-visible:ring-primary/45 relative flex h-24 w-16 shrink-0 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-semibold shadow-sm transition-[transform,border-color,box-shadow,opacity] duration-200 ease-out focus-visible:ring-2 focus-visible:outline-none sm:h-28 sm:w-20 ${
+                isSelected
+                  ? 'border-primary bg-primary/10 -translate-y-1 shadow-md'
+                  : 'border-border/80 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md'
+              } ${!canVote ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
               style={{ backgroundColor: card.color }}
               onClick={() => {
                 if (isSelected) return;
                 play(card);
               }}
             >
-              <div className="flex flex-col justify-between h-full w-full p-1">
-                {card.value >= 0 && (
-                  <>
-                    <span className="text-xs flex justify-start">
-                      {card.displayValue}
-                    </span>
-                    <span
-                      className={`${card.displayValue.length < 2 ? 'text-4xl' : 'text-3xl'}`}
-                    >
-                      {card.displayValue}
-                    </span>
-                    <span className="flex justify-end w-full text-xs">
-                      {card.displayValue}
-                    </span>
-                  </>
-                )}
-                {card.value === -1 && (
-                  <span className="flex flex-col justify-center h-full w-full text-4xl">
-                    <Coffee className="size-9 w-full" aria-hidden="true" />
+              {card.value >= 0 && (
+                <div className="flex h-full w-full flex-col justify-between p-1 text-slate-900">
+                  <span className="text-[11px] leading-none">
+                    {card.displayValue}
                   </span>
-                )}
-                {card.value === -2 && (
-                  <span className="flex flex-col justify-center h-full w-full text-4xl">
-                    <CircleQuestionMark
-                      className="size-9 w-full"
-                      aria-hidden="true"
-                    />
+                  <span
+                    className={`${card.displayValue.length < 2 ? 'text-3xl' : 'text-2xl'} leading-none`}
+                  >
+                    {card.displayValue}
                   </span>
-                )}
-              </div>
+                  <span className="text-[11px] leading-none text-right">
+                    {card.displayValue}
+                  </span>
+                </div>
+              )}
+              {card.value === -1 && (
+                <Coffee className="size-8 text-slate-900" aria-hidden="true" />
+              )}
+              {card.value === -2 && (
+                <CircleQuestionMark
+                  className="size-8 text-slate-900"
+                  aria-hidden="true"
+                />
+              )}
+              {isSelected && (
+                <span className="bg-primary text-primary-foreground absolute -right-2 -top-2 inline-flex size-6 items-center justify-center rounded-full shadow">
+                  <Check className="size-3.5" aria-hidden="true" />
+                </span>
+              )}
             </button>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

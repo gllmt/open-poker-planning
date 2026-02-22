@@ -40,8 +40,21 @@ function safeGetCookie(name: string): string | null {
 }
 
 function safeSetCookie(name: string, value: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    if ('cookieStore' in window && window.cookieStore) {
+      void window.cookieStore.set({
+        name,
+        value,
+        path: '/',
+        expires: Date.now() + THEME_COOKIE_MAX_AGE_SECONDS * 1000,
+      });
+      return;
+    }
+  } catch {}
   if (typeof document === 'undefined') return;
   try {
+    // biome-ignore lint/suspicious/noDocumentCookie: Compatibility fallback where Cookie Store API is unavailable.
     document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${THEME_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
   } catch {}
 }

@@ -10,14 +10,14 @@ const RecentGames = dynamic(
 
 export function HomePage() {
   return (
-    <div className="flex flex-col md:flex-row items-center w-full justify-center animate-fade-in-down px-4 gap-10">
-      <div className="w-full md:w-1/2 max-w-xl flex flex-col gap-6 pt-8">
+    <div className="animate-fade-in-down grid w-full items-start gap-6 lg:grid-cols-3">
+      <div className="w-full lg:col-span-2">
         <div className="w-full">
           <CreateGame />
         </div>
       </div>
 
-      <div className="w-full md:w-1/2 max-w-xl">
+      <div className="w-full">
         <RecentGames />
       </div>
     </div>

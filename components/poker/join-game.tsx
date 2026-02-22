@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { fetchGameState, joinGame } from '@/lib/api/games';
 import {
@@ -153,83 +152,102 @@ export function JoinGame({
   };
 
   return (
-    <div className="w-full">
-      <form onSubmit={handleSubmit} className="w-full flex justify-center">
-        <Card className="w-full max-w-lg">
-          <CardHeader className="text-center">
-            <CardTitle>{t('joinGame.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup className="gap-5">
-              <Field>
-                <FieldLabel htmlFor="sessionId">
-                  {t('joinGame.sessionId')}
-                </FieldLabel>
-                <Input
-                  id="sessionId"
-                  required
-                  type="text"
-                  placeholder={t('joinGame.sessionIdPlaceholder')}
-                  value={state.joinGameId}
-                  onChange={(event) =>
-                    dispatch({
-                      type: 'set-join-game-id',
-                      value: event.target.value,
-                    })
-                  }
-                />
-              </Field>
+    <form onSubmit={handleSubmit} className="w-full">
+      <Card className="mx-auto w-full max-w-lg border border-border/70 bg-card/95 shadow-sm">
+        <CardHeader className="border-b border-border/60 pb-5">
+          <CardTitle className="text-xl font-semibold tracking-tight">
+            {t('joinGame.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5 pt-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="sessionId">
+              {t('joinGame.sessionId')}
+            </label>
+            <Input
+              id="sessionId"
+              name="sessionId"
+              required
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={t('joinGame.sessionIdPlaceholder')}
+              className="h-11 rounded-xl border-border/70 bg-background/70 px-4"
+              value={state.joinGameId}
+              onChange={(event) =>
+                dispatch({
+                  type: 'set-join-game-id',
+                  value: event.target.value,
+                })
+              }
+            />
+          </div>
 
-              <Field>
-                <FieldLabel htmlFor="inviteToken">
-                  {t('joinGame.inviteToken')}
-                </FieldLabel>
-                <Input
-                  id="inviteToken"
-                  required
-                  type="text"
-                  placeholder={t('joinGame.inviteTokenPlaceholder')}
-                  value={state.inviteToken}
-                  onChange={(event) =>
-                    dispatch({
-                      type: 'set-invite-token',
-                      value: event.target.value,
-                    })
-                  }
-                />
-              </Field>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="inviteToken">
+              {t('joinGame.inviteToken')}
+            </label>
+            <Input
+              id="inviteToken"
+              name="inviteToken"
+              required
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={t('joinGame.inviteTokenPlaceholder')}
+              className="h-11 rounded-xl border-border/70 bg-background/70 px-4"
+              value={state.inviteToken}
+              onChange={(event) =>
+                dispatch({
+                  type: 'set-invite-token',
+                  value: event.target.value,
+                })
+              }
+            />
+          </div>
 
-              <Field>
-                <FieldLabel htmlFor="playerName">
-                  {t('joinGame.yourName')}
-                </FieldLabel>
-                <Input
-                  id="playerName"
-                  required
-                  type="text"
-                  placeholder={t('joinGame.yourNamePlaceholder')}
-                  value={state.playerName}
-                  onChange={(event) =>
-                    dispatch({
-                      type: 'set-player-name',
-                      value: event.target.value,
-                    })
-                  }
-                />
-              </Field>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="playerName">
+              {t('joinGame.yourName')}
+            </label>
+            <Input
+              id="playerName"
+              name="playerName"
+              required
+              type="text"
+              autoComplete="nickname"
+              placeholder={t('joinGame.yourNamePlaceholder')}
+              className="h-11 rounded-xl border-border/70 bg-background/70 px-4"
+              value={state.playerName}
+              onChange={(event) =>
+                dispatch({
+                  type: 'set-player-name',
+                  value: event.target.value,
+                })
+              }
+            />
+          </div>
 
-              {state.error && (
-                <p className="text-destructive text-xs">{state.error}</p>
-              )}
-            </FieldGroup>
-          </CardContent>
-          <CardFooter className="justify-end">
-            <Button type="submit" disabled={state.loading}>
-              {state.loading ? t('common.joining') : t('common.join')}
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
-    </div>
+          {state.error && (
+            <output
+              aria-live="polite"
+              className="text-destructive block rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs"
+            >
+              {state.error}
+            </output>
+          )}
+        </CardContent>
+        <CardFooter className="justify-start border-t border-border/60">
+          <Button
+            type="submit"
+            disabled={state.loading}
+            size="lg"
+            className="h-11 rounded-xl px-6"
+          >
+            {state.loading ? t('common.joining') : t('common.join')}
+          </Button>
+        </CardFooter>
+      </Card>
+    </form>
   );
 }

@@ -16,7 +16,7 @@ const themeScript =
 
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
-  applicationName: 'Planning Poker',
+  applicationName: 'Open poker planning',
   generator: 'Next.js',
   referrer: 'origin-when-cross-origin',
   formatDetection: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  title: 'Planning Poker',
+  title: 'Open poker planning',
 };
 
 export const viewport: Viewport = {

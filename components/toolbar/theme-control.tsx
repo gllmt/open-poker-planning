@@ -1,5 +1,6 @@
 'use client';
 
+import { Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { useI18n } from '@/components/i18n/use-i18n';
@@ -46,23 +47,13 @@ export function ThemeControl() {
         setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
       }}
       aria-label={t('theme.toggle')}
+      className="rounded-full border border-border/70 px-2.5 hover:border-primary/40 hover:bg-primary/10"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        className="size-4.5"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path stroke="none" d="M0 0h24v24H0z" />
-        <path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0M12 3v18M12 9l4.65-4.65M12 14.3l7.37-7.37M12 19.6l8.85-8.85" />
-      </svg>
+      {theme === 'dark' ? (
+        <Sun className="size-4.5" aria-hidden="true" />
+      ) : (
+        <Moon className="size-4.5" aria-hidden="true" />
+      )}
     </Button>
   );
 }

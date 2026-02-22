@@ -16,7 +16,7 @@ export default async function GamePage({
 }) {
   const { id } = await params;
   return (
-    <div className="px-2">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6">
       <PokerErrorBoundary>
         <Poker gameId={id} />
       </PokerErrorBoundary>

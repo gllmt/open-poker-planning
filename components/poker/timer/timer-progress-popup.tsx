@@ -1,11 +1,12 @@
 'use client';
 
 import {
+  Clock3,
   Minus,
   Pause,
   Play,
   Plus,
-  Square,
+  RotateCcw,
   Volume2,
   VolumeOff,
   X,
@@ -120,12 +121,11 @@ function TimerProgressView({
 
   const [minutes, seconds] = getMinutesAndSeconds(totalSeconds);
   const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
-  const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
   const totalMinutesLabel = minutes.toString().padStart(2, '0');
   const totalSecondsLabel = seconds.toString().padStart(2, '0');
 
   return (
-    <div className="border-border bg-card text-card-foreground w-full rounded-xl border px-3 py-2">
+    <div className="bg-background/75 text-card-foreground w-full rounded-xl border border-border/70 px-3 py-2.5 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div
@@ -175,18 +175,11 @@ function TimerProgressView({
           </span>
         )}
       </div>
-      <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
-        <div
-          className="bg-primary h-full rounded-full transition-[width] duration-500 ease-linear"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
     </div>
   );
 }
 
 function TimerProgressMod({
-  isMod = false,
   startedAt = null,
   pausedAt = 0,
   totalSeconds = 300,
@@ -401,20 +394,24 @@ function TimerProgressMod({
 
   const [minutes, seconds] = getMinutesAndSeconds(displayTotal);
   const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
-  const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
   const [currentMinutesRunning, currentSecondsRunning] =
     getMinutesAndSeconds(clampedElapsed);
 
   return (
-    <div className="border-border bg-card text-card-foreground w-full rounded-xl border px-3 py-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+    <div className="bg-background/75 text-card-foreground w-full rounded-xl border border-border/70 px-4 py-4 shadow-xs">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-muted-foreground inline-flex items-center gap-2 text-sm font-semibold">
+          <Clock3 className="size-4" aria-hidden="true" />
+          Timer
+        </span>
+        <div className="flex items-center gap-1">
           <Button
             title={soundOn ? t('timer.disableSound') : t('timer.enableSound')}
-            onClick={() => isMod && toggleSound()}
+            onClick={toggleSound}
             type="button"
             size="icon-xs"
             variant="ghost"
+            className="rounded-lg"
           >
             {soundOn ? (
               <Volume2 className="size-4" aria-hidden="true" />
@@ -422,132 +419,110 @@ function TimerProgressMod({
               <VolumeOff className="size-4" aria-hidden="true" />
             )}
           </Button>
-          <div
-            title={
-              isMod
-                ? t('timer.setTime', { minutes, seconds })
-                : t('timer.runningTime', {
-                    minutes: runningMinutes,
-                    seconds: runningSeconds,
-                  })
-            }
-            className="text-foreground flex items-center gap-1 font-mono text-lg tabular-nums"
+          <Button
+            type="button"
+            title={t('timer.closeTitle')}
+            onClick={onTimerClose}
+            size="icon-xs"
+            variant="ghost"
+            className="rounded-lg"
           >
-            <Input
-              type="text"
-              value={
-                isRunning || !isMod
-                  ? runningMinutes.toString().padStart(2, '0')
-                  : minutes.toString().padStart(2, '0')
-              }
-              maxLength={3}
-              pattern="[0-9]*"
-              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
-              onChange={onMinutesChange}
-              onBlur={onInputsBlur}
-              disabled={isRunning}
-            />
-            <span className="pb-[0.2rem]">:</span>
-            <Input
-              type="text"
-              value={
-                isRunning || !isMod
-                  ? runningSeconds.toString().padStart(2, '0')
-                  : seconds.toString().padStart(2, '0')
-              }
-              maxLength={3}
-              pattern="[0-9]*"
-              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
-              onChange={onSecondsChange}
-              onBlur={onInputsBlur}
-              disabled={isRunning}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isRunning ? (
-            <TimerControlButton
-              title={t('timer.startTitle')}
-              callback={startTimer}
-              disabled={displayTotal === 0}
-              className="text-muted-foreground"
-            >
-              <Play className="size-4" aria-hidden="true" />
-            </TimerControlButton>
-          ) : (
-            <TimerControlButton
-              title={t('timer.pauseTitle')}
-              callback={pauseTimer}
-              className="text-muted-foreground"
-            >
-              <Pause className="size-4" aria-hidden="true" />
-            </TimerControlButton>
-          )}
-          {isMod && (
-            <Button
-              type="button"
-              title={t('timer.closeTitle')}
-              onClick={onTimerClose}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </Button>
-          )}
+            <X className="size-4" aria-hidden="true" />
+          </Button>
         </div>
       </div>
-      <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
-        <div
-          className="bg-primary h-full rounded-full transition-[width] duration-500 ease-linear"
-          style={{ width: `${percentage}%` }}
+
+      <div
+        title={t('timer.setTime', { minutes, seconds })}
+        className="text-foreground mb-4 flex items-center justify-center gap-1 font-mono text-5xl font-bold tabular-nums tracking-tight"
+      >
+        <Input
+          type="text"
+          value={
+            isRunning
+              ? runningMinutes.toString().padStart(2, '0')
+              : minutes.toString().padStart(2, '0')
+          }
+          maxLength={3}
+          pattern="[0-9]*"
+          className="text-foreground disabled:text-foreground disabled:opacity-100 h-12 w-14 border-none bg-transparent p-0 text-center text-5xl focus-visible:ring-0 focus-visible:ring-offset-0 md:w-16"
+          onChange={onMinutesChange}
+          onBlur={onInputsBlur}
+          disabled={isRunning}
+        />
+        <span className="pb-[0.2rem]">:</span>
+        <Input
+          type="text"
+          value={
+            isRunning
+              ? runningSeconds.toString().padStart(2, '0')
+              : seconds.toString().padStart(2, '0')
+          }
+          maxLength={3}
+          pattern="[0-9]*"
+          className="text-foreground disabled:text-foreground disabled:opacity-100 h-12 w-14 border-none bg-transparent p-0 text-center text-5xl focus-visible:ring-0 focus-visible:ring-offset-0 md:w-16"
+          onChange={onSecondsChange}
+          onBlur={onInputsBlur}
+          disabled={isRunning}
         />
       </div>
-      {isMod && (
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <TimerControlButton
-              title={t('timer.resetTitle')}
-              callback={handleReset}
-              className="text-muted-foreground"
-            >
-              <Square className="size-4" aria-hidden="true" />
-            </TimerControlButton>
-            {!isRunning && (
-              <>
-                <TimerControlButton
-                  callback={onReduceSeconds}
-                  title={t('timer.minusMinute')}
-                >
-                  <Minus className="size-4" aria-hidden="true" />
-                </TimerControlButton>
-                {showTimerDebugPresets && (
-                  <TimerControlButton
-                    callback={setTenSeconds}
-                    title={t('timer.setTime', { minutes: 0, seconds: 10 })}
-                  >
-                    <span className="text-[10px] font-semibold leading-none">
-                      10s
-                    </span>
-                  </TimerControlButton>
-                )}
-                <TimerControlButton
-                  callback={onAddSeconds}
-                  title={t('timer.addMinute')}
-                >
-                  <Plus className="size-4" aria-hidden="true" />
-                </TimerControlButton>
-              </>
-            )}
-          </div>
-          {!isRunning && (
-            <span className="text-muted-foreground text-xs">
-              {t('timer.elapsed', {
-                minutes: currentMinutesRunning.toString().padStart(2, '0'),
-                seconds: currentSecondsRunning.toString().padStart(2, '0'),
-              })}
-            </span>
+
+      <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+        {!isRunning && (
+          <TimerControlButton
+            callback={onReduceSeconds}
+            title={t('timer.minusMinute')}
+          >
+            <Minus className="size-4" aria-hidden="true" />
+          </TimerControlButton>
+        )}
+        <Button
+          type="button"
+          title={isRunning ? t('timer.pauseTitle') : t('timer.startTitle')}
+          onClick={isRunning ? pauseTimer : startTimer}
+          disabled={!isRunning && displayTotal === 0}
+          className="h-10 min-w-[8.5rem] rounded-xl px-6 text-sm font-bold"
+          variant={isRunning ? 'secondary' : 'default'}
+        >
+          {isRunning ? (
+            <Pause className="size-4" aria-hidden="true" />
+          ) : (
+            <Play className="size-4" aria-hidden="true" />
           )}
-        </div>
+          {isRunning ? t('timer.pauseAction') : t('timer.startAction')}
+        </Button>
+        <TimerControlButton
+          title={t('timer.resetTitle')}
+          callback={handleReset}
+          className="text-muted-foreground"
+        >
+          <RotateCcw className="size-4" aria-hidden="true" />
+        </TimerControlButton>
+        {!isRunning && (
+          <TimerControlButton
+            callback={onAddSeconds}
+            title={t('timer.addMinute')}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+          </TimerControlButton>
+        )}
+        {showTimerDebugPresets && !isRunning && (
+          <TimerControlButton
+            callback={setTenSeconds}
+            title={t('timer.setTime', { minutes: 0, seconds: 10 })}
+          >
+            <span className="text-[10px] font-semibold leading-none">10s</span>
+          </TimerControlButton>
+        )}
+      </div>
+
+      {!isRunning && (
+        <p className="text-muted-foreground mt-2 text-center text-xs">
+          {t('timer.elapsed', {
+            minutes: currentMinutesRunning.toString().padStart(2, '0'),
+            seconds: currentSecondsRunning.toString().padStart(2, '0'),
+          })}
+        </p>
       )}
     </div>
   );
@@ -569,7 +544,7 @@ function TimerControlButton({
   return (
     <Button
       title={title}
-      className={`text-muted-foreground hover:text-foreground ${className}`}
+      className={`text-muted-foreground hover:text-foreground rounded-lg ${className}`}
       onClick={callback}
       type="button"
       disabled={disabled}
