@@ -38,7 +38,7 @@ export const PlayerCard = memo(function PlayerCard({
 
   return (
     <div
-      className={`max-w-content flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-card-foreground transition-all duration-200 ease-out ${
+      className={`max-w-content flex w-full items-center justify-between gap-3 rounded-4xl border px-3 py-2.5 text-card-foreground transition-all duration-200 ease-out ${
         isDimmed
           ? 'border-transparent bg-muted/40'
           : 'border-border/70 bg-background/75 shadow-xs'

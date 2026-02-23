@@ -49,11 +49,10 @@ export function ThemeControl() {
       aria-label={t('theme.toggle')}
       className="rounded-full border border-border/70 px-2.5 hover:border-primary/40 hover:bg-primary/10"
     >
-      {theme === 'dark' ? (
-        <Sun className="size-4.5" aria-hidden="true" />
-      ) : (
-        <Moon className="size-4.5" aria-hidden="true" />
-      )}
+      <span className="inline-flex size-4.5 items-center justify-center">
+        <Moon className="size-4.5 dark:hidden" aria-hidden="true" />
+        <Sun className="hidden size-4.5 dark:block" aria-hidden="true" />
+      </span>
     </Button>
   );
 }

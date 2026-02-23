@@ -229,7 +229,7 @@ export function CreateGame() {
                   autoComplete="off"
                   spellCheck={false}
                   placeholder={`${t('createGame.defaultName')}…`}
-                  className="h-11 rounded-xl border-border/70 bg-background/70 px-4"
+                  className="h-11 rounded-4xl border-border/70 bg-background/70 px-4"
                   value={state.gameName}
                   onChange={(event) =>
                     dispatch({

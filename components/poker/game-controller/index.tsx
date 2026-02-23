@@ -219,7 +219,7 @@ export function GameController({
   };
 
   return (
-    <section className="flex h-full min-h-[24rem] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-sm">
+    <section className="flex h-fit flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-sm">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
         <div className="min-w-0 space-y-2">
           <h1
@@ -260,7 +260,7 @@ export function GameController({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto bg-muted/20 px-5 py-5">
+      <div className="overflow-y-auto bg-muted/20 px-5 py-5">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
           <Timer
             timerProps={timerProps}
@@ -273,7 +273,7 @@ export function GameController({
               <Button
                 type="button"
                 onClick={handlePrimaryAction}
-                className={`h-14 w-full rounded-xl text-base font-semibold shadow-sm ${
+                className={`h-14 w-full rounded-4xl text-base font-semibold shadow-sm ${
                   roundReadyToReveal
                     ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                     : ''
@@ -303,7 +303,7 @@ export function GameController({
               </div>
             </div>
           ) : roundReadyToReveal && !isFinished ? (
-            <div className="text-muted-foreground rounded-xl border border-border/70 bg-background/60 px-4 py-4 text-center text-sm">
+            <div className="text-muted-foreground rounded-4xl border border-border/70 bg-background/60 px-4 py-4 text-center text-sm">
               {t('game.waitingVotes', {
                 voted: votedCount,
                 total: totalPlayers,
@@ -325,7 +325,7 @@ export function GameController({
           aria-live="polite"
           className="pointer-events-none fixed right-4 top-20 z-50"
         >
-          <output className="bg-card text-card-foreground ring-foreground/10 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-xs shadow-lg ring-1">
+          <output className="bg-card text-card-foreground ring-foreground/10 inline-flex items-center gap-2 rounded-4xl px-4 py-3 text-xs shadow-lg ring-1">
             <Check className="text-primary size-4" aria-hidden="true" />
             <span className="font-medium">{t('game.inviteCopied')}</span>
           </output>

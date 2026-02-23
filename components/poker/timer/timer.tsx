@@ -198,7 +198,7 @@ export function Timer({
         type="button"
         size="lg"
         variant="outline"
-        className="text-muted-foreground hover:text-foreground hover:border-border h-12 w-full rounded-xl border-dashed"
+        className="text-muted-foreground hover:text-foreground hover:border-border h-12 w-full rounded-4xl border-dashed"
       >
         <Clock3 className="size-4" aria-hidden="true" />
         {t('timer.activate')}

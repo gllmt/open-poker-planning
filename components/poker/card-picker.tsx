@@ -68,7 +68,7 @@ export function CardPicker({
           {error}
         </output>
       )}
-      <div className="flex items-center gap-3 overflow-x-auto pb-2">
+      <div className="flex flex-wrap items-start justify-center gap-3 px-1 pt-2 pb-3">
         {cards.map((card) => {
           const isSelected = currentValue === card.value;
           return (
@@ -77,7 +77,7 @@ export function CardPicker({
               type="button"
               aria-pressed={isSelected}
               disabled={!canVote}
-              className={`focus-visible:ring-primary/45 relative flex h-24 w-16 shrink-0 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-semibold shadow-sm transition-[transform,border-color,box-shadow,opacity] duration-200 ease-out focus-visible:ring-2 focus-visible:outline-none sm:h-28 sm:w-20 ${
+              className={`focus-visible:ring-primary/45 relative mt-1 flex h-24 w-16 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-semibold shadow-sm transition-[transform,border-color,box-shadow,opacity] duration-200 ease-out focus-visible:ring-2 focus-visible:outline-none sm:h-28 sm:w-20 ${
                 isSelected
                   ? 'border-primary bg-primary/10 -translate-y-1 shadow-md'
                   : 'border-border/80 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md'

@@ -24,7 +24,7 @@ export function Players({
   );
 
   return (
-    <aside className="flex h-full min-h-[24rem] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-sm">
+    <aside className="flex h-fit flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-sm">
       <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
         <h2 className="text-lg font-semibold">{t('players.title')}</h2>
         <div className="bg-muted/75 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold">
@@ -32,7 +32,7 @@ export function Players({
           <span>{players.length}</span>
         </div>
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
+      <div className="space-y-2 overflow-y-auto px-4 py-4">
         {players.map((player) => (
           <PlayerCard
             key={player.id}

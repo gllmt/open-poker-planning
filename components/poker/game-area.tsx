@@ -31,8 +31,8 @@ export function GameArea({
   confettiSeed?: string | null;
 }) {
   return (
-    <div className="flex min-h-[calc(100vh-8.5rem)] flex-col gap-5 pb-6">
-      <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+    <div className="flex flex-col gap-5 pb-6">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <GameController
           game={game}
           players={players}
