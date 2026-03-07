@@ -20,11 +20,23 @@ export function ThemeControl() {
 
   useEffect(() => {
     const root = document.documentElement;
+
+    // Enable smooth theme transition
+    root.classList.add('theme-transitioning');
+
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
+
     if (hasStoredTheme) {
       persistTheme(theme);
     }
+
+    // Remove transition class after animation completes
+    const timer = setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 350);
+
+    return () => clearTimeout(timer);
   }, [theme, hasStoredTheme]);
 
   useEffect(() => {
@@ -56,7 +68,7 @@ export function ThemeControl() {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
-        className="size-4.5"
+        className="size-4.5 transition-transform duration-300 hover:rotate-45"
         viewBox="0 0 24 24"
         aria-hidden="true"
       >

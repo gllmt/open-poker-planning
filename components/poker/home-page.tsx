@@ -1,23 +1,22 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { RecentGamesSkeleton } from './recent-games-skeleton';
 import { CreateGame } from './create-game';
 
 const RecentGames = dynamic(
   () => import('./recent-games').then((m) => m.RecentGames),
-  { ssr: false }
+  { ssr: false, loading: () => <RecentGamesSkeleton /> }
 );
 
 export function HomePage() {
   return (
-    <div className="flex flex-col md:flex-row items-center w-full justify-center animate-fade-in-down px-4 gap-10">
-      <div className="w-full md:w-1/2 max-w-xl flex flex-col gap-6 pt-8">
-        <div className="w-full">
-          <CreateGame />
-        </div>
+    <div className="flex flex-col md:flex-row items-start w-full justify-center px-4 gap-8 md:gap-10">
+      <div className="animate-scale-in stagger-4 w-full md:w-1/2 max-w-xl flex flex-col gap-6">
+        <CreateGame />
       </div>
 
-      <div className="w-full md:w-1/2 max-w-xl">
+      <div className="animate-scale-in stagger-5 w-full md:w-1/2 max-w-xl">
         <RecentGames />
       </div>
     </div>

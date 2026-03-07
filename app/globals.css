@@ -142,11 +142,28 @@
   }
 }
 
-/* custom styles */
+/* smooth scroll & theme transition */
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+html * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0s;
+}
+
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition-duration: 0.3s !important;
+  transition-timing-function: ease !important;
+}
+
+/* custom animations */
 @keyframes fade-in-down {
   0% {
     opacity: 0;
-    transform: translateY(-40px);
+    transform: translateY(-24px);
   }
   100% {
     opacity: 1;
@@ -154,9 +171,59 @@
   }
 }
 
-.animate-fade-in-down {
-  animation: fade-in-down 1s ease-out;
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* stagger delays */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 160ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 320ms; }
 
 .confetti-piece {
   position: absolute;
@@ -194,4 +261,21 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* glass card utility */
+@utility glass-card {
+  background: oklch(1 0 0 / 60%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 20%);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 4%), 0 1px 2px oklch(0 0 0 / 3%);
+}
+
+@utility dark-glass-card {
+  background: oklch(0.2 0 0 / 50%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 8%);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 20%), 0 1px 2px oklch(0 0 0 / 10%);
 }
