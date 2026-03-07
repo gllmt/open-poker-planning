@@ -17,9 +17,6 @@ export function Toolbar() {
           href={withLocale('/', locale)}
           className="focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-xl px-1 py-1 transition-colors hover:text-primary focus-visible:ring-2 focus-visible:outline-none"
         >
-          <span className="bg-primary text-primary-foreground inline-flex size-8 items-center justify-center rounded-lg text-sm font-bold">
-            P
-          </span>
           <span className="hidden text-lg font-semibold tracking-tight sm:inline">
             {t('toolbar.brand')}
           </span>
