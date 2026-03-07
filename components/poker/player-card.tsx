@@ -36,7 +36,7 @@ export const PlayerCard = memo(function PlayerCard({
 
   return (
     <div
-      className={`flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 text-card-foreground max-w-content transition-opacity duration-200 ease-out ${cardOpacityClass}`}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl glass-inner dark:dark-glass-inner px-3 py-2 text-card-foreground max-w-content transition-all duration-200 ease-out hover:bg-accent/40 dark:hover:bg-accent/20 ${cardOpacityClass}`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="sm" className="shrink-0">

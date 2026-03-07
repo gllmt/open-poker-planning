@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 
 import { useI18n } from '@/components/i18n/use-i18n';
+import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/loading';
 import { withLocale } from '@/lib/i18n/paths';
 
@@ -29,13 +30,15 @@ export function Poker({ gameId }: { gameId: string }) {
     return (
       <div className="p-6 text-center">
         <p className="text-sm text-destructive">{controller.queryError}</p>
-        <button
+        <Button
           type="button"
-          className="mt-4 text-sm underline"
+          variant="outline"
+          size="sm"
+          className="mt-4"
           onClick={() => window.location.reload()}
         >
           {t('common.retry') || 'Retry'}
-        </button>
+        </Button>
       </div>
     );
   }

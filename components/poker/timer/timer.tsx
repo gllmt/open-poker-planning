@@ -192,7 +192,7 @@ export function Timer({
   if (!localTimerVisible) {
     if (!isMod) return null;
     return (
-      <div className="border-border bg-card text-card-foreground flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2">
+      <div className="glass-inner dark:dark-glass-inner text-card-foreground flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2">
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <Hourglass className="size-4" aria-hidden="true" />
           <span>{t('timer.disabled')}</span>

@@ -147,10 +147,12 @@ html {
   scroll-behavior: smooth;
 }
 
-html,
-html * {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 0s;
+@layer base {
+  html,
+  html * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 0s;
+  }
 }
 
 html.theme-transitioning,
@@ -224,6 +226,23 @@ html.theme-transitioning * {
 .stagger-3 { animation-delay: 160ms; }
 .stagger-4 { animation-delay: 240ms; }
 .stagger-5 { animation-delay: 320ms; }
+.stagger-6 { animation-delay: 400ms; }
+
+/* toast entry / exit */
+@keyframes toast-in {
+  0% { opacity: 0; transform: translateX(24px) scale(0.96); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toast-out {
+  0% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(24px) scale(0.96); }
+}
+.animate-toast-in {
+  animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-toast-out {
+  animation: toast-out 0.25s ease both;
+}
 
 .confetti-piece {
   position: absolute;
@@ -278,4 +297,14 @@ html.theme-transitioning * {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid oklch(1 0 0 / 8%);
   box-shadow: 0 4px 24px oklch(0 0 0 / 20%), 0 1px 2px oklch(0 0 0 / 10%);
+}
+
+@utility glass-inner {
+  background: oklch(1 0 0 / 40%);
+  border: 1px solid oklch(1 0 0 / 15%);
+}
+
+@utility dark-glass-inner {
+  background: oklch(1 0 0 / 5%);
+  border: 1px solid oklch(1 0 0 / 6%);
 }

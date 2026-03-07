@@ -39,19 +39,24 @@ export function CardPicker({
     onVote(card.value, card.value === -1 ? 'coffee' : undefined);
   };
 
+  const isFinished = game.gameStatus === Status.Finished;
+
   return (
-    <div className="w-full max-w-full animate-fade-in-down">
+    <div className="w-full max-w-4xl">
       <div className="text-center text-lg font-semibold my-4">
-        {game.gameStatus !== Status.Finished
-          ? t('cardPicker.cta')
-          : t('cardPicker.notReady')}
+        <span
+          key={isFinished ? 'finished' : 'active'}
+          className="inline-block animate-fade-in"
+        >
+          {!isFinished ? t('cardPicker.cta') : t('cardPicker.notReady')}
+        </span>
       </div>
       {error && (
         <div className="text-center text-destructive text-xs -mt-2 mb-2">
           {error}
         </div>
       )}
-      <div className="flex flex-wrap justify-center gap-6 py-4">
+      <div className="flex flex-wrap justify-center gap-3 md:gap-6 py-4">
         {cards.map((card) => {
           const isSelected = currentValue === card.value;
           return (
@@ -59,20 +64,22 @@ export function CardPicker({
               key={card.value}
               type="button"
               aria-pressed={isSelected}
-              disabled={game.gameStatus === Status.Finished}
+              disabled={isFinished}
               className={`
-                cursor-pointer select-none transition-all duration-300 ease-out will-change-transform
-                rounded-md border-2 border-transparent bg-card shadow-sm text-slate-900 dark:text-white
+                cursor-pointer select-none will-change-transform
+                rounded-xl border-2 border-transparent shadow-sm text-slate-900 dark:text-white
                 flex flex-col items-center justify-center
-                hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-md
+                transition-[transform,box-shadow,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                hover:-translate-y-1 hover:scale-[1.03] hover:shadow-md
+                active:scale-[0.98]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
                 w-20 h-[110px] md:w-[130px] md:h-[180px]
                 ${
                   isSelected
-                    ? 'ring-4 ring-primary/70 dark:ring-primary/80 scale-[1.04] shadow-md'
+                    ? 'ring-4 ring-primary/70 dark:ring-primary/80 -translate-y-1.5 scale-[1.03] shadow-lg'
                     : ''
                 }
-                ${game.gameStatus === Status.Finished ? 'opacity-50 cursor-not-allowed' : ''}
+                ${isFinished ? 'opacity-50 cursor-not-allowed hover:translate-y-0 hover:scale-100 hover:shadow-sm active:scale-100' : ''}
               `}
               style={{ backgroundColor: card.color }}
               onClick={() => {

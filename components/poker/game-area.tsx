@@ -34,26 +34,30 @@ export function GameArea({
 }) {
   return (
     <>
-      <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-center">
-        <GameController
-          game={game}
-          players={players}
-          currentPlayerId={currentPlayerId}
-          confettiSeed={confettiSeed}
-          onReveal={onReveal}
-          onReset={onReset}
-          onTimerUpdate={onTimerUpdate}
-          onAutoReveal={onAutoReveal}
-          onDeleteGame={onDeleteGame}
-        />
-        <Players
-          game={game}
-          players={players}
-          currentPlayerId={currentPlayerId}
-          onRemovePlayer={onRemovePlayer}
-        />
+      <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-start">
+        <div className="animate-scale-in stagger-1 w-full md:w-auto">
+          <GameController
+            game={game}
+            players={players}
+            currentPlayerId={currentPlayerId}
+            confettiSeed={confettiSeed}
+            onReveal={onReveal}
+            onReset={onReset}
+            onTimerUpdate={onTimerUpdate}
+            onAutoReveal={onAutoReveal}
+            onDeleteGame={onDeleteGame}
+          />
+        </div>
+        <div className="animate-scale-in stagger-2 w-full md:w-auto">
+          <Players
+            game={game}
+            players={players}
+            currentPlayerId={currentPlayerId}
+            onRemovePlayer={onRemovePlayer}
+          />
+        </div>
       </div>
-      <div className="text-center flex justify-center pb-4">
+      <div className="animate-fade-in-up stagger-3 text-center flex justify-center pb-4">
         <CardPicker
           game={game}
           players={players}
