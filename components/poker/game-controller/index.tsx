@@ -285,9 +285,7 @@ export function GameController({
           />
         </div>
       </div>
-      {confettiSeed ? (
-        <ConfettiOverlay key={confettiSeed} seed={confettiSeed} />
-      ) : null}
+      {confettiSeed ? <ConfettiOverlay key={confettiSeed} /> : null}
     </div>
   );
 }

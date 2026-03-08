@@ -1,103 +1,80 @@
-import type { CSSProperties } from 'react';
-import { useMemo } from 'react';
+'use client';
 
-const confettiColors = [
-  '#f59e0b',
-  '#10b981',
-  '#3b82f6',
-  '#f97316',
-  '#ec4899',
-  '#22c55e',
-  '#a855f7',
-  '#14b8a6',
-];
+import confetti from 'canvas-confetti';
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
-const CONFETTI_COUNT = 240;
+const FIREWORKS_DURATION_MS = 15_000;
+const FIREWORKS_INTERVAL_MS = 250;
+const FIREWORKS_DEFAULTS = {
+  spread: 360,
+  startVelocity: 30,
+  ticks: 60,
+} as const;
 
-const timingOptions = [
-  'linear',
-  'ease-out',
-  'ease-in-out',
-  'cubic-bezier(0.2, 0.8, 0.3, 1)',
-];
+function randomInRange(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
 
-const hashSeed = (seed: string) => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return hash || 1;
-};
+export function ConfettiOverlay() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const portalRoot = typeof document === 'undefined' ? null : document.body;
 
-const createRng = (seed: number) => {
-  let state = seed >>> 0;
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / 2 ** 32;
-  };
-};
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-const createConfettiPieces = (seed: string) => {
-  const rand = createRng(hashSeed(seed));
-  const randomBetween = (min: number, max: number) =>
-    rand() * (max - min) + min;
+    const fire = confetti.create(canvas, {
+      disableForReducedMotion: true,
+      resize: true,
+    });
 
-  return Array.from({ length: CONFETTI_COUNT }, (_, index) => {
-    const size = randomBetween(5, 12);
-    const left = randomBetween(0, 100);
-    const delay = randomBetween(0, 0.5);
-    const duration = randomBetween(3.2, 4.6);
-    const driftStart = randomBetween(-20, 20);
-    const driftEnd = randomBetween(-90, 90);
-    const rotate = randomBetween(-900, 900);
-    const timing =
-      timingOptions[Math.floor(randomBetween(0, timingOptions.length))] ||
-      'linear';
+    const animationEnd = Date.now() + FIREWORKS_DURATION_MS;
+    const interval = window.setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
 
-    return {
-      id: `${seed}-${index}`,
-      left: `${left.toFixed(2)}%`,
-      delay: `${delay.toFixed(2)}s`,
-      duration: `${duration.toFixed(2)}s`,
-      size,
-      height: Math.round(size * 0.6),
-      color: confettiColors[index % confettiColors.length] as string,
-      driftStart: `${driftStart.toFixed(1)}px`,
-      driftEnd: `${driftEnd.toFixed(1)}px`,
-      rotate: `${rotate.toFixed(0)}deg`,
-      timing,
+      if (timeLeft <= 0) {
+        window.clearInterval(interval);
+        return;
+      }
+
+      const particleCount = Math.max(
+        1,
+        Math.round(50 * (timeLeft / FIREWORKS_DURATION_MS))
+      );
+
+      void fire({
+        ...FIREWORKS_DEFAULTS,
+        origin: {
+          x: randomInRange(0.1, 0.3),
+          y: Math.random() - 0.2,
+        },
+        particleCount,
+      });
+
+      void fire({
+        ...FIREWORKS_DEFAULTS,
+        origin: {
+          x: randomInRange(0.7, 0.9),
+          y: Math.random() - 0.2,
+        },
+        particleCount,
+      });
+    }, FIREWORKS_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(interval);
+      fire.reset();
     };
-  });
-};
+  }, []);
 
-export function ConfettiOverlay({ seed }: { seed: string }) {
-  const confettiPieces = useMemo(() => createConfettiPieces(seed), [seed]);
+  if (!portalRoot) return null;
 
-  return (
-    <div
-      className="pointer-events-none fixed inset-0 z-40 overflow-hidden motion-reduce:hidden"
-      aria-hidden="true"
-    >
-      {confettiPieces.map((piece) => (
-        <span
-          key={piece.id}
-          className="confetti-piece"
-          style={
-            {
-              left: piece.left,
-              width: `${piece.size}px`,
-              height: `${piece.height}px`,
-              backgroundColor: piece.color,
-              animationDelay: piece.delay,
-              animationDuration: piece.duration,
-              animationTimingFunction: piece.timing,
-              '--confetti-x-start': piece.driftStart,
-              '--confetti-x-end': piece.driftEnd,
-              '--confetti-rotate': piece.rotate,
-            } as CSSProperties
-          }
-        />
-      ))}
-    </div>
+  return createPortal(
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none fixed inset-0 z-[9999] h-full w-full"
+    />,
+    portalRoot
   );
 }
