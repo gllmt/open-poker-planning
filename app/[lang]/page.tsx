@@ -1,4 +1,5 @@
 import { Clock, Layers, Link2, ShieldCheck } from 'lucide-react';
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { HomePage } from '@/components/poker/home-page';
@@ -8,6 +9,21 @@ import { i18n, isLocale } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
 const FEATURE_ICONS = [Clock, Layers, Link2, ShieldCheck];
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const locale = isLocale(lang) ? lang : i18n.defaultLocale;
+  const dictionary = await getDictionary(locale);
+
+  return {
+    title: dictionary.home.title,
+    description: dictionary.home.description,
+  };
+}
 
 export default async function Home({
   params,

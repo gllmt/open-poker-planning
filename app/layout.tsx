@@ -50,7 +50,9 @@ export default async function RootLayout({
   return (
     <html lang={lang} className={initialThemeClass} suppressHydrationWarning>
       <head>
-        <script>{themeScript}</script>
+        <Script id="theme-script" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
       </head>
       <body className={`${notoSans.variable} antialiased`}>
         {children}
