@@ -141,6 +141,12 @@
     "name": "Nom",
     "createdBy": "Créé par"
   },
+  "notFound": {
+    "eyebrow": "Page introuvable",
+    "title": "Oups, cette page n'existe pas",
+    "description": "La page que vous recherchez a peut-être été déplacée, supprimée, ou le lien est incorrect.",
+    "backHome": "Retour à l'accueil"
+  },
   "access": {
     "title": "Accès requis",
     "description": "Entrez le code d'accès pour continuer.",

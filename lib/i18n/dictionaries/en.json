@@ -141,6 +141,12 @@
     "name": "Name",
     "createdBy": "Created By"
   },
+  "notFound": {
+    "eyebrow": "Page not found",
+    "title": "Oops, this page doesn't exist",
+    "description": "The page you're looking for might have been moved, deleted, or maybe the link is broken.",
+    "backHome": "Back to home"
+  },
   "access": {
     "title": "Access required",
     "description": "Enter the access code to continue.",
