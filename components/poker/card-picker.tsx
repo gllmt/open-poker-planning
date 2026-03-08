@@ -2,11 +2,13 @@
 
 import { CircleQuestionMark, Coffee } from 'lucide-react';
 import { useMemo } from 'react';
+
 import { useI18n } from '@/components/i18n/use-i18n';
 import type { CardConfig } from '@/types/cards';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
+
 import { getCards, normalizeLegacyCards } from './card-configs';
 
 export function CardPicker({
@@ -56,60 +58,82 @@ export function CardPicker({
           {error}
         </div>
       )}
-      <div className="flex flex-wrap justify-center gap-3 md:gap-6 py-4">
+      <div className="flex flex-wrap justify-center gap-3 py-4 md:gap-6">
         {cards.map((card) => {
           const isSelected = currentValue === card.value;
+          const isDisabled = isFinished;
+          const baseClasses = `
+            relative
+            flex h-[110px] w-20 flex-col items-center justify-center
+            rounded-xl border-2 border-transparent
+            text-slate-900 shadow-sm
+            select-none
+            transform-gpu
+            transition-transform transition-shadow transition-opacity
+            duration-300 ease-out
+            dark:text-white
+            md:h-[180px] md:w-[130px]
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
+          `;
+
+          const interactiveClasses = !isDisabled
+            ? `
+              cursor-pointer
+              hover:-translate-y-1 hover:scale-[1.03] hover:shadow-md
+              active:scale-[0.98]
+            `
+            : `
+              cursor-not-allowed opacity-50
+            `;
+
+          const selectedClasses = isSelected
+            ? `
+              ring-4 ring-primary/70 shadow-lg
+              -translate-y-1 scale-[1.03]
+              dark:ring-primary/80
+            `
+            : '';
+
           return (
             <button
               key={card.value}
               type="button"
               aria-pressed={isSelected}
-              disabled={isFinished}
-              className={`
-                cursor-pointer select-none will-change-transform
-                rounded-xl border-2 border-transparent shadow-sm text-slate-900 dark:text-white
-                flex flex-col items-center justify-center
-                transition-[transform,box-shadow,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-                hover:-translate-y-1 hover:scale-[1.03] hover:shadow-md
-                active:scale-[0.98]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
-                w-20 h-[110px] md:w-[130px] md:h-[180px]
-                ${
-                  isSelected
-                    ? 'ring-4 ring-primary/70 dark:ring-primary/80 -translate-y-1.5 scale-[1.03] shadow-lg'
-                    : ''
-                }
-                ${isFinished ? 'opacity-50 cursor-not-allowed hover:translate-y-0 hover:scale-100 hover:shadow-sm active:scale-100' : ''}
-              `}
+              disabled={isDisabled}
+              className={`${baseClasses} ${interactiveClasses} ${selectedClasses}`}
               style={{ backgroundColor: card.color }}
               onClick={() => {
-                if (isSelected) return;
+                if (isSelected || isDisabled) return;
                 play(card);
               }}
             >
-              <div className="flex flex-col justify-between h-full w-full p-1">
+              <div className="flex h-full w-full flex-col justify-between p-1">
                 {card.value >= 0 && (
                   <>
-                    <span className="text-xs flex justify-start">
+                    <span className="flex justify-start text-xs">
                       {card.displayValue}
                     </span>
                     <span
-                      className={`${card.displayValue.length < 2 ? 'text-4xl' : 'text-3xl'}`}
+                      className={
+                        card.displayValue.length < 2 ? 'text-4xl' : 'text-3xl'
+                      }
                     >
                       {card.displayValue}
                     </span>
-                    <span className="flex justify-end w-full text-xs">
+                    <span className="flex w-full justify-end text-xs">
                       {card.displayValue}
                     </span>
                   </>
                 )}
+
                 {card.value === -1 && (
-                  <span className="flex flex-col justify-center h-full w-full text-4xl">
+                  <span className="flex h-full w-full flex-col justify-center text-4xl">
                     <Coffee className="size-9 w-full" aria-hidden="true" />
                   </span>
                 )}
+
                 {card.value === -2 && (
-                  <span className="flex flex-col justify-center h-full w-full text-4xl">
+                  <span className="flex h-full w-full flex-col justify-center text-4xl">
                     <CircleQuestionMark
                       className="size-9 w-full"
                       aria-hidden="true"
