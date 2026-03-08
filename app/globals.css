@@ -221,21 +221,45 @@ html.theme-transitioning * {
 }
 
 /* stagger delays */
-.stagger-1 { animation-delay: 0ms; }
-.stagger-2 { animation-delay: 80ms; }
-.stagger-3 { animation-delay: 160ms; }
-.stagger-4 { animation-delay: 240ms; }
-.stagger-5 { animation-delay: 320ms; }
-.stagger-6 { animation-delay: 400ms; }
+.stagger-1 {
+  animation-delay: 0ms;
+}
+.stagger-2 {
+  animation-delay: 80ms;
+}
+.stagger-3 {
+  animation-delay: 160ms;
+}
+.stagger-4 {
+  animation-delay: 240ms;
+}
+.stagger-5 {
+  animation-delay: 320ms;
+}
+.stagger-6 {
+  animation-delay: 400ms;
+}
 
 /* toast entry / exit */
 @keyframes toast-in {
-  0% { opacity: 0; transform: translateX(24px) scale(0.96); }
-  100% { opacity: 1; transform: translateX(0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 @keyframes toast-out {
-  0% { opacity: 1; transform: translateX(0) scale(1); }
-  100% { opacity: 0; transform: translateX(24px) scale(0.96); }
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
 }
 .animate-toast-in {
   animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -288,7 +312,9 @@ html.theme-transitioning * {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid oklch(1 0 0 / 20%);
-  box-shadow: 0 4px 24px oklch(0 0 0 / 4%), 0 1px 2px oklch(0 0 0 / 3%);
+  box-shadow:
+    0 4px 24px oklch(0 0 0 / 4%),
+    0 1px 2px oklch(0 0 0 / 3%);
 }
 
 @utility dark-glass-card {
@@ -296,7 +322,9 @@ html.theme-transitioning * {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid oklch(1 0 0 / 8%);
-  box-shadow: 0 4px 24px oklch(0 0 0 / 20%), 0 1px 2px oklch(0 0 0 / 10%);
+  box-shadow:
+    0 4px 24px oklch(0 0 0 / 20%),
+    0 1px 2px oklch(0 0 0 / 10%);
 }
 
 @utility glass-inner {

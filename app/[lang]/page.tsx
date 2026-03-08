@@ -1,9 +1,4 @@
-import {
-  Clock,
-  Layers,
-  Link2,
-  ShieldCheck,
-} from 'lucide-react';
+import { Clock, Layers, Link2, ShieldCheck } from 'lucide-react';
 import { Suspense } from 'react';
 
 import { HomePage } from '@/components/poker/home-page';
@@ -78,7 +73,9 @@ export default async function Home({
 
       <footer className="animate-fade-in w-full max-w-5xl pt-12 text-center">
         <div className="border-t border-border/40 pt-6 flex flex-col items-center gap-2">
-          <p className="text-xs text-muted-foreground/60">Planning Poker — Open Source</p>
+          <p className="text-xs text-muted-foreground/60">
+            Planning Poker — Open Source
+          </p>
           <a
             href="https://github.com/gllmt"
             target="_blank"

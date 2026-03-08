@@ -19,7 +19,10 @@ export function Toolbar() {
   return (
     <header className="border-border/40 bg-background/70 sticky top-0 z-50 flex w-full items-center justify-between border-b px-4 py-2 backdrop-blur-lg supports-backdrop-filter:bg-background/60">
       <div className="inline-flex items-center">
-        <Link href={withLocale('/', locale)} className="flex items-center gap-2 group">
+        <Link
+          href={withLocale('/', locale)}
+          className="flex items-center gap-2 group"
+        >
           <Spade className="size-5 text-primary transition-transform duration-200 group-hover:scale-110" />
           <span className="md:text-xl text-sm font-semibold tracking-tight">
             {t('toolbar.brand')}

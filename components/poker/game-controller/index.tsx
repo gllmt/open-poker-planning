@@ -193,9 +193,7 @@ export function GameController({
       <div className="w-full max-w-xl my-5 glass-card dark:dark-glass-card rounded-2xl overflow-hidden">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-3 border-b border-border/40 px-5 py-3.5">
-          <h2 className="text-lg font-semibold truncate grow">
-            {game.name}
-          </h2>
+          <h2 className="text-lg font-semibold truncate grow">{game.name}</h2>
           <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
             {getStatusLabel(game.gameStatus, t)}{' '}
             {getGameStatusIcon(game.gameStatus)}
