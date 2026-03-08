@@ -15,6 +15,7 @@ export function GameArea({
   onTimerUpdate,
   onAutoReveal,
   onDeleteGame,
+  onLeaveGame,
   onRemovePlayer,
   voteError,
   confettiSeed,
@@ -28,6 +29,7 @@ export function GameArea({
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
   onDeleteGame: () => Promise<void>;
+  onLeaveGame: () => Promise<void>;
   onRemovePlayer: (playerId: string) => Promise<void>;
   voteError?: string | null;
   confettiSeed?: string | null;
@@ -46,6 +48,7 @@ export function GameArea({
             onTimerUpdate={onTimerUpdate}
             onAutoReveal={onAutoReveal}
             onDeleteGame={onDeleteGame}
+            onLeaveGame={onLeaveGame}
           />
         </div>
         <div className="animate-scale-in stagger-2 w-full md:w-auto">

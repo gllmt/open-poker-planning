@@ -65,7 +65,10 @@
     "inviteTokenPlaceholder": "Paste the token from the invite link",
     "yourName": "Your Name",
     "yourNamePlaceholder": "Enter your name",
-    "errorJoinFailed": "Failed to join session"
+    "errorJoinFailed": "Failed to join session",
+    "leftSession": "You left the game.",
+    "sessionExpired": "Your session is no longer valid for this game.",
+    "removedFromGame": "You were removed from the game by the session creator."
   },
   "cardPicker": {
     "cta": "Click on the card to vote",
@@ -85,7 +88,7 @@
       "inProgress": "In progress",
       "finished": "Finished"
     },
-    "inviteNoToken": "No invite token available on this device. Use the one from the original invite link.",
+    "inviteNoToken": "Unable to generate a new invite link right now.",
     "inviteCopied": "Invite link copied to clipboard!",
     "invitePrompt": "Automatic copy failed. Use this invite link:",
     "openInvite": "Open link",
@@ -94,6 +97,7 @@
     "restart": "Restart",
     "delete": "Delete",
     "exit": "Exit",
+    "leaveFailed": "Unable to leave the game right now.",
     "invite": "Invite",
     "autoReveal": "Auto Reveal",
     "autoRevealHint": "Auto Reveal when all members finished voting",

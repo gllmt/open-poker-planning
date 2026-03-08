@@ -4,6 +4,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 import { api } from '@/convex/_generated/api';
+import { leaveGame as leaveGameRequest } from '@/lib/api/games';
 import {
   getPlayerGamesFromCache,
   upsertPlayerGame,
@@ -20,9 +21,10 @@ type PendingVote = {
   emoji?: string;
 };
 
-type PokerAuth = {
+type SessionExitReason = 'left' | 'missing-session' | 'removed';
+
+type PokerSession = {
   playerId: string;
-  joinTokenHash: string;
   playerTokenHash: string;
   adminTokenHash?: string;
 };
@@ -34,38 +36,66 @@ type PokerState = {
   currentPlayerId: string | undefined;
   voteError: string | null;
   confettiSeed: string | null;
-  auth: PokerAuth | null;
+  auth: PokerSession;
   queryError: string | null;
-  shouldRedirectToJoin: boolean;
+  sessionExitReason: SessionExitReason | null;
 };
 
 type PokerAction =
-  | { type: 'set-auth'; auth: PokerAuth }
-  | { type: 'require-join' }
+  | { type: 'set-auth'; auth: PokerSession }
   | { type: 'set-game'; value: Game | null }
   | { type: 'set-players'; value: Player[] | null }
   | { type: 'set-vote-error'; value: string | null }
   | { type: 'set-query-error-and-stop-loading'; value: string }
+  | { type: 'set-session-exit'; value: SessionExitReason | null }
   | {
       type: 'apply-snapshot';
       game: Game;
       players: Player[];
       confettiSeed: string | null;
+      currentPlayerId: string;
       loading?: boolean;
       clearQueryError?: boolean;
     };
 
-const initialState: PokerState = {
-  game: null,
-  players: null,
-  loading: true,
-  currentPlayerId: undefined,
-  voteError: null,
-  confettiSeed: null,
-  auth: null,
-  queryError: null,
-  shouldRedirectToJoin: false,
-};
+function getInitialState(initialSession: PokerSession): PokerState {
+  return {
+    game: null,
+    players: null,
+    loading: true,
+    currentPlayerId: initialSession.playerId,
+    voteError: null,
+    confettiSeed: null,
+    auth: initialSession,
+    queryError: null,
+    sessionExitReason: null,
+  };
+}
+
+function getPlayersSignature(players: Player[]) {
+  return players
+    .map(
+      (player) =>
+        `${player.id}:${player.status}:${player.value ?? ''}:${player.emoji ?? ''}`
+    )
+    .join('|');
+}
+
+function getSnapshotSignature(
+  game: Game,
+  players: Player[],
+  currentPlayerId: string,
+  confettiSeed: string | null
+) {
+  return [
+    game.id,
+    game.updatedAt ?? '',
+    game.gameStatus,
+    currentPlayerId,
+    confettiSeed ?? '',
+    getPlayersSignature(players),
+  ].join('::');
+}
 
 function pokerReducer(state: PokerState, action: PokerAction): PokerState {
   switch (action.type) {
@@ -74,13 +104,6 @@ function pokerReducer(state: PokerState, action: PokerAction): PokerState {
         ...state,
         auth: action.auth,
         currentPlayerId: action.auth.playerId,
-        shouldRedirectToJoin: false,
-      };
-    case 'require-join':
-      return {
-        ...state,
-        shouldRedirectToJoin: true,
-        loading: false,
       };
     case 'set-game':
       return { ...state, game: action.value };
@@ -89,15 +112,27 @@ function pokerReducer(state: PokerState, action: PokerAction): PokerState {
     case 'set-vote-error':
       return { ...state, voteError: action.value };
     case 'set-query-error-and-stop-loading':
-      return { ...state, queryError: action.value, loading: false };
+      return {
+        ...state,
+        queryError: action.value,
+        loading: false,
+      };
+    case 'set-session-exit':
+      return {
+        ...state,
+        loading: false,
+        sessionExitReason: action.value,
+      };
     case 'apply-snapshot':
       return {
         ...state,
         game: action.game,
         players: action.players,
         confettiSeed: action.confettiSeed,
+        currentPlayerId: action.currentPlayerId,
         loading: action.loading ?? state.loading,
         queryError: action.clearQueryError ? null : state.queryError,
+        sessionExitReason: null,
       };
     default:
       return state;
@@ -106,15 +141,23 @@ function pokerReducer(state: PokerState, action: PokerAction): PokerState {
 
 type UsePokerControllerArgs = {
   gameId: string;
+  initialSession: PokerSession;
   translate: (key: string) => string;
 };
 
 export function usePokerController({
   gameId,
+  initialSession,
   translate,
 }: UsePokerControllerArgs) {
-  const [state, dispatch] = useReducer(pokerReducer, initialState);
+  const [state, dispatch] = useReducer(
+    pokerReducer,
+    initialSession,
+    getInitialState
+  );
 
+  const authRef = useRef(state.auth);
+  const queryErrorRef = useRef<string | null>(state.queryError);
   const pendingVoteRef = useRef<PendingVote | null>(null);
   const voteDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -127,6 +170,7 @@ export function usePokerController({
   const gameRef = useRef<Game | null>(null);
   const playersRef = useRef<Player[] | null>(null);
   const confettiSeedRef = useRef<string | null>(null);
+  const lastAppliedSnapshotRef = useRef<string | null>(null);
 
   const voteMutation = useMutation(api.games.vote);
   const revealMutation = useMutation(api.games.reveal);
@@ -136,6 +180,14 @@ export function usePokerController({
   const removePlayerMutation = useMutation(api.games.removePlayer);
   const deleteGameMutation = useMutation(api.games.deleteGame);
 
+  useEffect(() => {
+    authRef.current = state.auth;
+  }, [state.auth]);
+
+  useEffect(() => {
+    queryErrorRef.current = state.queryError;
+  }, [state.queryError]);
+
   const clearPendingVote = useCallback(() => {
     pendingVoteRef.current = null;
   }, []);
@@ -144,6 +196,7 @@ export function usePokerController({
     (
       nextGame: Game,
       nextPlayers: Player[],
+      currentPlayerId: string,
       options?: {
         loading?: boolean;
         clearQueryError?: boolean;
@@ -170,6 +223,21 @@ export function usePokerController({
       }
 
       lastGameStatusRef.current = nextGame.gameStatus;
+      const nextSnapshotSignature = getSnapshotSignature(
+        nextGame,
+        nextPlayers,
+        currentPlayerId,
+        nextConfettiSeed
+      );
+
+      if (
+        lastAppliedSnapshotRef.current === nextSnapshotSignature &&
+        !queryErrorRef.current
+      ) {
+        return;
+      }
+
+      lastAppliedSnapshotRef.current = nextSnapshotSignature;
       gameRef.current = nextGame;
       playersRef.current = nextPlayers;
       confettiSeedRef.current = nextConfettiSeed;
@@ -178,6 +246,7 @@ export function usePokerController({
         type: 'apply-snapshot',
         game: nextGame,
         players: nextPlayers,
+        currentPlayerId,
         confettiSeed: nextConfettiSeed,
         loading: options?.loading,
         clearQueryError: options?.clearQueryError,
@@ -187,15 +256,16 @@ export function usePokerController({
   );
 
   const applyServerState = useCallback(
-    (serverGame: Game, serverPlayers: Player[], playerId: string) => {
+    (serverGame: Game, serverPlayers: Player[], currentPlayerId: string) => {
       let nextPlayers = serverPlayers;
+
       if (pendingVoteRef.current && serverGame.gameStatus === Status.Started) {
         pendingVoteRef.current = null;
       }
-      const pendingVote = pendingVoteRef.current;
 
+      const pendingVote = pendingVoteRef.current;
       if (pendingVote) {
-        const me = nextPlayers.find((player) => player.id === playerId);
+        const me = nextPlayers.find((player) => player.id === currentPlayerId);
         const synced =
           me?.status === Status.Finished &&
           me.value === pendingVote.value &&
@@ -205,7 +275,7 @@ export function usePokerController({
           pendingVoteRef.current = null;
         } else {
           nextPlayers = nextPlayers.map((player) =>
-            player.id === playerId
+            player.id === currentPlayerId
               ? {
                   ...player,
                   value: pendingVote.value,
@@ -217,7 +287,17 @@ export function usePokerController({
         }
       }
 
-      applyGameState(serverGame, nextPlayers, {
+      if (authRef.current.playerId !== currentPlayerId) {
+        dispatch({
+          type: 'set-auth',
+          auth: {
+            ...authRef.current,
+            playerId: currentPlayerId,
+          },
+        });
+      }
+
+      applyGameState(serverGame, nextPlayers, currentPlayerId, {
         loading: false,
         clearQueryError: true,
       });
@@ -225,50 +305,31 @@ export function usePokerController({
       const cached = getPlayerGamesFromCache().find(
         (entry) => entry.id === gameId
       );
+
       upsertPlayerGame({
         id: serverGame.id,
         name: serverGame.name,
         createdBy: serverGame.createdBy,
         createdById: serverGame.createdById,
-        playerId,
+        playerId: currentPlayerId,
         joinToken: cached?.joinToken,
         joinTokenHash: cached?.joinTokenHash,
-        playerTokenHash: cached?.playerTokenHash,
-        adminTokenHash: cached?.adminTokenHash,
+        playerTokenHash: authRef.current.playerTokenHash,
+        adminTokenHash: authRef.current.adminTokenHash,
         isAllowMembersToManageSession: serverGame.isAllowMembersToManageSession,
       });
     },
     [applyGameState, gameId]
   );
 
-  useEffect(() => {
-    const cached = getPlayerGamesFromCache().find(
-      (entry) => entry.id === gameId
-    );
-    if (!cached?.playerId || !cached.joinTokenHash || !cached.playerTokenHash) {
-      dispatch({ type: 'require-join' });
-      return;
-    }
-
-    dispatch({
-      type: 'set-auth',
-      auth: {
-        playerId: cached.playerId,
-        joinTokenHash: cached.joinTokenHash,
-        playerTokenHash: cached.playerTokenHash,
-        adminTokenHash: cached.adminTokenHash,
-      },
-    });
-  }, [gameId]);
-
-  const queryArgs = state.auth
-    ? { gameId, joinTokenHash: state.auth.joinTokenHash }
-    : 'skip';
-
-  const gameState = useQuery(api.games.getGameState, queryArgs);
+  const gameState = useQuery(api.games.getViewerGameState, {
+    gameId,
+    playerTokenHash: state.auth.playerTokenHash,
+  });
+  const gameNotFoundMessage = translate('game.gameNotFound');
 
   useEffect(() => {
-    if (!state.auth || gameState) return;
+    if (gameState) return;
 
     const timeout = setTimeout(() => {
       dispatch({
@@ -278,20 +339,33 @@ export function usePokerController({
     }, 10000);
 
     return () => clearTimeout(timeout);
-  }, [state.auth, gameState]);
+  }, [gameState]);
 
   useEffect(() => {
-    if (!gameState || !state.auth) return;
-    applyServerState(gameState.game, gameState.players, state.auth.playerId);
-  }, [gameState, state.auth, applyServerState]);
+    if (!gameState) return;
 
-  useEffect(() => {
-    if (!state.players || !state.currentPlayerId) return;
-    const stillInGame = state.players.some(
-      (player) => player.id === state.currentPlayerId
-    );
-    if (!stillInGame) dispatch({ type: 'require-join' });
-  }, [state.players, state.currentPlayerId]);
+    if (gameState.type === 'ready') {
+      applyServerState(
+        gameState.game,
+        gameState.players,
+        gameState.currentPlayerId
+      );
+      return;
+    }
+
+    if (gameState.type === 'not_found') {
+      dispatch({
+        type: 'set-query-error-and-stop-loading',
+        value: gameNotFoundMessage,
+      });
+      return;
+    }
+
+    dispatch({
+      type: 'set-session-exit',
+      value: gameState.reason,
+    });
+  }, [applyServerState, gameNotFoundMessage, gameState]);
 
   useEffect(() => {
     return () => {
@@ -302,7 +376,7 @@ export function usePokerController({
   }, []);
 
   const onReveal = useCallback(async () => {
-    if (!state.game || !state.currentPlayerId || !state.auth) return;
+    if (!state.game || !state.currentPlayerId) return;
     if (state.game.gameStatus === Status.Finished) return;
 
     const requestId = ++revealRequestIdRef.current;
@@ -313,6 +387,7 @@ export function usePokerController({
       gameStatus: Status.Finished,
       timerProps: nextTimerProps,
     };
+
     gameRef.current = nextGame;
     dispatch({ type: 'set-game', value: nextGame });
 
@@ -328,15 +403,10 @@ export function usePokerController({
       gameRef.current = previousGame;
       dispatch({ type: 'set-game', value: previousGame });
     }
-  }, [state.game, state.currentPlayerId, state.auth, revealMutation]);
+  }, [revealMutation, state.auth, state.currentPlayerId, state.game]);
 
   const onReset = useCallback(async () => {
-    if (
-      !state.game ||
-      !state.players ||
-      !state.currentPlayerId ||
-      !state.auth
-    ) {
+    if (!state.game || !state.players || !state.currentPlayerId) {
       return;
     }
 
@@ -366,6 +436,7 @@ export function usePokerController({
       type: 'apply-snapshot',
       game: nextGame,
       players: nextPlayers,
+      currentPlayerId: state.currentPlayerId,
       confettiSeed: null,
     });
 
@@ -385,29 +456,31 @@ export function usePokerController({
         type: 'apply-snapshot',
         game: previousGame,
         players: previousPlayers,
+        currentPlayerId: state.currentPlayerId,
         confettiSeed: previousConfettiSeed,
       });
     }
   }, [
-    state.game,
-    state.players,
-    state.currentPlayerId,
-    state.auth,
-    state.confettiSeed,
     clearPendingVote,
     resetMutation,
+    state.auth,
+    state.confettiSeed,
+    state.currentPlayerId,
+    state.game,
+    state.players,
   ]);
 
   const onTimerUpdate = useCallback(
     async (timer: TimerProps) => {
-      if (!state.game || !state.currentPlayerId || !state.auth) return;
+      if (!state.game || !state.currentPlayerId) return;
+
       const requestId = ++timerRequestIdRef.current;
       const previousTimerProps = state.game.timerProps;
-
       const nextGame = {
         ...state.game,
         timerProps: { ...state.game.timerProps, ...timer },
       };
+
       gameRef.current = nextGame;
       dispatch({ type: 'set-game', value: nextGame });
 
@@ -429,12 +502,11 @@ export function usePokerController({
           : new Error('Failed to update timer');
       }
     },
-    [state.game, state.currentPlayerId, state.auth, updateTimerMutation]
+    [state.auth, state.currentPlayerId, state.game, updateTimerMutation]
   );
 
   const onAutoReveal = useCallback(
     async (value: boolean) => {
-      if (!state.auth) return;
       await setAutoRevealMutation({
         gameId,
         autoReveal: value,
@@ -443,12 +515,11 @@ export function usePokerController({
         playerTokenHash: state.auth.playerTokenHash,
       });
     },
-    [state.auth, gameId, setAutoRevealMutation]
+    [gameId, setAutoRevealMutation, state.auth]
   );
 
   const onRemovePlayer = useCallback(
     async (playerId: string) => {
-      if (!state.auth) return;
       await removePlayerMutation({
         gameId,
         playerId,
@@ -457,30 +528,33 @@ export function usePokerController({
         playerTokenHash: state.auth.playerTokenHash,
       });
     },
-    [state.auth, gameId, removePlayerMutation]
+    [gameId, removePlayerMutation, state.auth]
   );
 
   const onDeleteGame = useCallback(async () => {
-    if (!state.auth) return;
     await deleteGameMutation({
       gameId,
       adminTokenHash: state.auth.adminTokenHash,
       callerPlayerId: state.auth.playerId,
       playerTokenHash: state.auth.playerTokenHash,
     });
-  }, [state.auth, gameId, deleteGameMutation]);
+  }, [deleteGameMutation, gameId, state.auth]);
+
+  const onLeaveGame = useCallback(async () => {
+    await leaveGameRequest(gameId, state.auth.playerId);
+    dispatch({ type: 'set-session-exit', value: 'left' });
+  }, [gameId, state.auth.playerId]);
 
   const onVote = useCallback(
     (value: number, emoji?: string) => {
       if (
         !state.game ||
         !state.currentPlayerId ||
-        !state.auth ||
-        !state.players
+        !state.players ||
+        state.game.gameStatus === Status.Finished
       ) {
         return;
       }
-      if (state.game.gameStatus === Status.Finished) return;
 
       pendingVoteRef.current = { value, emoji };
       dispatch({ type: 'set-vote-error', value: null });
@@ -491,6 +565,7 @@ export function usePokerController({
           ? { ...player, value, emoji, status: Status.Finished }
           : player
       );
+
       playersRef.current = nextPlayers;
       dispatch({ type: 'set-players', value: nextPlayers });
 
@@ -522,6 +597,7 @@ export function usePokerController({
                 ? error.message
                 : translate('game.voteFailed'),
           });
+
           if (previousPlayers) {
             playersRef.current = previousPlayers;
             dispatch({ type: 'set-players', value: previousPlayers });
@@ -530,13 +606,13 @@ export function usePokerController({
       }, 150);
     },
     [
-      state.game,
-      state.currentPlayerId,
-      state.auth,
-      state.players,
       gameId,
-      voteMutation,
+      state.auth.playerTokenHash,
+      state.currentPlayerId,
+      state.game,
+      state.players,
       translate,
+      voteMutation,
     ]
   );
 
@@ -548,13 +624,14 @@ export function usePokerController({
     voteError: state.voteError,
     confettiSeed: state.confettiSeed,
     queryError: state.queryError,
-    shouldRedirectToJoin: state.shouldRedirectToJoin,
+    sessionExitReason: state.sessionExitReason,
     onVote,
     onReveal,
     onReset,
     onTimerUpdate,
     onAutoReveal,
     onDeleteGame,
+    onLeaveGame,
     onRemovePlayer,
   };
 }

@@ -24,6 +24,7 @@ export default defineSchema({
     gameId: v.string(),
     name: v.string(),
     status: v.string(),
+    membershipStatus: v.optional(v.string()),
     value: v.union(v.number(), v.null()),
     emoji: v.union(v.string(), v.null()),
     createdAt: v.number(),
@@ -31,5 +32,16 @@ export default defineSchema({
     playerTokenHash: v.string(),
   })
     .index('by_gameId', ['gameId'])
-    .index('by_gameId_playerId', ['gameId', 'playerId']),
+    .index('by_gameId_playerId', ['gameId', 'playerId'])
+    .index('by_gameId_playerTokenHash', ['gameId', 'playerTokenHash']),
+  gameInvites: defineTable({
+    gameId: v.string(),
+    tokenHash: v.string(),
+    createdByPlayerId: v.string(),
+    createdAt: v.number(),
+    revokedAt: v.union(v.number(), v.null()),
+    revokedReason: v.optional(v.string()),
+  })
+    .index('by_gameId', ['gameId'])
+    .index('by_gameId_tokenHash', ['gameId', 'tokenHash']),
 });

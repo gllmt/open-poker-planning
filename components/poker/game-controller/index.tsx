@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
-import { getPlayerGamesFromCache } from '@/lib/browser-storage';
+import { createInvite } from '@/lib/api/games';
 import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
 import type { Game, TimerProps } from '@/types/game';
@@ -44,6 +44,7 @@ export function GameController({
   onTimerUpdate,
   onAutoReveal,
   onDeleteGame,
+  onLeaveGame,
 }: {
   game: Game;
   players: Player[];
@@ -54,6 +55,7 @@ export function GameController({
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
   onDeleteGame: () => Promise<void>;
+  onLeaveGame: () => Promise<void>;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -68,11 +70,6 @@ export function GameController({
     game.isAllowMembersToManageSession
   );
 
-  const joinToken = useMemo(
-    () => getPlayerGamesFromCache().find((g) => g.id === game.id)?.joinToken,
-    [game.id]
-  );
-
   const averageValue = useGameAverage(game, players);
   const canShowAverage = averageValue !== null;
   const averageLabel =
@@ -81,18 +78,21 @@ export function GameController({
       : '-';
 
   const copyInviteLink = async () => {
-    if (!joinToken) {
+    let inviteLink = '';
+
+    try {
+      const { token } = await createInvite(game.id, currentPlayerId);
+      inviteLink = `${window.location.origin}${withLocale(
+        `/join/${game.id}`,
+        locale
+      )}?token=${token}`;
+    } catch {
       sileo.info({
         title: t('game.inviteNoToken'),
         position: 'top-center',
       });
       return;
     }
-
-    const inviteLink = `${window.location.origin}${withLocale(
-      `/join/${game.id}`,
-      locale
-    )}?token=${joinToken}`;
 
     try {
       if (navigator.clipboard?.writeText) {
@@ -190,7 +190,14 @@ export function GameController({
     autoRevealValue,
     baseAutoReveal,
   ]);
-  const leaveGame = () => router.push(withLocale('/', locale));
+  const leaveGame = () => {
+    void onLeaveGame().catch(() => {
+      sileo.info({
+        title: t('game.leaveFailed'),
+        position: 'top-center',
+      });
+    });
+  };
 
   const handleRemoveGame = async () => {
     const confirm = window.confirm(t('game.confirmDelete'));

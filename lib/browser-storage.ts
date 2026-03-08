@@ -103,13 +103,31 @@ export function updatePlayerGamesInCache(playerGames: PlayerGame[]) {
 
 export function getCurrentPlayerId(gameId: string): string | undefined {
   const games = getPlayerGamesFromCache();
-  return games.find((g) => g.id === gameId)?.playerId;
+  const playerId = games.find((g) => g.id === gameId)?.playerId;
+  return playerId || undefined;
 }
 
 export function upsertPlayerGame(game: PlayerGame) {
   const games = getPlayerGamesFromCache();
   const next = [game, ...games.filter((g) => g.id !== game.id)].slice(0, 20);
   updatePlayerGamesInCache(next);
+}
+
+export function clearPlayerGameSession(gameId: string) {
+  updatePlayerGamesInCache(
+    getPlayerGamesFromCache().map((game) =>
+      game.id === gameId
+        ? {
+            ...game,
+            playerId: '',
+            joinToken: undefined,
+            joinTokenHash: undefined,
+            playerTokenHash: undefined,
+            adminTokenHash: undefined,
+          }
+        : game
+    )
+  );
 }
 
 export function removePlayerGame(gameId: string) {

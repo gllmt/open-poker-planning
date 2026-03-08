@@ -1,7 +1,8 @@
 'use client';
 
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useReducer } from 'react';
+import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -14,9 +15,9 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { fetchGameState, joinGame } from '@/lib/api/games';
+import { clearGameSession, joinGame } from '@/lib/api/games';
 import {
-  getCurrentPlayerId,
+  clearPlayerGameSession,
   getRecentPlayerName,
   setRecentPlayerName,
   upsertPlayerGame,
@@ -29,7 +30,6 @@ type JoinGameState = {
   playerName: string;
   error: string | null;
   loading: boolean;
-  redirectToGameId: string | null;
 };
 
 type JoinGameAction =
@@ -37,8 +37,7 @@ type JoinGameAction =
   | { type: 'set-invite-token'; value: string }
   | { type: 'set-player-name'; value: string }
   | { type: 'set-error'; value: string | null }
-  | { type: 'set-loading'; value: boolean }
-  | { type: 'set-redirect-game-id'; value: string | null };
+  | { type: 'set-loading'; value: boolean };
 
 function initJoinGameState({
   initialGameId,
@@ -53,7 +52,6 @@ function initJoinGameState({
     playerName: '',
     error: null,
     loading: false,
-    redirectToGameId: null,
   };
 }
 
@@ -72,8 +70,6 @@ function joinGameReducer(
       return { ...state, error: action.value };
     case 'set-loading':
       return { ...state, loading: action.value };
-    case 'set-redirect-game-id':
-      return { ...state, redirectToGameId: action.value };
     default:
       return state;
   }
@@ -82,9 +78,11 @@ function joinGameReducer(
 export function JoinGame({
   initialGameId,
   initialInviteToken,
+  initialReason,
 }: {
   initialGameId?: string;
   initialInviteToken?: string;
+  initialReason?: 'left' | 'missing-session' | 'removed';
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -102,20 +100,22 @@ export function JoinGame({
   }, [state.playerName]);
 
   useEffect(() => {
-    if (!state.joinGameId) return;
-    const existingPlayerId = getCurrentPlayerId(state.joinGameId);
-    if (!existingPlayerId) return;
+    if (!initialGameId || !initialReason) return;
 
-    fetchGameState({ gameId: state.joinGameId, playerId: existingPlayerId })
-      .then(() =>
-        dispatch({ type: 'set-redirect-game-id', value: state.joinGameId })
-      )
-      .catch(() => {});
-  }, [state.joinGameId]);
+    clearPlayerGameSession(initialGameId);
+    void clearGameSession(initialGameId).catch(() => {});
 
-  if (state.redirectToGameId) {
-    redirect(withLocale(`/game/${state.redirectToGameId}`, locale));
-  }
+    const titleByReason = {
+      left: t('joinGame.leftSession'),
+      'missing-session': t('joinGame.sessionExpired'),
+      removed: t('joinGame.removedFromGame'),
+    } satisfies Record<typeof initialReason, string>;
+
+    sileo.info({
+      title: titleByReason[initialReason],
+      position: 'top-center',
+    });
+  }, [initialGameId, initialReason, t]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

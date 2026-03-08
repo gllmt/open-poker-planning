@@ -56,6 +56,67 @@ export async function joinGame(
   return jsonOrThrow(res);
 }
 
+export async function createInvite(
+  gameId: string,
+  callerPlayerId: string
+): Promise<{ token: string }> {
+  const res = await fetch(`/api/games/${encodeURIComponent(gameId)}/invite`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ callerPlayerId }),
+  });
+  return jsonOrThrow(res);
+}
+
+export async function getGameSessionState(gameId: string): Promise<
+  | {
+      state: 'active';
+      playerId: string;
+      playerTokenHash: string;
+      adminTokenHash?: string;
+    }
+  | {
+      state: 'missing' | 'not_found';
+    }
+  | {
+      state: 'revoked';
+      reason: 'left' | 'missing-session' | 'removed';
+    }
+> {
+  const res = await fetch(`/api/games/${encodeURIComponent(gameId)}/session`, {
+    method: 'GET',
+  });
+  return jsonOrThrow(res);
+}
+
+export async function clearGameSession(gameId: string) {
+  const res = await fetch(`/api/games/${encodeURIComponent(gameId)}/session`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    throw new Error(`Request failed (${res.status})`);
+  }
+}
+
+export async function leaveGame(gameId: string, callerPlayerId: string) {
+  const res = await fetch(`/api/games/${encodeURIComponent(gameId)}/leave`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ callerPlayerId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    const errorValue =
+      typeof data === 'object' && data !== null
+        ? (data as Record<string, unknown>).error
+        : undefined;
+    const message =
+      (typeof errorValue === 'string' ? errorValue : null) ||
+      `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+}
+
 export async function fetchGameState(params: {
   gameId: string;
   token?: string;

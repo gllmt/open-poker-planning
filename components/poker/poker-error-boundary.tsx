@@ -28,6 +28,8 @@ export class PokerErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const isRedirectError = this.state.error?.message === 'NEXT_REDIRECT';
+
       if (this.props.fallback) {
         return this.props.fallback;
       }
@@ -35,7 +37,10 @@ export class PokerErrorBoundary extends Component<Props, State> {
       return (
         <div className="p-6 text-center">
           <p className="text-sm text-destructive">
-            {this.state.error?.message || 'An error occurred loading the game.'}
+            {isRedirectError
+              ? 'Unable to continue with the current session.'
+              : this.state.error?.message ||
+                'An error occurred loading the game.'}
           </p>
           <button
             type="button"
