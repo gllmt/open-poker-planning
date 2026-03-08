@@ -81,21 +81,22 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
 
-  html {
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
 
-  ::selection {
-    background-color: var(--color-primary);
-    color: var(--color-primary-foreground);
-  }
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
 
-  button {
-    cursor: pointer;
-  }
+button {
+  cursor: pointer;
 }
 
 .dark {
@@ -140,11 +141,6 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* smooth scroll & theme transition */
-html {
-  scroll-behavior: smooth;
 }
 
 @layer base {

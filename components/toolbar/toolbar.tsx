@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useI18n } from '@/components/i18n/use-i18n';
-import { cn } from '@/lib/utils';
 import { withLocale } from '@/lib/i18n/paths';
+import { cn } from '@/lib/utils';
 
 import { ThemeControl } from './theme-control';
 

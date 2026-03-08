@@ -40,9 +40,16 @@ function safeGetCookie(name: string): string | null {
 }
 
 function safeSetCookie(name: string, value: string) {
-  if (typeof document === 'undefined') return;
+  if (typeof window === 'undefined') return;
   try {
-    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${THEME_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+    if (!('cookieStore' in window)) return;
+    void window.cookieStore.set({
+      name,
+      value,
+      path: '/',
+      expires: Date.now() + THEME_COOKIE_MAX_AGE_SECONDS * 1000,
+      sameSite: 'lax',
+    });
   } catch {}
 }
 

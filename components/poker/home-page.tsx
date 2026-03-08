@@ -1,8 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { RecentGamesSkeleton } from './recent-games-skeleton';
 import { CreateGame } from './create-game';
+import { RecentGamesSkeleton } from './recent-games-skeleton';
 
 const RecentGames = dynamic(
   () => import('./recent-games').then((m) => m.RecentGames),
