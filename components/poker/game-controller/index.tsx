@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -56,9 +57,6 @@ export function GameController({
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
-  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
-  const [toastExiting, setToastExiting] = useState(false);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const baseAutoReveal = game.autoReveal ?? false;
   const [autoRevealValue, setAutoRevealValue] = useState(baseAutoReveal);
   const [autoRevealPending, setAutoRevealPending] = useState(false);
@@ -82,17 +80,12 @@ export function GameController({
       ? averageValue.toFixed(2)
       : '-';
 
-  const dismissToast = useCallback(() => {
-    setToastExiting(true);
-    setTimeout(() => {
-      setShowCopiedMessage(false);
-      setToastExiting(false);
-    }, 260);
-  }, []);
-
   const copyInviteLink = async () => {
     if (!joinToken) {
-      window.alert(t('game.inviteNoToken'));
+      sileo.info({
+        title: t('game.inviteNoToken'),
+        position: 'top-center',
+      });
       return;
     }
 
@@ -104,9 +97,15 @@ export function GameController({
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(inviteLink);
-        setShowCopiedMessage(true);
-        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-        toastTimerRef.current = setTimeout(dismissToast, 4000);
+        sileo.action({
+          title: t('game.inviteCopied'),
+          duration: 8000,
+          button: {
+            title: t('game.openInvite'),
+            onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
+          },
+          position: 'top-center',
+        });
         return;
       }
     } catch {}
@@ -127,14 +126,28 @@ export function GameController({
       document.body.removeChild(textarea);
 
       if (ok) {
-        setShowCopiedMessage(true);
-        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-        toastTimerRef.current = setTimeout(dismissToast, 4000);
+        sileo.action({
+          title: t('game.inviteCopied'),
+          duration: 8000,
+          button: {
+            title: t('game.openInvite'),
+            onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
+          },
+          position: 'top-center',
+        });
         return;
       }
     } catch {}
 
-    window.prompt(t('game.invitePrompt'), inviteLink);
+    sileo.action({
+      title: t('game.invitePrompt'),
+      duration: 10000,
+      button: {
+        title: t('game.openInvite'),
+        onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
+      },
+      position: 'top-center',
+    });
   };
 
   const handleAutoReveal = useCallback(
@@ -272,22 +285,6 @@ export function GameController({
           />
         </div>
       </div>
-
-      {/* Glass toast notification with enter/exit animation */}
-      {showCopiedMessage && (
-        <div className="fixed top-6 right-6 z-50">
-          <div
-            className={`glass-card dark:dark-glass-card px-5 py-3 rounded-xl shadow-lg ${
-              toastExiting ? 'animate-toast-out' : 'animate-toast-in'
-            }`}
-            role="alert"
-          >
-            <span className="block text-sm font-semibold">
-              {t('game.inviteCopied')}
-            </span>
-          </div>
-        </div>
-      )}
       {confettiSeed ? (
         <ConfettiOverlay key={confettiSeed} seed={confettiSeed} />
       ) : null}
