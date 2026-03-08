@@ -30,7 +30,7 @@ export function ResultsSection({
   if (game.gameStatus !== Status.Finished) return null;
 
   return (
-    <div className="mt-4 border-t border-border/60 pt-3">
+    <div className="mt-4 border-t border-border/40 pt-3 animate-fade-in">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t('results.title')}</h3>
         {showAverage && (
@@ -42,10 +42,10 @@ export function ResultsSection({
           </div>
         )}
       </div>
-      <div className="mt-2 overflow-hidden rounded-xl border border-border/60">
+      <div className="mt-2 overflow-hidden rounded-xl glass-inner dark:dark-glass-inner">
         <table className="w-full text-sm">
-          <thead className="bg-muted/40">
-            <tr>
+          <thead>
+            <tr className="border-b border-border/30">
               <th className="px-3 py-2 text-left font-medium text-muted-foreground">
                 {t('results.player')}
               </th>
@@ -54,7 +54,7 @@ export function ResultsSection({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/60">
+          <tbody className="divide-y divide-border/30">
             {players.map((player) => {
               const hasVoted =
                 player.status === Status.Finished && player.value !== undefined;
@@ -76,7 +76,7 @@ export function ResultsSection({
               );
 
               return (
-                <tr key={player.id} className="bg-background">
+                <tr key={player.id}>
                   <td className="px-3 py-2">
                     <span className="text-sm font-medium">{player.name}</span>
                   </td>

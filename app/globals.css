@@ -81,21 +81,22 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
 
-  html {
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
 
-  ::selection {
-    background-color: var(--color-primary);
-    color: var(--color-primary-foreground);
-  }
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
 
-  button {
-    cursor: pointer;
-  }
+button {
+  cursor: pointer;
 }
 
 .dark {
@@ -142,11 +143,25 @@
   }
 }
 
-/* custom styles */
+@layer base {
+  html,
+  html * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 0s;
+  }
+}
+
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition-duration: 0.3s !important;
+  transition-timing-function: ease !important;
+}
+
+/* custom animations */
 @keyframes fade-in-down {
   0% {
     opacity: 0;
-    transform: translateY(-40px);
+    transform: translateY(-24px);
   }
   100% {
     opacity: 1;
@@ -154,20 +169,99 @@
   }
 }
 
-.animate-fade-in-down {
-  animation: fade-in-down 1s ease-out;
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.confetti-piece {
-  position: absolute;
-  top: -10%;
-  border-radius: 2px;
-  opacity: 0;
-  animation-name: confetti-fall;
-  animation-timing-function: linear;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  will-change: transform;
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* stagger delays */
+.stagger-1 {
+  animation-delay: 0ms;
+}
+.stagger-2 {
+  animation-delay: 80ms;
+}
+.stagger-3 {
+  animation-delay: 160ms;
+}
+.stagger-4 {
+  animation-delay: 240ms;
+}
+.stagger-5 {
+  animation-delay: 320ms;
+}
+.stagger-6 {
+  animation-delay: 400ms;
+}
+
+/* toast entry / exit */
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes toast-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+}
+.animate-toast-in {
+  animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-toast-out {
+  animation: toast-out 0.25s ease both;
 }
 
 .poker-spinner-heads {
@@ -175,23 +269,39 @@
   animation: poker-spin 1.2s linear infinite;
 }
 
-@keyframes confetti-fall {
-  0% {
-    opacity: 0;
-    transform: translate3d(var(--confetti-x-start, 0px), -10vh, 0) rotate(0deg);
-  }
-  5% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(var(--confetti-x-end, 0px), 110vh, 0)
-      rotate(var(--confetti-rotate, 720deg));
-  }
-}
-
 @keyframes poker-spin {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* glass card utility */
+@utility glass-card {
+  background: oklch(1 0 0 / 60%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 20%);
+  box-shadow:
+    0 4px 24px oklch(0 0 0 / 4%),
+    0 1px 2px oklch(0 0 0 / 3%);
+}
+
+@utility dark-glass-card {
+  background: oklch(0.2 0 0 / 50%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 8%);
+  box-shadow:
+    0 4px 24px oklch(0 0 0 / 20%),
+    0 1px 2px oklch(0 0 0 / 10%);
+}
+
+@utility glass-inner {
+  background: oklch(1 0 0 / 40%);
+  border: 1px solid oklch(1 0 0 / 15%);
+}
+
+@utility dark-glass-inner {
+  background: oklch(1 0 0 / 5%);
+  border: 1px solid oklch(1 0 0 / 6%);
 }

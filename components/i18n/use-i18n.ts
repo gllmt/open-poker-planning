@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext } from 'react';
+import { useCallback, useContext } from 'react';
 
 import { I18nContext } from '@/lib/i18n/context';
 
@@ -35,10 +35,13 @@ export function useI18n() {
   }
   const { locale, dictionary } = context;
 
-  const t = (key: string, values?: InterpolationValues) => {
-    const resolved = resolveKey(dictionary as DictionaryValue, key);
-    return interpolate(resolved, values);
-  };
+  const t = useCallback(
+    (key: string, values?: InterpolationValues) => {
+      const resolved = resolveKey(dictionary as DictionaryValue, key);
+      return interpolate(resolved, values);
+    },
+    [dictionary]
+  );
 
   return { locale, t };
 }

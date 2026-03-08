@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getPlayerGamesFromCache } from '@/lib/browser-storage';
+import { createInvite } from '@/lib/api/games';
 import { withLocale } from '@/lib/i18n/paths';
 import { isModerator } from '@/lib/is-moderator';
 import type { Game, TimerProps } from '@/types/game';
@@ -44,6 +44,7 @@ export function GameController({
   onTimerUpdate,
   onAutoReveal,
   onDeleteGame,
+  onLeaveGame,
 }: {
   game: Game;
   players: Player[];
@@ -54,10 +55,10 @@ export function GameController({
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
   onDeleteGame: () => Promise<void>;
+  onLeaveGame: () => Promise<void>;
 }) {
   const router = useRouter();
   const { locale, t } = useI18n();
-  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const baseAutoReveal = game.autoReveal ?? false;
   const [autoRevealValue, setAutoRevealValue] = useState(baseAutoReveal);
   const [autoRevealPending, setAutoRevealPending] = useState(false);
@@ -69,11 +70,6 @@ export function GameController({
     game.isAllowMembersToManageSession
   );
 
-  const joinToken = useMemo(
-    () => getPlayerGamesFromCache().find((g) => g.id === game.id)?.joinToken,
-    [game.id]
-  );
-
   const averageValue = useGameAverage(game, players);
   const canShowAverage = averageValue !== null;
   const averageLabel =
@@ -82,21 +78,34 @@ export function GameController({
       : '-';
 
   const copyInviteLink = async () => {
-    if (!joinToken) {
-      window.alert(t('game.inviteNoToken'));
+    let inviteLink = '';
+
+    try {
+      const { token } = await createInvite(game.id, currentPlayerId);
+      inviteLink = `${window.location.origin}${withLocale(
+        `/join/${game.id}`,
+        locale
+      )}?token=${token}`;
+    } catch {
+      sileo.info({
+        title: t('game.inviteNoToken'),
+        position: 'top-center',
+      });
       return;
     }
-
-    const inviteLink = `${window.location.origin}${withLocale(
-      `/join/${game.id}`,
-      locale
-    )}?token=${joinToken}`;
 
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(inviteLink);
-        setShowCopiedMessage(true);
-        setTimeout(() => setShowCopiedMessage(false), 5000);
+        sileo.action({
+          title: t('game.inviteCopied'),
+          duration: 8000,
+          button: {
+            title: t('game.openInvite'),
+            onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
+          },
+          position: 'top-center',
+        });
         return;
       }
     } catch {}
@@ -117,13 +126,28 @@ export function GameController({
       document.body.removeChild(textarea);
 
       if (ok) {
-        setShowCopiedMessage(true);
-        setTimeout(() => setShowCopiedMessage(false), 5000);
+        sileo.action({
+          title: t('game.inviteCopied'),
+          duration: 8000,
+          button: {
+            title: t('game.openInvite'),
+            onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
+          },
+          position: 'top-center',
+        });
         return;
       }
     } catch {}
 
-    window.prompt(t('game.invitePrompt'), inviteLink);
+    sileo.action({
+      title: t('game.invitePrompt'),
+      duration: 10000,
+      button: {
+        title: t('game.openInvite'),
+        onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
+      },
+      position: 'top-center',
+    });
   };
 
   const handleAutoReveal = useCallback(
@@ -166,7 +190,14 @@ export function GameController({
     autoRevealValue,
     baseAutoReveal,
   ]);
-  const leaveGame = () => router.push(withLocale('/', locale));
+  const leaveGame = () => {
+    void onLeaveGame().catch(() => {
+      sileo.info({
+        title: t('game.leaveFailed'),
+        position: 'top-center',
+      });
+    });
+  };
 
   const handleRemoveGame = async () => {
     const confirm = window.confirm(t('game.confirmDelete'));
@@ -179,18 +210,18 @@ export function GameController({
 
   return (
     <div className="flex flex-col items-center w-full md:w-[450px]">
-      <Card className="w-full max-w-xl my-5 gap-0 py-0">
-        <CardHeader className="border-border flex flex-wrap items-center gap-3 border-b px-4 py-3">
-          <CardTitle className="text-lg font-semibold truncate grow">
-            {game.name}
-          </CardTitle>
-          <span className="text-sm font-medium">
+      <div className="w-full max-w-xl my-5 glass-card dark:dark-glass-card rounded-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border/40 px-5 py-3.5">
+          <h2 className="text-lg font-semibold truncate grow">{game.name}</h2>
+          <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
             {getStatusLabel(game.gameStatus, t)}{' '}
             {getGameStatusIcon(game.gameStatus)}
           </span>
-        </CardHeader>
+        </div>
 
-        <CardContent className="px-4 pb-4 pt-3">
+        {/* Body */}
+        <div className="px-5 pb-5 pt-4">
           <div className="pb-3">
             <Timer
               timerProps={timerProps}
@@ -211,7 +242,7 @@ export function GameController({
             </div>
           )}
 
-          <div className="flex flex-wrap justify-center gap-6 pb-2">
+          <div className="flex flex-wrap justify-center gap-5 pb-2">
             {isMod && (
               <>
                 <ControllerButton
@@ -252,13 +283,6 @@ export function GameController({
             >
               <Share className="size-5" aria-hidden="true" />
             </ControllerButton>
-
-            {/* TODO: Add story editor for new feature with story history soon! */}
-            {/* <StoryEditor
-              gameId={game.id}
-              playerId={currentPlayerId}
-              storyName={game.storyName ?? ''}
-            /> */}
           </div>
           <ResultsSection
             game={game}
@@ -266,24 +290,9 @@ export function GameController({
             averageLabel={averageLabel}
             showAverage={canShowAverage}
           />
-        </CardContent>
-      </Card>
-
-      {showCopiedMessage && (
-        <div className="fixed top-6 right-6 z-50">
-          <div
-            className="bg-card border-border text-card-foreground shadow-lg px-4 py-3 text-xs rounded-xl ring-1 ring-foreground/10"
-            role="alert"
-          >
-            <span className="block font-semibold">
-              {t('game.inviteCopied')}
-            </span>
-          </div>
         </div>
-      )}
-      {confettiSeed ? (
-        <ConfettiOverlay key={confettiSeed} seed={confettiSeed} />
-      ) : null}
+      </div>
+      {confettiSeed ? <ConfettiOverlay key={confettiSeed} /> : null}
     </div>
   );
 }
@@ -300,19 +309,19 @@ function ControllerButton({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center gap-1.5">
       <Button
         type="button"
         aria-label={label}
         onClick={onClick}
-        className="rounded-full"
+        className="rounded-xl hover:shadow-md active:scale-[0.95] transition-all duration-150"
         title={label}
         size="icon"
         variant={variant}
       >
         <span className="text-2xl">{children}</span>
       </Button>
-      <span className="text-muted-foreground text-xs mt-1">{label}</span>
+      <span className="text-muted-foreground text-xs">{label}</span>
     </div>
   );
 }

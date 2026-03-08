@@ -4,12 +4,27 @@ import type { Game } from '../types/game';
 import type { Player } from '../types/player';
 import { Status } from '../types/status';
 import type { Doc } from './_generated/dataModel';
-import { type DatabaseReader, mutation, query } from './_generated/server';
+import {
+  type DatabaseReader,
+  type MutationCtx,
+  mutation,
+  query,
+} from './_generated/server';
 
 const STATUS = Status;
+const MEMBERSHIP = {
+  Active: 'active',
+  Left: 'left',
+  Removed: 'removed',
+} as const;
+
+type MembershipStatus = (typeof MEMBERSHIP)[keyof typeof MEMBERSHIP];
+type ViewerRevokedReason = 'left' | 'missing-session' | 'removed';
 
 type GameDoc = Doc<'games'>;
 type PlayerDoc = Doc<'players'>;
+type GameInviteDoc = Doc<'gameInvites'>;
+type DbReaderCtx = { db: DatabaseReader };
 
 const resetTimerProps = (timerProps: unknown) => {
   if (timerProps === undefined) return undefined;
@@ -22,28 +37,15 @@ const resetTimerProps = (timerProps: unknown) => {
   };
 };
 
-type DbReaderCtx = { db: DatabaseReader };
-
-async function getGameByGameId(ctx: DbReaderCtx, gameId: string) {
-  const results = (await ctx.db
-    .query('games')
-    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
-    .collect()) as GameDoc[];
-  return results[0] ?? null;
+function getMembershipStatus(player: PlayerDoc): MembershipStatus {
+  return (
+    (player.membershipStatus as MembershipStatus | undefined) ??
+    MEMBERSHIP.Active
+  );
 }
 
-async function getPlayerByGameAndPlayerId(
-  ctx: DbReaderCtx,
-  gameId: string,
-  playerId: string
-) {
-  const results = (await ctx.db
-    .query('players')
-    .withIndex('by_gameId_playerId', (q) =>
-      q.eq('gameId', gameId).eq('playerId', playerId)
-    )
-    .collect()) as PlayerDoc[];
-  return results[0] ?? null;
+function isActivePlayer(player: PlayerDoc) {
+  return getMembershipStatus(player) === MEMBERSHIP.Active;
 }
 
 function sanitizeGame(game: GameDoc): Game {
@@ -77,6 +79,100 @@ function sanitizePlayer(player: PlayerDoc): Player {
   };
 }
 
+async function getGameByGameId(ctx: DbReaderCtx, gameId: string) {
+  const results = (await ctx.db
+    .query('games')
+    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
+    .collect()) as GameDoc[];
+  return results[0] ?? null;
+}
+
+async function getPlayersByGameId(ctx: DbReaderCtx, gameId: string) {
+  return (await ctx.db
+    .query('players')
+    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
+    .collect()) as PlayerDoc[];
+}
+
+async function getActivePlayersByGameId(ctx: DbReaderCtx, gameId: string) {
+  return (await getPlayersByGameId(ctx, gameId))
+    .filter(isActivePlayer)
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function getPlayerByGameAndPlayerId(
+  ctx: DbReaderCtx,
+  gameId: string,
+  playerId: string
+) {
+  const results = (await ctx.db
+    .query('players')
+    .withIndex('by_gameId_playerId', (q) =>
+      q.eq('gameId', gameId).eq('playerId', playerId)
+    )
+    .collect()) as PlayerDoc[];
+  return results[0] ?? null;
+}
+
+async function getPlayerByGameAndPlayerTokenHash(
+  ctx: DbReaderCtx,
+  gameId: string,
+  playerTokenHash: string
+) {
+  const results = (await ctx.db
+    .query('players')
+    .withIndex('by_gameId_playerTokenHash', (q) =>
+      q.eq('gameId', gameId).eq('playerTokenHash', playerTokenHash)
+    )
+    .collect()) as PlayerDoc[];
+  return results[0] ?? null;
+}
+
+async function getInvitesByGameId(ctx: DbReaderCtx, gameId: string) {
+  return (await ctx.db
+    .query('gameInvites')
+    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
+    .collect()) as GameInviteDoc[];
+}
+
+async function hasValidInviteToken(
+  ctx: DbReaderCtx,
+  game: GameDoc,
+  tokenHash: string
+) {
+  const invites = await getInvitesByGameId(ctx, game.gameId);
+  if (invites.length === 0) {
+    return tokenHash === game.joinTokenHash;
+  }
+
+  return invites.some(
+    (invite) => invite.tokenHash === tokenHash && invite.revokedAt === null
+  );
+}
+
+async function revokeActiveInvites(
+  ctx: MutationCtx,
+  gameId: string,
+  revokedReason: string,
+  revokedAt: number
+) {
+  const invites = (await ctx.db
+    .query('gameInvites')
+    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
+    .collect()) as GameInviteDoc[];
+
+  await Promise.all(
+    invites
+      .filter((invite) => invite.revokedAt === null)
+      .map((invite) =>
+        ctx.db.patch(invite._id, {
+          revokedAt,
+          revokedReason,
+        })
+      )
+  );
+}
+
 async function assertCanManage(
   ctx: DbReaderCtx,
   game: GameDoc,
@@ -87,13 +183,98 @@ async function assertCanManage(
   if (adminTokenHash && adminTokenHash === game.adminTokenHash) return true;
   if (!game.isAllowMembersToManageSession) return false;
   if (!callerPlayerId || !playerTokenHash) return false;
+
   const caller = await getPlayerByGameAndPlayerId(
     ctx,
     game.gameId,
     callerPlayerId
   );
-  return Boolean(caller && caller.playerTokenHash === playerTokenHash);
+
+  return Boolean(
+    caller &&
+      isActivePlayer(caller) &&
+      caller.playerTokenHash === playerTokenHash
+  );
 }
+
+async function assertCanCreateInvite(
+  ctx: DbReaderCtx,
+  game: GameDoc,
+  playerId: string,
+  playerTokenHash: string,
+  adminTokenHash?: string | null
+) {
+  if (adminTokenHash && adminTokenHash === game.adminTokenHash) return true;
+
+  const caller = await getPlayerByGameAndPlayerId(ctx, game.gameId, playerId);
+
+  return Boolean(
+    caller &&
+      isActivePlayer(caller) &&
+      caller.playerTokenHash === playerTokenHash
+  );
+}
+
+async function getViewerState(
+  ctx: DbReaderCtx,
+  gameId: string,
+  playerTokenHash: string
+): Promise<
+  | {
+      type: 'not_found';
+    }
+  | {
+      type: 'revoked';
+      reason: ViewerRevokedReason;
+    }
+  | {
+      type: 'ready';
+      currentPlayerId: string;
+      game: Game;
+      players: Player[];
+    }
+> {
+  const game = await getGameByGameId(ctx, gameId);
+  if (!game) {
+    return { type: 'not_found' };
+  }
+
+  const viewer = await getPlayerByGameAndPlayerTokenHash(
+    ctx,
+    gameId,
+    playerTokenHash
+  );
+  if (!viewer) {
+    return { type: 'revoked', reason: 'missing-session' };
+  }
+
+  const membershipStatus = getMembershipStatus(viewer);
+  if (membershipStatus === MEMBERSHIP.Left) {
+    return { type: 'revoked', reason: 'left' };
+  }
+  if (membershipStatus === MEMBERSHIP.Removed) {
+    return { type: 'revoked', reason: 'removed' };
+  }
+
+  const players = await getActivePlayersByGameId(ctx, gameId);
+
+  return {
+    type: 'ready',
+    currentPlayerId: viewer.playerId,
+    game: sanitizeGame(game),
+    players: players.map(sanitizePlayer),
+  };
+}
+
+export const getViewerGameState = query({
+  args: {
+    gameId: v.string(),
+    playerTokenHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return getViewerState(ctx, args.gameId, args.playerTokenHash);
+  },
+});
 
 export const getGameState = query({
   args: {
@@ -107,8 +288,9 @@ export const getGameState = query({
     if (!game) throw new Error('NOT_FOUND');
 
     let authorized = false;
-    if (args.joinTokenHash && args.joinTokenHash === game.joinTokenHash) {
-      authorized = true;
+
+    if (args.joinTokenHash) {
+      authorized = await hasValidInviteToken(ctx, game, args.joinTokenHash);
     }
 
     if (!authorized && args.playerId && args.playerTokenHash) {
@@ -117,19 +299,19 @@ export const getGameState = query({
         args.gameId,
         args.playerId
       );
-      if (player && player.playerTokenHash === args.playerTokenHash) {
+
+      if (
+        player &&
+        isActivePlayer(player) &&
+        player.playerTokenHash === args.playerTokenHash
+      ) {
         authorized = true;
       }
     }
 
     if (!authorized) throw new Error('UNAUTHORIZED');
 
-    const players = (await ctx.db
-      .query('players')
-      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
-      .collect()) as PlayerDoc[];
-
-    players.sort((a, b) => a.createdAt - b.createdAt);
+    const players = await getActivePlayersByGameId(ctx, args.gameId);
 
     return {
       game: sanitizeGame(game),
@@ -153,6 +335,7 @@ export const createGame = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+
     await ctx.db.insert('games', {
       gameId: args.gameId,
       name: args.name,
@@ -176,12 +359,55 @@ export const createGame = mutation({
       gameId: args.gameId,
       name: args.createdBy,
       status: STATUS.NotStarted,
+      membershipStatus: MEMBERSHIP.Active,
       value: 0,
       emoji: null,
       createdAt: now,
       updatedAt: now,
       playerTokenHash: args.playerTokenHash,
     });
+
+    await ctx.db.insert('gameInvites', {
+      gameId: args.gameId,
+      tokenHash: args.joinTokenHash,
+      createdByPlayerId: args.createdById,
+      createdAt: now,
+      revokedAt: null,
+    });
+  },
+});
+
+export const createInvite = mutation({
+  args: {
+    gameId: v.string(),
+    tokenHash: v.string(),
+    createdByPlayerId: v.string(),
+    playerTokenHash: v.string(),
+    adminTokenHash: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const game = await getGameByGameId(ctx, args.gameId);
+    if (!game) throw new Error('NOT_FOUND');
+
+    const authorized = await assertCanCreateInvite(
+      ctx,
+      game,
+      args.createdByPlayerId,
+      args.playerTokenHash,
+      args.adminTokenHash ?? null
+    );
+    if (!authorized) throw new Error('UNAUTHORIZED');
+
+    const now = Date.now();
+    await ctx.db.insert('gameInvites', {
+      gameId: args.gameId,
+      tokenHash: args.tokenHash,
+      createdByPlayerId: args.createdByPlayerId,
+      createdAt: now,
+      revokedAt: null,
+    });
+
+    await ctx.db.patch(game._id, { updatedAt: now });
   },
 });
 
@@ -196,7 +422,13 @@ export const joinGame = mutation({
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
     if (!game) throw new Error('NOT_FOUND');
-    if (args.joinTokenHash !== game.joinTokenHash) {
+
+    const hasValidInvite = await hasValidInviteToken(
+      ctx,
+      game,
+      args.joinTokenHash
+    );
+    if (!hasValidInvite) {
       throw new Error('INVALID_INVITE');
     }
 
@@ -206,6 +438,7 @@ export const joinGame = mutation({
       gameId: args.gameId,
       name: args.playerName,
       status: STATUS.NotStarted,
+      membershipStatus: MEMBERSHIP.Active,
       value: 0,
       emoji: null,
       createdAt: now,
@@ -213,6 +446,41 @@ export const joinGame = mutation({
       playerTokenHash: args.playerTokenHash,
     });
 
+    await ctx.db.patch(game._id, { updatedAt: now });
+  },
+});
+
+export const leaveGame = mutation({
+  args: {
+    gameId: v.string(),
+    playerId: v.string(),
+    playerTokenHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await getGameByGameId(ctx, args.gameId);
+    if (!game) throw new Error('NOT_FOUND');
+
+    const player = await getPlayerByGameAndPlayerId(
+      ctx,
+      args.gameId,
+      args.playerId
+    );
+    if (
+      !player ||
+      !isActivePlayer(player) ||
+      player.playerTokenHash !== args.playerTokenHash
+    ) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(player._id, {
+      membershipStatus: MEMBERSHIP.Left,
+      status: STATUS.NotStarted,
+      value: 0,
+      emoji: null,
+      updatedAt: now,
+    });
     await ctx.db.patch(game._id, { updatedAt: now });
   },
 });
@@ -234,7 +502,11 @@ export const vote = mutation({
       args.gameId,
       args.playerId
     );
-    if (!player || player.playerTokenHash !== args.playerTokenHash) {
+    if (
+      !player ||
+      !isActivePlayer(player) ||
+      player.playerTokenHash !== args.playerTokenHash
+    ) {
       throw new Error('UNAUTHORIZED');
     }
 
@@ -252,14 +524,13 @@ export const vote = mutation({
 
     let nextStatus: Status = STATUS.InProgress;
     if (game.autoReveal) {
-      const players = (await ctx.db
-        .query('players')
-        .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
-        .collect()) as PlayerDoc[];
+      const players = await getActivePlayersByGameId(ctx, args.gameId);
       const allFinished =
         players.length > 0 &&
-        players.every((p) =>
-          p.playerId === args.playerId ? true : p.status === STATUS.Finished
+        players.every((entry) =>
+          entry.playerId === args.playerId
+            ? true
+            : entry.status === STATUS.Finished
         );
       if (allFinished) nextStatus = STATUS.Finished;
     }
@@ -337,16 +608,13 @@ export const reset = mutation({
       updatedAt: now,
     });
 
-    const players = (await ctx.db
-      .query('players')
-      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
-      .collect()) as PlayerDoc[];
-
+    const players = await getActivePlayersByGameId(ctx, args.gameId);
     await Promise.all(
       players.map((player) =>
         ctx.db.patch(player._id, {
           status: STATUS.NotStarted,
           value: 0,
+          emoji: null,
           updatedAt: now,
         })
       )
@@ -370,7 +638,11 @@ export const updateStory = mutation({
       args.gameId,
       args.callerPlayerId
     );
-    if (!player || player.playerTokenHash !== args.playerTokenHash) {
+    if (
+      !player ||
+      !isActivePlayer(player) ||
+      player.playerTokenHash !== args.playerTokenHash
+    ) {
       throw new Error('UNAUTHORIZED');
     }
 
@@ -469,7 +741,14 @@ export const removePlayer = mutation({
     if (!target) throw new Error('NOT_FOUND');
 
     const now = Date.now();
-    await ctx.db.delete(target._id);
+    await ctx.db.patch(target._id, {
+      membershipStatus: MEMBERSHIP.Removed,
+      status: STATUS.NotStarted,
+      value: 0,
+      emoji: null,
+      updatedAt: now,
+    });
+    await revokeActiveInvites(ctx, args.gameId, 'player_removed', now);
     await ctx.db.patch(game._id, { updatedAt: now });
   },
 });
@@ -494,12 +773,11 @@ export const deleteGame = mutation({
     );
     if (!authorized) throw new Error('UNAUTHORIZED');
 
-    const players = (await ctx.db
-      .query('players')
-      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
-      .collect()) as PlayerDoc[];
+    const players = await getPlayersByGameId(ctx, args.gameId);
+    const invites = await getInvitesByGameId(ctx, args.gameId);
 
     await Promise.all(players.map((player) => ctx.db.delete(player._id)));
+    await Promise.all(invites.map((invite) => ctx.db.delete(invite._id)));
     await ctx.db.delete(game._id);
   },
 });

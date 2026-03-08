@@ -65,7 +65,10 @@
     "inviteTokenPlaceholder": "Collez le jeton du lien d'invitation",
     "yourName": "Votre nom",
     "yourNamePlaceholder": "Entrez votre nom",
-    "errorJoinFailed": "Impossible de rejoindre la session."
+    "errorJoinFailed": "Impossible de rejoindre la session.",
+    "leftSession": "Vous avez quitté la partie.",
+    "sessionExpired": "Votre session n'est plus valide pour cette partie.",
+    "removedFromGame": "Vous avez été retiré de la partie par le créateur de la session."
   },
   "cardPicker": {
     "cta": "Cliquez sur la carte pour voter",
@@ -85,17 +88,19 @@
       "inProgress": "Session en cours de vote",
       "finished": "Session terminée"
     },
-    "inviteNoToken": "Aucun jeton d'invitation disponible sur cet appareil. Utilisez celui du lien d'invitation d'origine.",
+    "inviteNoToken": "Impossible de générer un nouveau lien d'invitation pour le moment.",
     "inviteCopied": "Lien d'invitation copié dans le presse-papiers !",
-    "invitePrompt": "Copiez ce lien d'invitation :",
+    "invitePrompt": "Copie automatique impossible. Utilisez ce lien d'invitation :",
+    "openInvite": "Ouvrir le lien",
     "confirmDelete": "Etes-vous sur ? Cette action supprimera cette session et tous les joueurs.",
-    "reveal": "Révéler",
+    "reveal": "Voir les votes",
     "restart": "Recommencer",
     "delete": "Supprimer",
     "exit": "Quitter",
+    "leaveFailed": "Impossible de quitter la partie pour le moment.",
     "invite": "Inviter",
-    "autoReveal": "Révéler automatiquement",
-    "autoRevealHint": "Révéler automatiquement quand tous les joueurs ont voté",
+    "autoReveal": "Voir les votes automatiquement",
+    "autoRevealHint": "Voir les votes automatiquement quand tous les joueurs ont voté",
     "gameNotFound": "Session introuvable",
     "voteFailed": "Impossible de voter."
   },
@@ -135,6 +140,12 @@
     "empty": "Aucune session récente trouvée",
     "name": "Nom",
     "createdBy": "Créé par"
+  },
+  "notFound": {
+    "eyebrow": "Page introuvable",
+    "title": "Oups, cette page n'existe pas",
+    "description": "La page que vous recherchez a peut-être été déplacée, supprimée, ou le lien est incorrect.",
+    "backHome": "Retour à l'accueil"
   },
   "access": {
     "title": "Accès requis",

@@ -65,7 +65,10 @@
     "inviteTokenPlaceholder": "Paste the token from the invite link",
     "yourName": "Your Name",
     "yourNamePlaceholder": "Enter your name",
-    "errorJoinFailed": "Failed to join session"
+    "errorJoinFailed": "Failed to join session",
+    "leftSession": "You left the game.",
+    "sessionExpired": "Your session is no longer valid for this game.",
+    "removedFromGame": "You were removed from the game by the session creator."
   },
   "cardPicker": {
     "cta": "Click on the card to vote",
@@ -85,14 +88,16 @@
       "inProgress": "In progress",
       "finished": "Finished"
     },
-    "inviteNoToken": "No invite token available on this device. Use the one from the original invite link.",
+    "inviteNoToken": "Unable to generate a new invite link right now.",
     "inviteCopied": "Invite link copied to clipboard!",
-    "invitePrompt": "Copy this invite link:",
+    "invitePrompt": "Automatic copy failed. Use this invite link:",
+    "openInvite": "Open link",
     "confirmDelete": "Are you sure? This will delete this session and remove all players.",
     "reveal": "Reveal",
     "restart": "Restart",
     "delete": "Delete",
     "exit": "Exit",
+    "leaveFailed": "Unable to leave the game right now.",
     "invite": "Invite",
     "autoReveal": "Auto Reveal",
     "autoRevealHint": "Auto Reveal when all members finished voting",
@@ -135,6 +140,12 @@
     "empty": "No recent sessions found",
     "name": "Name",
     "createdBy": "Created By"
+  },
+  "notFound": {
+    "eyebrow": "Page not found",
+    "title": "Oops, this page doesn't exist",
+    "description": "The page you're looking for might have been moved, deleted, or maybe the link is broken.",
+    "backHome": "Back to home"
   },
   "access": {
     "title": "Access required",

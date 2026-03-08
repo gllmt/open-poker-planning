@@ -1,10 +1,16 @@
+import { fetchQuery } from 'convex/nextjs';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { JoinGame } from '@/components/poker/join-game';
 import { Loading } from '@/components/ui/loading';
+import { api } from '@/convex/_generated/api';
 import { i18n, isLocale } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { cookieNames } from '@/lib/security/cookies';
+import { hashToken } from '@/lib/security/tokens';
 
 export const metadata: Metadata = {
   robots: {
@@ -25,6 +31,7 @@ export default async function JoinGamePage({
 }: {
   params: Promise<{ lang: string; id: string }>;
   searchParams: Promise<{
+    reason?: string | string[];
     token?: string | string[];
   }>;
 }) {
@@ -33,6 +40,32 @@ export default async function JoinGamePage({
   const dictionary = await getDictionary(locale);
   const resolvedSearchParams = await searchParams;
   const initialInviteToken = readSearchParam(resolvedSearchParams?.token) ?? '';
+  let initialReason = readSearchParam(resolvedSearchParams?.reason) as
+    | 'left'
+    | 'missing-session'
+    | 'removed'
+    | undefined;
+
+  if (!initialReason) {
+    const cookieStore = await cookies();
+    const playerToken = cookieStore.get(cookieNames.playerToken(id))?.value;
+
+    if (playerToken) {
+      const viewerState = await fetchQuery(api.games.getViewerGameState, {
+        gameId: id,
+        playerTokenHash: hashToken(playerToken),
+      });
+
+      if (viewerState.type === 'ready') {
+        redirect(`/${locale}/game/${id}`);
+      }
+
+      if (viewerState.type === 'revoked') {
+        initialReason = viewerState.reason;
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col items-center w-full py-8 flex-1 px-4">
       <div className="w-full max-w-5xl flex justify-center">
@@ -48,6 +81,7 @@ export default async function JoinGamePage({
             <JoinGame
               initialGameId={id}
               initialInviteToken={initialInviteToken}
+              initialReason={initialReason}
             />
           </Suspense>
         </div>
