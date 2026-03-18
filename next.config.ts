@@ -11,6 +11,8 @@ const convexOrigin = convexUrl ? new URL(convexUrl).origin : null;
 const convexWsOrigin = convexOrigin
   ? convexOrigin.replace(/^http/, "ws")
   : null;
+const posthogUrl = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+const posthogOrigin = posthogUrl ? new URL(posthogUrl).origin : null;
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -33,6 +35,7 @@ const contentSecurityPolicy = [
     convexWsOrigin,
     "https://*.convex.cloud",
     "wss://*.convex.cloud",
+    posthogOrigin,
   ]
     .filter(Boolean)
     .join(" "),

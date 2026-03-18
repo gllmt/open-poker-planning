@@ -1,5 +1,6 @@
 'use client';
 
+import { usePostHog } from '@posthog/next';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useReducer } from 'react';
 import { sileo } from 'sileo';
@@ -84,6 +85,7 @@ export function JoinGame({
   initialInviteToken?: string;
   initialReason?: 'left' | 'missing-session' | 'removed';
 }) {
+  const posthog = usePostHog();
   const router = useRouter();
   const { locale, t } = useI18n();
   const [state, dispatch] = useReducer(
@@ -139,6 +141,13 @@ export function JoinGame({
         joinToken: state.inviteToken,
         joinTokenHash,
         playerTokenHash,
+      });
+
+      posthog.capture('planning_poker_game_joined', {
+        game_id: state.joinGameId,
+        join_source: initialGameId ? 'invite_link' : 'manual',
+        locale,
+        reason: initialReason ?? 'none',
       });
 
       router.push(withLocale(`/game/${state.joinGameId}`, locale));

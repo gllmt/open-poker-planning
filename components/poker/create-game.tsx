@@ -1,5 +1,6 @@
 'use client';
 
+import { usePostHog } from '@posthog/next';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useReducer } from 'react';
 
@@ -114,6 +115,7 @@ function createGameReducer(
 }
 
 export function CreateGame() {
+  const posthog = usePostHog();
   const router = useRouter();
   const { locale, t } = useI18n();
 
@@ -182,6 +184,14 @@ export function CreateGame() {
         playerTokenHash,
         adminTokenHash,
         isAllowMembersToManageSession: state.allowMembersToManageSession,
+      });
+
+      posthog.capture('planning_poker_game_created', {
+        cards_count: payload.cards.length,
+        game_id: gameId,
+        game_type: state.gameType,
+        has_member_session_controls: state.allowMembersToManageSession,
+        locale,
       });
 
       router.push(withLocale(`/game/${gameId}`, locale));
