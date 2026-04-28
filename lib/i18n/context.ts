@@ -5,7 +5,7 @@ import { createContext } from 'react';
 import type { Locale } from './config';
 import type { Dictionary } from './dictionaries';
 
-export type I18nContextValue = {
+type I18nContextValue = {
   locale: Locale;
   dictionary: Dictionary;
 };

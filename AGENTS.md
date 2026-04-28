@@ -7,17 +7,18 @@
 - `lib/`: shared utilities:
   - `lib/api/`: browser fetch wrappers for `/api/**`.
   - `lib/security/`: token + cookie helpers (server-only).
-  - `lib/supabase/`: Supabase clients (service role on server) + Realtime broadcast.
-- `supabase/schema.sql`: Postgres schema (Phase 1 uses `games` + `players`).
+  - `lib/convex/`: Convex error helpers.
+- `convex/`: Convex schema, queries, and mutations.
 - `public/`: static assets (e.g. `public/timer-notification.mp3`).
 
 ## Build, Test, and Development Commands
 
 - Install: `pnpm install`
 - Dev: `pnpm dev` (runs Next.js locally)
-- Lint: `pnpm lint` (ESLint + `eslint-config-next`)
+- Lint: `pnpm lint` (Biome lint)
 - Build: `pnpm build` (typecheck + production build)
 - Start: `pnpm start` (serve the production build)
+- Test: `pnpm test` (Vitest)
 
 ## Coding Style & Naming Conventions
 
@@ -27,11 +28,12 @@
 
 ## Security & Configuration Tips
 
-- Copy `.env.example` to `.env.local`. `SUPABASE_SERVICE_ROLE_KEY` is **server-only** (never expose it to the client).
-- DB is intended to be private: RLS is enabled and there are no public policies; all DB access goes through Route Handlers using the service role key.
+- Copy `.env.example` to `.env.local`.
+- Convex is the source of truth for game state; client subscriptions use `NEXT_PUBLIC_CONVEX_URL`.
 - Access is token-based (no login): admin/player tokens are stored in HttpOnly cookies; invite token is required to join.
+- Route Handlers are used where server-generated tokens or cookies are required; gameplay state changes use Convex queries/mutations.
 
 ## Commit & Pull Request Guidelines
 
 - Current history is minimal (“Initial commit…”). Use clear, imperative subjects (optionally `feat:` / `fix:`).
-- PRs: describe behavior changes, include screenshots for UI changes, and ensure `pnpm lint` + `pnpm build` pass.
+- PRs: describe behavior changes, include screenshots for UI changes, and ensure `pnpm lint`, `pnpm test`, and `pnpm build` pass.

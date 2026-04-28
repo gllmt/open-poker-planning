@@ -69,7 +69,7 @@ export function getStoredTheme(): Theme | null {
   return isTheme(cookieValue) ? cookieValue : null;
 }
 
-export function getSystemTheme(): Theme {
+function getSystemTheme(): Theme {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
     return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -97,14 +97,8 @@ export function getPlayerGamesFromCache(): PlayerGame[] {
   }
 }
 
-export function updatePlayerGamesInCache(playerGames: PlayerGame[]) {
+function updatePlayerGamesInCache(playerGames: PlayerGame[]) {
   safeSetItem(PLAYER_GAMES_KEY, JSON.stringify(playerGames));
-}
-
-export function getCurrentPlayerId(gameId: string): string | undefined {
-  const games = getPlayerGamesFromCache();
-  const playerId = games.find((g) => g.id === gameId)?.playerId;
-  return playerId || undefined;
 }
 
 export function upsertPlayerGame(game: PlayerGame) {
@@ -127,11 +121,5 @@ export function clearPlayerGameSession(gameId: string) {
           }
         : game
     )
-  );
-}
-
-export function removePlayerGame(gameId: string) {
-  updatePlayerGamesInCache(
-    getPlayerGamesFromCache().filter((g) => g.id !== gameId)
   );
 }

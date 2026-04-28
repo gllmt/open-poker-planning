@@ -33,7 +33,7 @@ const isLegacyVariableCard = (color: string | undefined) => {
   return normalized.startsWith(legacyCardVarPrefix);
 };
 
-export const fibonacciCards: CardConfig[] = [
+const fibonacciCards: CardConfig[] = [
   { value: 0, displayValue: '0', color: palette.zero },
   { value: 1, displayValue: '1', color: palette.blue1 },
   { value: 2, displayValue: '2', color: palette.blue1 },
@@ -49,7 +49,7 @@ export const fibonacciCards: CardConfig[] = [
   { value: -1, displayValue: 'Coffee', color: palette.coffee },
 ];
 
-export const shortFibonacciCards: CardConfig[] = [
+const shortFibonacciCards: CardConfig[] = [
   { value: 0, displayValue: '0', color: palette.zero },
   { value: 0.5, displayValue: '½', color: palette.blue1 },
   { value: 1, displayValue: '1', color: palette.blue1 },
@@ -65,7 +65,7 @@ export const shortFibonacciCards: CardConfig[] = [
   { value: -1, displayValue: 'Coffee', color: palette.coffee },
 ];
 
-export const tShirtCards: CardConfig[] = [
+const tShirtCards: CardConfig[] = [
   { value: 10, displayValue: 'XXS', color: palette.xxs },
   { value: 20, displayValue: 'XS', color: palette.blue1 },
   { value: 30, displayValue: 'S', color: palette.blue1 },
@@ -77,7 +77,7 @@ export const tShirtCards: CardConfig[] = [
   { value: -1, displayValue: 'Coffee', color: palette.coffee },
 ];
 
-export const tShirtAndNumbersCards: CardConfig[] = [
+const tShirtAndNumbersCards: CardConfig[] = [
   { value: 10, displayValue: 'S', color: palette.blue1 },
   { value: 20, displayValue: 'M', color: palette.blue1 },
   { value: 30, displayValue: 'L', color: palette.blue2 },
@@ -89,7 +89,7 @@ export const tShirtAndNumbersCards: CardConfig[] = [
   { value: 90, displayValue: '5', color: palette.red1 },
 ];
 
-export const customCardsTemplate: CardConfig[] = [
+const customCardsTemplate: CardConfig[] = [
   { value: 0, displayValue: '0', color: palette.zero },
   { value: 1, displayValue: '1', color: palette.blue1 },
   { value: 2, displayValue: '2', color: palette.blue1 },
@@ -135,29 +135,6 @@ export const normalizeLegacyCards = (
     const fallback = defaults.find((entry) => entry.value === card.value);
     return fallback ? { ...card, color: fallback.color } : card;
   });
-};
-
-export const getRandomEmoji = () => {
-  const emojis = [
-    '☕',
-    '🥤',
-    '🍹',
-    '🍸',
-    '🍧',
-    '🍨',
-    '🍩',
-    '🍎',
-    '🧁',
-    '🍪',
-    '🍿',
-    '🌮',
-    '🍦',
-    '🍉',
-    '🍐',
-    '🍰',
-    '🍫',
-  ];
-  return emojis[Math.floor(Math.random() * emojis.length)];
 };
 
 export const getCustomCards = (values: string[]) => {

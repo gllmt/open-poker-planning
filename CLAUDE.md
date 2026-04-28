@@ -8,21 +8,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm install          # Install dependencies
 pnpm dev              # Start development server
 pnpm build            # TypeScript check + production build
-pnpm lint             # Run ESLint
-pnpm lints            # Full lint suite: Biome + ESLint + TypeScript
+pnpm lint             # Run Biome lint
+pnpm test             # Run Vitest tests
+pnpm lints            # Full lint suite: Biome + TypeScript
 pnpm biome:fix        # Auto-fix Biome issues
 pnpm format           # Format code with Biome
 ```
 
 ## Architecture
 
-Real-time planning poker app using **Next.js 16 App Router** + **Supabase** (Postgres + Realtime).
+Real-time planning poker app using **Next.js 16 App Router** + **Convex**.
 
 ### Tech Stack
 - **Frontend**: React 19, Tailwind CSS v4, Base UI, shadcn/ui, Lucide icons
-- **Backend**: Next.js Route Handlers (all in `app/api/games/**`)
-- **Database**: Supabase PostgreSQL with RLS (no public policies)
-- **Realtime**: Supabase Broadcast channels for game state sync
+- **Backend**: Convex queries/mutations plus Next.js Route Handlers for token and cookie flows
+- **Database/Realtime**: Convex
 - **i18n**: English (en) and French (fr) via `app/[lang]/` routes
 
 ### Key Directories
@@ -31,24 +31,24 @@ Real-time planning poker app using **Next.js 16 App Router** + **Supabase** (Pos
 - `components/poker/` - Domain components (Poker, GameArea, Players, Timer, Results)
 - `components/ui/` - Primitive UI components
 - `lib/security/` - Token generation, hashing, cookie management (server-only)
-- `lib/supabase/` - Supabase clients and broadcast logic
+- `lib/convex/` - Convex error helpers
 - `lib/api/` - Browser fetch wrappers for API calls
 - `types/` - TypeScript interfaces (Game, Player, Status, CardConfig)
-- `supabase/schema.sql` - PostgreSQL schema
+- `convex/` - Convex schema, queries, and mutations
 
 ### Security Model
 - **No login**: Token-based access only
 - **Tokens**: 256-bit random strings, SHA256 hashed before storage
 - **Cookies**: HttpOnly, Secure (prod), SameSite=Lax, 30-day expiry
-- **DB Access**: All queries via Service Role key in Route Handlers; clients never query Postgres directly
-- **Broadcasts**: Notify clients to refetch; payloads contain no sensitive data
+- **Data access**: Convex functions enforce token hashes and membership state
+- **Realtime**: Convex subscriptions keep game state synchronized
 
 ### Data Flow
 1. Game creation returns `joinToken` (share via URL) and `adminToken` (stored in cookie)
 2. Players join with invite token, receive `playerToken` in cookie
-3. API routes verify tokens against hashed values in DB
-4. State changes trigger Realtime broadcast → clients refetch via API
-5. Recent commits use `after()` for non-blocking broadcast execution
+3. Route Handlers verify token flows that need HttpOnly cookies
+4. Gameplay updates call Convex mutations with hashed credentials
+5. Convex subscriptions stream game state changes back to clients
 
 ## Coding Conventions
 

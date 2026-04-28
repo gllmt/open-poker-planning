@@ -1,15 +1,13 @@
 # TODO
 
-## Backend (Route Handlers)
-- [ ] Add lightweight logging in `after()` callbacks to avoid silent failures.
-  - Implementation: replace `.catch(() => {})` with `.catch((error) => console.error('Broadcast failed:', error))` in the 5 route handlers.
-  - Files: `app/api/games/[gameId]/auto-reveal/route.ts`, `app/api/games/[gameId]/reset/route.ts`, `app/api/games/[gameId]/reveal/route.ts`, `app/api/games/[gameId]/story/route.ts`, `app/api/games/[gameId]/timer/route.ts`.
-- [ ] (Optional) Evaluate `waitUntil()` for critical broadcasts.
-  - Implementation: use `event.waitUntil(broadcastPromise)` only if broadcasts must be guaranteed; otherwise keep `after()` for lowest latency.
+## Backend (Convex)
+- [ ] Add focused tests for token authorization in Convex mutations.
+  - Implementation: cover invalid invite tokens, removed members, and non-moderator management attempts.
+  - Files: test setup needed for `convex/games.ts`.
 
 ## Frontend (Optimistic UI)
 - [ ] Add visible error feedback for `autoReveal` failures.
-  - Implementation: display a small inline error below the toggle or show a toast when the API call fails and rollback occurs.
+  - Implementation: display a small inline error below the toggle or show a toast when the Convex mutation fails and rollback occurs.
   - File: `components/poker/game-controller/index.tsx`.
 - [ ] (Optional) Extract `useOptimisticToggle` hook for `autoReveal`.
   - Implementation: move `autoRevealValue`, `autoRevealPending`, `autoRevealPendingSync` logic into a reusable hook; return `{ value, pending, toggle }`.

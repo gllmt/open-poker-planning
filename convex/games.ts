@@ -622,38 +622,6 @@ export const reset = mutation({
   },
 });
 
-export const updateStory = mutation({
-  args: {
-    gameId: v.string(),
-    callerPlayerId: v.string(),
-    playerTokenHash: v.string(),
-    storyName: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
-
-    const player = await getPlayerByGameAndPlayerId(
-      ctx,
-      args.gameId,
-      args.callerPlayerId
-    );
-    if (
-      !player ||
-      !isActivePlayer(player) ||
-      player.playerTokenHash !== args.playerTokenHash
-    ) {
-      throw new Error('UNAUTHORIZED');
-    }
-
-    const now = Date.now();
-    await ctx.db.patch(game._id, {
-      storyName: args.storyName || null,
-      updatedAt: now,
-    });
-  },
-});
-
 export const updateTimer = mutation({
   args: {
     gameId: v.string(),

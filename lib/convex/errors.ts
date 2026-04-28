@@ -5,7 +5,7 @@ const KNOWN_CODES = new Set([
   'GAME_FINISHED',
 ]);
 
-export type ConvexErrorCode =
+type ConvexErrorCode =
   | 'NOT_FOUND'
   | 'UNAUTHORIZED'
   | 'INVALID_INVITE'

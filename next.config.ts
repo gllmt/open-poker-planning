@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
 
 const umamiHost = "https://umami.pierreguillemot.dev";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : null;
-const supabaseWsOrigin = supabaseOrigin
-  ? supabaseOrigin.replace(/^http/, "ws")
-  : null;
+const isDevelopment = process.env.NODE_ENV === "development";
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 const convexOrigin = convexUrl ? new URL(convexUrl).origin : null;
 const convexWsOrigin = convexOrigin
@@ -14,23 +10,27 @@ const convexWsOrigin = convexOrigin
 const posthogUrl = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 const posthogOrigin = posthogUrl ? new URL(posthogUrl).origin : null;
 
+const scriptSrc = [
+  "script-src",
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDevelopment ? ["'unsafe-eval'"] : []),
+  umamiHost,
+].join(" ");
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'self'",
   "object-src 'none'",
-  `script-src 'self' 'unsafe-inline' ${umamiHost}`,
+  scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://images.unsplash.com",
   "font-src 'self'",
   [
     "connect-src 'self'",
     umamiHost,
-    supabaseOrigin,
-    supabaseWsOrigin,
-    "https://*.supabase.co",
-    "wss://*.supabase.co",
     convexOrigin,
     convexWsOrigin,
     "https://*.convex.cloud",
