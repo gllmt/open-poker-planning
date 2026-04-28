@@ -1,16 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
-
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/loading';
-import { clearGameSession } from '@/lib/api/games';
-import { clearPlayerGameSession } from '@/lib/browser-storage';
-import { withLocale } from '@/lib/i18n/paths';
 
 import { GameArea } from './game-area';
+import { useSessionExitRedirect } from './hooks/use-session-exit-redirect';
 import { usePokerController } from './use-poker-controller';
 
 export function Poker({
@@ -24,37 +19,18 @@ export function Poker({
     playerTokenHash: string;
   };
 }) {
-  const router = useRouter();
   const { locale, t } = useI18n();
-  const hasHandledSessionExitRef = useRef(false);
   const controller = usePokerController({
     gameId,
     initialSession,
     translate: t,
   });
 
-  useEffect(() => {
-    if (!controller.sessionExitReason || hasHandledSessionExitRef.current) {
-      return;
-    }
-
-    hasHandledSessionExitRef.current = true;
-    clearPlayerGameSession(gameId);
-
-    const redirectTo =
-      controller.sessionExitReason === 'left'
-        ? withLocale('/', locale)
-        : withLocale(
-            `/join/${gameId}?reason=${controller.sessionExitReason}`,
-            locale
-          );
-
-    void clearGameSession(gameId)
-      .catch(() => {})
-      .finally(() => {
-        router.replace(redirectTo);
-      });
-  }, [controller.sessionExitReason, gameId, locale, router]);
+  useSessionExitRedirect({
+    gameId,
+    locale,
+    reason: controller.sessionExitReason,
+  });
 
   if (controller.loading) {
     return (

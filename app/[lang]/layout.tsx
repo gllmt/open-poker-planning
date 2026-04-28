@@ -25,6 +25,8 @@ export async function generateMetadata({
   const siteUrl = getSiteUrl();
   const canonicalPath = `/${locale}`;
   const canonicalUrl = new URL(canonicalPath, siteUrl).toString();
+  const ogImagePath = `/og-image-${locale}.jpg`;
+  const ogImageUrl = new URL(ogImagePath, siteUrl).toString();
   const languages = Object.fromEntries(
     i18n.locales.map((entry) => [entry, `/${entry}`] as const)
   ) as Record<string, string>;
@@ -50,10 +52,11 @@ export async function generateMetadata({
       description,
       images: [
         {
-          url: '/opengraph-image',
-          width: 1200,
-          height: 630,
+          url: ogImageUrl,
+          width: 2400,
+          height: 1260,
           alt: dictionary.meta.ogAlt,
+          type: 'image/jpeg',
         },
       ],
     },
@@ -61,7 +64,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['/opengraph-image'],
+      images: [ogImageUrl],
     },
   };
 }

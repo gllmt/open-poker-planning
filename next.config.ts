@@ -65,8 +65,20 @@ const securityHeaders = [
   },
 ];
 
+const ogImageCacheHeaders = [
+  {
+    key: "Cache-Control",
+    value: "public, max-age=86400, stale-while-revalidate=604800",
+  },
+];
+
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["192.168.1.10","192.168.1.20", "10.0.5.109", "10.0.5.88"],
+  allowedDevOrigins: [
+    "192.168.1.10",
+    "192.168.1.20",
+    "10.0.5.109",
+    "10.0.5.88",
+  ],
   poweredByHeader: false,
   images: {
     remotePatterns: [
@@ -78,6 +90,14 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/og-image-en.jpg",
+        headers: ogImageCacheHeaders,
+      },
+      {
+        source: "/og-image-fr.jpg",
+        headers: ogImageCacheHeaders,
+      },
       {
         source: "/:path*",
         headers: securityHeaders,
