@@ -17,7 +17,12 @@ export async function POST(
 ) {
   const { gameId } = await context.params;
   const body = (await request.json().catch(() => null)) as JoinBody | null;
-  if (!body?.playerName || !body?.token) {
+  if (
+    typeof body?.playerName !== 'string' ||
+    body.playerName === '' ||
+    typeof body?.token !== 'string' ||
+    body.token === ''
+  ) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
@@ -44,6 +49,9 @@ export async function POST(
         { error: 'Invalid invite token' },
         { status: 403 }
       );
+    }
+    if (code === 'INVALID_INPUT') {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
     return NextResponse.json({ error: 'Failed to join' }, { status: 500 });
   }

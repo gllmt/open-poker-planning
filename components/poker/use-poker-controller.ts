@@ -621,6 +621,7 @@ export function usePokerController({
     players: state.players,
     loading: state.loading,
     currentPlayerId: state.currentPlayerId,
+    isAdmin: Boolean(state.auth.adminTokenHash),
     voteError: state.voteError,
     confettiSeed: state.confettiSeed,
     queryError: state.queryError,

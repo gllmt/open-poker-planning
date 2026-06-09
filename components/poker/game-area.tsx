@@ -9,6 +9,7 @@ export function GameArea({
   game,
   players,
   currentPlayerId,
+  isAdmin,
   onVote,
   onReveal,
   onReset,
@@ -23,6 +24,7 @@ export function GameArea({
   game: Game;
   players: Player[];
   currentPlayerId: string;
+  isAdmin: boolean;
   onVote: (value: number, emoji?: string) => void;
   onReveal: () => void;
   onReset: () => void;
@@ -42,6 +44,7 @@ export function GameArea({
             game={game}
             players={players}
             currentPlayerId={currentPlayerId}
+            isAdmin={isAdmin}
             confettiSeed={confettiSeed}
             onReveal={onReveal}
             onReset={onReset}

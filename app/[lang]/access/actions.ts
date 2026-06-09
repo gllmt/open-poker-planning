@@ -5,18 +5,12 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
+import { sanitizeInternalPath } from '@/lib/security/safe-redirect';
 import { generateToken, safeEqual } from '@/lib/security/tokens';
 
 const ACCESS_COOKIE_NAME = 'pp_site_access';
 const ACCESS_COOKIE_VERSION = 'v1';
 const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
-
-function sanitizeNext(raw: unknown): string {
-  if (typeof raw !== 'string') return '/';
-  if (!raw.startsWith('/')) return '/';
-  if (raw.startsWith('//')) return '/';
-  return raw;
-}
 
 function sign(payload: string, secret: string): string {
   return createHmac('sha256', secret).update(payload).digest('base64url');
@@ -24,7 +18,7 @@ function sign(payload: string, secret: string): string {
 
 export async function submitAccessCode(formData: FormData) {
   const secret = process.env.SITE_ACCESS_CODE;
-  const nextPath = sanitizeNext(formData.get('next'));
+  const nextPath = sanitizeInternalPath(formData.get('next'));
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
   const locale = isLocale(cookieLocale) ? cookieLocale : i18n.defaultLocale;

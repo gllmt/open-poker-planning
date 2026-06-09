@@ -3,13 +3,17 @@ const KNOWN_CODES = new Set([
   'UNAUTHORIZED',
   'INVALID_INVITE',
   'GAME_FINISHED',
+  'INVALID_INPUT',
+  'TOO_MANY_INVITES',
 ]);
 
 type ConvexErrorCode =
   | 'NOT_FOUND'
   | 'UNAUTHORIZED'
   | 'INVALID_INVITE'
-  | 'GAME_FINISHED';
+  | 'GAME_FINISHED'
+  | 'INVALID_INPUT'
+  | 'TOO_MANY_INVITES';
 
 export function getConvexErrorCode(error: unknown): ConvexErrorCode | null {
   const message = error instanceof Error ? error.message : null;

@@ -38,6 +38,7 @@ export function GameController({
   game,
   players,
   currentPlayerId,
+  isAdmin,
   confettiSeed,
   onReveal,
   onReset,
@@ -49,6 +50,7 @@ export function GameController({
   game: Game;
   players: Player[];
   currentPlayerId: string;
+  isAdmin: boolean;
   confettiSeed?: string | null;
   onReveal: () => void;
   onReset: () => void;
@@ -259,14 +261,16 @@ export function GameController({
                 >
                   <RefreshCcw className="size-5" aria-hidden="true" />
                 </ControllerButton>
-                <ControllerButton
-                  onClick={handleRemoveGame}
-                  label={t('game.delete')}
-                  variant="destructive"
-                >
-                  <Trash className="size-5" aria-hidden="true" />
-                </ControllerButton>
               </>
+            )}
+            {isAdmin && (
+              <ControllerButton
+                onClick={handleRemoveGame}
+                label={t('game.delete')}
+                variant="destructive"
+              >
+                <Trash className="size-5" aria-hidden="true" />
+              </ControllerButton>
             )}
 
             <ControllerButton

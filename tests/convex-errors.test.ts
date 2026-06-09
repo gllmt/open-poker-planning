@@ -12,6 +12,12 @@ describe('getConvexErrorCode', () => {
     expect(getConvexErrorCode(new Error('GAME_FINISHED'))).toBe(
       'GAME_FINISHED'
     );
+    expect(getConvexErrorCode(new Error('INVALID_INPUT'))).toBe(
+      'INVALID_INPUT'
+    );
+    expect(getConvexErrorCode(new Error('TOO_MANY_INVITES'))).toBe(
+      'TOO_MANY_INVITES'
+    );
   });
 
   it('returns null for unknown or non-Error values', () => {

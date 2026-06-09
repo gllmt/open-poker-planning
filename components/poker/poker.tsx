@@ -70,6 +70,7 @@ export function Poker({
       game={controller.game}
       players={controller.players}
       currentPlayerId={controller.currentPlayerId}
+      isAdmin={controller.isAdmin}
       onVote={controller.onVote}
       onReveal={controller.onReveal}
       onReset={controller.onReset}
