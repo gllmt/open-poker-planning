@@ -80,23 +80,49 @@ describe('game type', () => {
 describe('assertCards', () => {
   const card = { value: 1, displayValue: '1', color: '#fff' };
 
-  it('accepts a well-formed deck', () => {
-    expect(() =>
-      assertCards([card, { value: -1, displayValue: '?' }])
-    ).not.toThrow();
+  it('returns a normalized deck containing only known fields', () => {
+    expect(
+      assertCards([
+        { ...card, evil: { huge: 'payload' } },
+        { value: -1, displayValue: ' ? ', color: ' #000 ' },
+      ])
+    ).toEqual([
+      { value: 1, displayValue: '1', color: '#fff' },
+      { value: -1, displayValue: '?', color: '#000' },
+    ]);
   });
 
   it('rejects empty, oversized, or malformed decks', () => {
     expect(() => assertCards([])).toThrow('INVALID_INPUT');
     expect(() => assertCards('nope')).toThrow('INVALID_INPUT');
     expect(() =>
-      assertCards(Array.from({ length: LIMITS.cards + 1 }, () => card))
+      assertCards(
+        Array.from({ length: LIMITS.cards + 1 }, (_, i) => ({
+          ...card,
+          value: i,
+        }))
+      )
     ).toThrow('INVALID_INPUT');
     expect(() => assertCards([{ displayValue: '1' }])).toThrow('INVALID_INPUT');
     expect(() =>
       assertCards([{ value: Number.NaN, displayValue: '1' }])
     ).toThrow('INVALID_INPUT');
     expect(() => assertCards([{ value: 1, displayValue: 5 }])).toThrow(
+      'INVALID_INPUT'
+    );
+    expect(() => assertCards([{ value: 1, displayValue: '1' }])).toThrow(
+      'INVALID_INPUT'
+    );
+    expect(() =>
+      assertCards([{ value: 1, displayValue: '1', color: '   ' }])
+    ).toThrow('INVALID_INPUT');
+  });
+
+  it('rejects duplicate values and blank labels', () => {
+    expect(() => assertCards([card, { ...card, displayValue: '2' }])).toThrow(
+      'INVALID_INPUT'
+    );
+    expect(() => assertCards([{ value: 1, displayValue: '   ' }])).toThrow(
       'INVALID_INPUT'
     );
   });
@@ -118,16 +144,25 @@ describe('timer helpers', () => {
 
   it('assertTimerInput validates strictly', () => {
     expect(assertTimerInput(null)).toBeNull();
+    expect(assertTimerInput(undefined)).toBeNull();
     expect(assertTimerInput({ totalSeconds: 60, timerPaused: false })).toEqual({
       totalSeconds: 60,
       timerPaused: false,
     });
-    expect(assertTimerInput({ extra: 1 })).toEqual({});
     expect(() => assertTimerInput('nope')).toThrow('INVALID_INPUT');
     expect(() =>
       assertTimerInput({ totalSeconds: Number.POSITIVE_INFINITY })
     ).toThrow('INVALID_INPUT');
     expect(() => assertTimerInput({ soundOn: 'yes' })).toThrow('INVALID_INPUT');
+  });
+
+  it('assertTimerInput rejects unknown keys and empty payloads', () => {
+    expect(() => assertTimerInput({ extra: 1 })).toThrow('INVALID_INPUT');
+    expect(() => assertTimerInput({ startedAt: 1000, extra: 1 })).toThrow(
+      'INVALID_INPUT'
+    );
+    expect(() => assertTimerInput({})).toThrow('INVALID_INPUT');
+    expect(() => assertTimerInput([1000])).toThrow('INVALID_INPUT');
   });
 });
 

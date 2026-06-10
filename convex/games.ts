@@ -1,4 +1,4 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 
 import type { Game } from '../types/game';
 import type { Player } from '../types/player';
@@ -169,14 +169,31 @@ async function hasValidInviteToken(
   return timingSafeStringEqual(tokenHash, game.joinTokenHash);
 }
 
-// Number of invite rows (active or revoked) kept per game, bounding both
-// storage and any read that collects invites.
-async function countInvitesForGame(ctx: DbReaderCtx, gameId: string) {
+// Enforces the per-game invite budget before inserting a new invite row.
+// Only ACTIVE invites count toward the quota, so revoked rows can never
+// permanently exhaust it. When the row budget is full, the oldest revoked
+// rows are pruned to make room — never below LIMITS.invitesPerGame - 1 rows,
+// so a game that ever had invite rows keeps at least one and the legacy
+// join-token fallback (zero rows) cannot be re-enabled.
+async function reserveInviteSlot(ctx: MutationCtx, gameId: string) {
   const rows = (await ctx.db
     .query('gameInvites')
     .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
     .take(LIMITS.invitesPerGame + 1)) as GameInviteDoc[];
-  return rows.length;
+
+  const activeCount = rows.filter((row) => row.revokedAt === null).length;
+  if (activeCount >= LIMITS.invitesPerGame) {
+    throw new ConvexError('TOO_MANY_INVITES');
+  }
+
+  const overflow = rows.length - (LIMITS.invitesPerGame - 1);
+  if (overflow > 0) {
+    const prunable = rows
+      .filter((row) => row.revokedAt !== null)
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .slice(0, overflow);
+    await Promise.all(prunable.map((row) => ctx.db.delete(row._id)));
+  }
 }
 
 async function revokeActiveInvites(
@@ -337,10 +354,10 @@ export const createGame = mutation({
     assertTokenHash(args.joinTokenHash);
     assertTokenHash(args.adminTokenHash);
     assertTokenHash(args.playerTokenHash);
-    assertCards(args.cards);
+    const cards = assertCards(args.cards);
 
     const existing = await getGameByGameId(ctx, gameId);
-    if (existing) throw new Error('INVALID_INPUT');
+    if (existing) throw new ConvexError('INVALID_INPUT');
 
     const now = Date.now();
 
@@ -348,7 +365,7 @@ export const createGame = mutation({
       gameId,
       name,
       gameType,
-      cards: args.cards,
+      cards,
       createdBy,
       createdById,
       isAllowMembersToManageSession: args.isAllowMembersToManageSession,
@@ -397,7 +414,7 @@ export const createInvite = mutation({
     assertTokenHash(args.tokenHash);
 
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const authorized = await assertCanCreateInvite(
       ctx,
@@ -406,13 +423,9 @@ export const createInvite = mutation({
       args.playerTokenHash,
       args.adminTokenHash ?? null
     );
-    if (!authorized) throw new Error('UNAUTHORIZED');
+    if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
-    if (
-      (await countInvitesForGame(ctx, args.gameId)) >= LIMITS.invitesPerGame
-    ) {
-      throw new Error('TOO_MANY_INVITES');
-    }
+    await reserveInviteSlot(ctx, args.gameId);
 
     const now = Date.now();
     await ctx.db.insert('gameInvites', {
@@ -442,7 +455,7 @@ export const joinGame = mutation({
     assertTokenHash(args.joinTokenHash);
 
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const hasValidInvite = await hasValidInviteToken(
       ctx,
@@ -450,7 +463,7 @@ export const joinGame = mutation({
       args.joinTokenHash
     );
     if (!hasValidInvite) {
-      throw new Error('INVALID_INVITE');
+      throw new ConvexError('INVALID_INVITE');
     }
 
     const now = Date.now();
@@ -479,7 +492,7 @@ export const leaveGame = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const player = await getPlayerByGameAndPlayerId(
       ctx,
@@ -491,7 +504,7 @@ export const leaveGame = mutation({
       !isActivePlayer(player) ||
       !timingSafeStringEqual(player.playerTokenHash, args.playerTokenHash)
     ) {
-      throw new Error('UNAUTHORIZED');
+      throw new ConvexError('UNAUTHORIZED');
     }
 
     const now = Date.now();
@@ -516,7 +529,7 @@ export const vote = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const player = await getPlayerByGameAndPlayerId(
       ctx,
@@ -528,18 +541,18 @@ export const vote = mutation({
       !isActivePlayer(player) ||
       !timingSafeStringEqual(player.playerTokenHash, args.playerTokenHash)
     ) {
-      throw new Error('UNAUTHORIZED');
+      throw new ConvexError('UNAUTHORIZED');
     }
 
     if (game.gameStatus === STATUS.Finished) {
-      throw new Error('GAME_FINISHED');
+      throw new ConvexError('GAME_FINISHED');
     }
 
     if (!isAllowedVoteValue(game.cards, args.value)) {
-      throw new Error('INVALID_INPUT');
+      throw new ConvexError('INVALID_INPUT');
     }
     if (args.emoji !== undefined && args.emoji.length > LIMITS.emoji) {
-      throw new Error('INVALID_INPUT');
+      throw new ConvexError('INVALID_INPUT');
     }
 
     const now = Date.now();
@@ -585,7 +598,7 @@ export const reveal = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const authorized = await assertCanManage(
       ctx,
@@ -594,7 +607,7 @@ export const reveal = mutation({
       args.callerPlayerId ?? null,
       args.playerTokenHash ?? null
     );
-    if (!authorized) throw new Error('UNAUTHORIZED');
+    if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
     const now = Date.now();
     const nextTimerProps = resetTimerProps(game.timerProps);
@@ -616,7 +629,7 @@ export const reset = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const authorized = await assertCanManage(
       ctx,
@@ -625,7 +638,7 @@ export const reset = mutation({
       args.callerPlayerId ?? null,
       args.playerTokenHash ?? null
     );
-    if (!authorized) throw new Error('UNAUTHORIZED');
+    if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
     const now = Date.now();
     const nextTimerProps = resetTimerProps(game.timerProps);
@@ -660,7 +673,7 @@ export const updateTimer = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const authorized = await assertCanManage(
       ctx,
@@ -669,7 +682,7 @@ export const updateTimer = mutation({
       args.callerPlayerId ?? null,
       args.playerTokenHash ?? null
     );
-    if (!authorized) throw new Error('UNAUTHORIZED');
+    if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
     const timerProps = assertTimerInput(args.timerProps);
 
@@ -691,7 +704,7 @@ export const setAutoReveal = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const authorized = await assertCanManage(
       ctx,
@@ -700,7 +713,7 @@ export const setAutoReveal = mutation({
       args.callerPlayerId ?? null,
       args.playerTokenHash ?? null
     );
-    if (!authorized) throw new Error('UNAUTHORIZED');
+    if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
     const now = Date.now();
     await ctx.db.patch(game._id, {
@@ -720,7 +733,7 @@ export const removePlayer = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     const authorized = await assertCanManage(
       ctx,
@@ -729,14 +742,14 @@ export const removePlayer = mutation({
       args.callerPlayerId ?? null,
       args.playerTokenHash ?? null
     );
-    if (!authorized) throw new Error('UNAUTHORIZED');
+    if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
     const target = await getPlayerByGameAndPlayerId(
       ctx,
       args.gameId,
       args.playerId
     );
-    if (!target) throw new Error('NOT_FOUND');
+    if (!target) throw new ConvexError('NOT_FOUND');
 
     // Only the admin (creator) may remove the creator. A member with
     // "manage session" rights cannot evict the owner.
@@ -745,7 +758,7 @@ export const removePlayer = mutation({
         timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
     );
     if (target.playerId === game.createdById && !isAdmin) {
-      throw new Error('UNAUTHORIZED');
+      throw new ConvexError('UNAUTHORIZED');
     }
 
     const now = Date.now();
@@ -770,7 +783,7 @@ export const deleteGame = mutation({
   },
   handler: async (ctx, args) => {
     const game = await getGameByGameId(ctx, args.gameId);
-    if (!game) throw new Error('NOT_FOUND');
+    if (!game) throw new ConvexError('NOT_FOUND');
 
     // Deleting the whole game is owner-only, regardless of the
     // "members can manage session" flag (which covers in-session controls,
@@ -779,7 +792,7 @@ export const deleteGame = mutation({
       args.adminTokenHash &&
         timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
     );
-    if (!isAdmin) throw new Error('UNAUTHORIZED');
+    if (!isAdmin) throw new ConvexError('UNAUTHORIZED');
 
     const players = await getPlayersByGameId(ctx, args.gameId);
     const invites = await getInvitesByGameId(ctx, args.gameId);

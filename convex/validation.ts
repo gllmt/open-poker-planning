@@ -1,5 +1,8 @@
 // Pure, runtime-agnostic validation helpers shared by Convex functions.
-// Kept free of Convex-runtime imports so they can be unit-tested directly.
+// Only imports 'convex/values' (plain JS, no Convex runtime) so they can be
+// unit-tested directly.
+import { ConvexError } from 'convex/values';
+
 import { GameType } from '../types/game';
 
 export const LIMITS = {
@@ -45,25 +48,25 @@ export function timingSafeStringEqual(a: string, b: string): boolean {
 }
 
 export function assertText(value: unknown, max: number): string {
-  if (typeof value !== 'string') throw new Error('INVALID_INPUT');
+  if (typeof value !== 'string') throw new ConvexError('INVALID_INPUT');
   const trimmed = value.trim();
   if (trimmed.length === 0 || value.length > max) {
-    throw new Error('INVALID_INPUT');
+    throw new ConvexError('INVALID_INPUT');
   }
   return trimmed;
 }
 
 export function assertId(value: unknown): string {
-  if (typeof value !== 'string') throw new Error('INVALID_INPUT');
+  if (typeof value !== 'string') throw new ConvexError('INVALID_INPUT');
   if (value.length === 0 || value.length > LIMITS.id) {
-    throw new Error('INVALID_INPUT');
+    throw new ConvexError('INVALID_INPUT');
   }
   return value;
 }
 
 export function assertTokenHash(value: unknown): string {
   if (typeof value !== 'string' || !HEX_64.test(value)) {
-    throw new Error('INVALID_INPUT');
+    throw new ConvexError('INVALID_INPUT');
   }
   return value;
 }
@@ -74,37 +77,60 @@ export function isValidGameType(value: string): boolean {
 
 export function assertGameType(value: unknown): string {
   if (typeof value !== 'string' || !isValidGameType(value)) {
-    throw new Error('INVALID_INPUT');
+    throw new ConvexError('INVALID_INPUT');
   }
   return value;
 }
 
-export function assertCards(cards: unknown): void {
-  if (!Array.isArray(cards)) throw new Error('INVALID_INPUT');
+export type ValidatedCard = {
+  value: number;
+  displayValue: string;
+  color: string;
+};
+
+// Returns a normalized copy of the deck containing only the known card
+// fields, so callers persist exactly what was validated and nothing else.
+export function assertCards(cards: unknown): ValidatedCard[] {
+  if (!Array.isArray(cards)) throw new ConvexError('INVALID_INPUT');
   if (cards.length === 0 || cards.length > LIMITS.cards) {
-    throw new Error('INVALID_INPUT');
+    throw new ConvexError('INVALID_INPUT');
   }
+  const seenValues = new Set<number>();
+  const normalized: ValidatedCard[] = [];
   for (const card of cards) {
     if (typeof card !== 'object' || card === null) {
-      throw new Error('INVALID_INPUT');
+      throw new ConvexError('INVALID_INPUT');
     }
     const { value, displayValue, color } = card as Record<string, unknown>;
     if (typeof value !== 'number' || !Number.isFinite(value)) {
-      throw new Error('INVALID_INPUT');
+      throw new ConvexError('INVALID_INPUT');
     }
+    if (seenValues.has(value)) throw new ConvexError('INVALID_INPUT');
+    seenValues.add(value);
     if (
       typeof displayValue !== 'string' ||
+      displayValue.trim().length === 0 ||
       displayValue.length > LIMITS.cardDisplayValue
     ) {
-      throw new Error('INVALID_INPUT');
+      throw new ConvexError('INVALID_INPUT');
     }
+    if (typeof color !== 'string') {
+      throw new ConvexError('INVALID_INPUT');
+    }
+    const normalizedColor = color.trim();
     if (
-      color !== undefined &&
-      (typeof color !== 'string' || color.length > LIMITS.cardColor)
+      normalizedColor.length === 0 ||
+      normalizedColor.length > LIMITS.cardColor
     ) {
-      throw new Error('INVALID_INPUT');
+      throw new ConvexError('INVALID_INPUT');
     }
+    normalized.push({
+      value,
+      displayValue: displayValue.trim(),
+      color: normalizedColor,
+    });
   }
+  return normalized;
 }
 
 function isValidTimerValue(value: unknown): value is number | boolean | null {
@@ -130,21 +156,26 @@ export function pickTimerFields(timerProps: unknown): Record<string, unknown> {
   return out;
 }
 
-// Strict: validates a client-supplied timer payload, rejecting unexpected
-// shapes or values. Used on write.
+// Strict: validates a client-supplied timer payload, rejecting unknown keys,
+// invalid values, and empty objects (callers must send null to clear the
+// timer). Used on write so a malformed payload cannot wipe timer state.
 export function assertTimerInput(
   timerProps: unknown
 ): Record<string, unknown> | null {
   if (timerProps === null || timerProps === undefined) return null;
-  if (typeof timerProps !== 'object') throw new Error('INVALID_INPUT');
+  if (typeof timerProps !== 'object' || Array.isArray(timerProps)) {
+    throw new ConvexError('INVALID_INPUT');
+  }
 
   const input = timerProps as Record<string, unknown>;
+  const allowed: ReadonlySet<string> = new Set(TIMER_FIELDS);
   const out: Record<string, unknown> = {};
-  for (const key of TIMER_FIELDS) {
-    if (!(key in input)) continue;
-    if (!isValidTimerValue(input[key])) throw new Error('INVALID_INPUT');
+  for (const key of Object.keys(input)) {
+    if (!allowed.has(key)) throw new ConvexError('INVALID_INPUT');
+    if (!isValidTimerValue(input[key])) throw new ConvexError('INVALID_INPUT');
     out[key] = input[key];
   }
+  if (Object.keys(out).length === 0) throw new ConvexError('INVALID_INPUT');
   return out;
 }
 
