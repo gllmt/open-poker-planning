@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 import type { Locale } from '@/lib/i18n/config';
 import { I18nContext } from '@/lib/i18n/context';
@@ -15,9 +15,7 @@ export function I18nProvider({
   dictionary: Dictionary;
   children: ReactNode;
 }) {
-  return (
-    <I18nContext.Provider value={{ locale, dictionary }}>
-      {children}
-    </I18nContext.Provider>
-  );
+  const value = useMemo(() => ({ locale, dictionary }), [locale, dictionary]);
+
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
