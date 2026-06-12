@@ -17,14 +17,18 @@ export function AppPostHogProvider({
   return (
     <PostHogProvider
       apiKey={posthogKey}
+      // Cookieless analytics: memory-only identity, no autocapture, no recordings.
+      // Only manual pageviews and explicit product events are sent.
       clientOptions={{
         advanced_disable_flags: true,
+        autocapture: false,
         defaults: '2026-01-30',
         disable_conversations: true,
         disable_external_dependency_loading: true,
         disable_product_tours: true,
         disable_session_recording: true,
         disable_surveys: true,
+        persistence: 'memory',
         ...(posthogHost ? { api_host: posthogHost } : {}),
       }}
     >

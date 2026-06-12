@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
-const umamiHost = "https://umami.pierreguillemot.dev";
+const umamiHost =
+  process.env.NEXT_PUBLIC_UMAMI_HOST || "https://umami.pierreguillemot.dev";
+const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const isDevelopment = process.env.NODE_ENV === "development";
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 const convexOrigin = convexUrl ? new URL(convexUrl).origin : null;
@@ -73,12 +78,7 @@ const ogImageCacheHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: [
-    "192.168.1.10",
-    "192.168.1.20",
-    "10.0.5.109",
-    "10.0.5.88",
-  ],
+  ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   poweredByHeader: false,
   images: {
     remotePatterns: [

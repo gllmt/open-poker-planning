@@ -129,6 +129,7 @@ export function Timer({
       const legacyStartedAt = Date.now() - currentSeconds * 1000;
       fireAndForgetTimerUpdate({
         startedAt: legacyStartedAt,
+        elapsedSeconds: currentSeconds,
         pausedAt: null,
         totalSeconds,
         soundOn,

@@ -28,6 +28,7 @@ const TIMER_FIELDS = [
   'timerVisible',
   'currentSeconds',
   'timerPaused',
+  'elapsedSeconds',
 ] as const;
 
 const HEX_64 = /^[0-9a-f]{64}$/;
@@ -174,6 +175,12 @@ export function assertTimerInput(
     if (!allowed.has(key)) throw new ConvexError('INVALID_INPUT');
     if (!isValidTimerValue(input[key])) throw new ConvexError('INVALID_INPUT');
     out[key] = input[key];
+  }
+  if (
+    out.elapsedSeconds !== undefined &&
+    (typeof out.elapsedSeconds !== 'number' || out.elapsedSeconds < 0)
+  ) {
+    throw new ConvexError('INVALID_INPUT');
   }
   if (Object.keys(out).length === 0) throw new ConvexError('INVALID_INPUT');
   return out;

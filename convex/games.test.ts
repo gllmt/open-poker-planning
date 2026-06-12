@@ -759,3 +759,93 @@ describe('sanitized viewer output', () => {
     expect(serialized).not.toContain('TokenHash');
   });
 });
+
+describe('updateTimer server stamping', () => {
+  async function getStoredTimerProps(t: TestBackend) {
+    return t.run(async (ctx) => {
+      const game = await ctx.db
+        .query('games')
+        .withIndex('by_gameId', (q) => q.eq('gameId', GAME_ID))
+        .unique();
+      expect(game).not.toBeNull();
+      return game?.timerProps as Record<string, unknown> | null | undefined;
+    });
+  }
+
+  it('re-stamps start payloads with server time and strips elapsedSeconds', async () => {
+    const t = await setupGame();
+    const elapsedSeconds = 10;
+    const before = Date.now();
+
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: Date.now() + 9_999_999,
+        elapsedSeconds,
+        pausedAt: null,
+        totalSeconds: 300,
+        soundOn: true,
+      },
+    });
+
+    const after = Date.now();
+    const timerProps = await getStoredTimerProps(t);
+    const startedAt = timerProps?.startedAt;
+
+    expect(timerProps).toMatchObject({
+      pausedAt: null,
+      totalSeconds: 300,
+      soundOn: true,
+    });
+    expect(timerProps).not.toHaveProperty('elapsedSeconds');
+    expect(typeof startedAt).toBe('number');
+    expect(startedAt as number).toBeGreaterThanOrEqual(
+      before - elapsedSeconds * 1000 - 2000
+    );
+    expect(startedAt as number).toBeLessThanOrEqual(
+      after - elapsedSeconds * 1000 + 2000
+    );
+  });
+
+  it('passes pause payloads through unchanged', async () => {
+    const t = await setupGame();
+
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: null,
+        pausedAt: 42,
+        totalSeconds: 300,
+        soundOn: false,
+      },
+    });
+
+    await expect(getStoredTimerProps(t)).resolves.toEqual({
+      startedAt: null,
+      pausedAt: 42,
+      totalSeconds: 300,
+      soundOn: false,
+    });
+  });
+
+  it('still rejects unauthorized timer updates', async () => {
+    const t = await setupGame();
+
+    await expectConvexError(
+      t.mutation(api.games.updateTimer, {
+        gameId: GAME_ID,
+        adminTokenHash: HASH_X,
+        timerProps: {
+          startedAt: Date.now(),
+          elapsedSeconds: 0,
+          pausedAt: null,
+          totalSeconds: 300,
+          soundOn: true,
+        },
+      }),
+      'UNAUTHORIZED'
+    );
+  });
+});

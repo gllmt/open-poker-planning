@@ -405,6 +405,7 @@ export function usePokerController({
     const previousConfettiSeed = state.confettiSeed;
 
     clearPendingVote();
+    dispatch({ type: 'set-vote-error', value: null });
 
     const nextTimerProps = resetTimerProps(state.game.timerProps) ?? undefined;
     const nextGame = {

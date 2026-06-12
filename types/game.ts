@@ -9,6 +9,7 @@ export interface TimerProps {
   timerVisible?: boolean;
   currentSeconds?: number;
   timerPaused?: boolean;
+  elapsedSeconds?: number;
 }
 
 export interface Game {

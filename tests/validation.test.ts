@@ -164,6 +164,34 @@ describe('timer helpers', () => {
     expect(() => assertTimerInput({})).toThrow('INVALID_INPUT');
     expect(() => assertTimerInput([1000])).toThrow('INVALID_INPUT');
   });
+
+  it('assertTimerInput accepts elapsedSeconds start commands', () => {
+    expect(
+      assertTimerInput({
+        elapsedSeconds: 5,
+        startedAt: 123,
+        pausedAt: null,
+        totalSeconds: 300,
+      })
+    ).toEqual({
+      elapsedSeconds: 5,
+      startedAt: 123,
+      pausedAt: null,
+      totalSeconds: 300,
+    });
+  });
+
+  it('assertTimerInput rejects negative elapsedSeconds', () => {
+    expect(() => assertTimerInput({ elapsedSeconds: -1 })).toThrow(
+      'INVALID_INPUT'
+    );
+  });
+
+  it('assertTimerInput rejects non-numeric elapsedSeconds', () => {
+    expect(() => assertTimerInput({ elapsedSeconds: 'x' })).toThrow(
+      'INVALID_INPUT'
+    );
+  });
 });
 
 describe('isAllowedVoteValue', () => {

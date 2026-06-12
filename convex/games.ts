@@ -689,9 +689,14 @@ export const updateTimer = mutation({
     );
     if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
-    const timerProps = assertTimerInput(args.timerProps);
-
     const now = Date.now();
+    const timerProps = assertTimerInput(args.timerProps);
+    if (timerProps && typeof timerProps.elapsedSeconds === 'number') {
+      timerProps.startedAt = now - timerProps.elapsedSeconds * 1000;
+      timerProps.pausedAt = null;
+      delete timerProps.elapsedSeconds;
+    }
+
     await ctx.db.patch(game._id, {
       timerProps,
       updatedAt: now,

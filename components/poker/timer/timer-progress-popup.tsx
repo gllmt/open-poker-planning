@@ -32,6 +32,7 @@ type TimerProps = {
   onTimerClose: () => void;
   onTimerStateUpdate: (update: {
     startedAt: number | null;
+    elapsedSeconds?: number;
     pausedAt: number | null;
     totalSeconds: number;
     soundOn: boolean;
@@ -297,6 +298,7 @@ function TimerProgressMod({
     const startAt = Date.now() - baseElapsed * 1000;
     onTimerStateUpdate({
       startedAt: startAt,
+      elapsedSeconds: baseElapsed,
       pausedAt: null,
       totalSeconds: resolvedDraftTotal,
       soundOn,
