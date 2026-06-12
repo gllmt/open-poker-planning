@@ -16,7 +16,7 @@ row when done.
 | 003  | Mask other players' votes until reveal | P1 | S–M | 002 | DONE |
 | 004  | Remove token-hash credentials from localStorage and API JSON | P2 | M | 002 | DONE |
 | 005  | Rate limiting + close the /api hole in the site-access gate | P2 | M | — | DONE |
-| 006  | UI fix batch: reveal copy, error-boundary i18n, average sentinel, icon a11y | P2 | S | — | TODO |
+| 006  | UI fix batch: reveal copy, error-boundary i18n, average sentinel, icon a11y | P2 | S | — | DONE |
 | 007  | Analytics privacy: cookieless PostHog + documented posture | P3 | S–M | — | TODO |
 | 008  | Timer: server-stamped start times (remove mod clock skew) | P3 | M | 002; after 003 & 006 | TODO |
 | 009  | Hygiene bundle: dep advisories, docs truth-up, small fixes | P3 | S–M | coordinate w/ 004 | TODO |

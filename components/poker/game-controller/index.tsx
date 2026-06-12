@@ -75,7 +75,7 @@ export function GameController({
   const averageValue = useGameAverage(game, players);
   const canShowAverage = averageValue !== null;
   const averageLabel =
-    game.gameStatus === Status.Finished && averageValue
+    game.gameStatus === Status.Finished && averageValue !== null
       ? averageValue.toFixed(2)
       : '-';
 

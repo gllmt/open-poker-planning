@@ -72,7 +72,12 @@
   },
   "cardPicker": {
     "cta": "Click on the card to vote",
-    "notReady": "Session not ready for voting! Wait for moderator to start"
+    "notReady": "Voting is closed - votes are revealed"
+  },
+  "errorBoundary": {
+    "sessionError": "Unable to continue with the current session.",
+    "genericError": "An error occurred loading the game.",
+    "retry": "Retry"
   },
   "players": {
     "title": "Players"

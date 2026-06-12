@@ -46,10 +46,16 @@ export function ResultsSection({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/30">
-              <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+              <th
+                scope="col"
+                className="px-3 py-2 text-left font-medium text-muted-foreground"
+              >
                 {t('results.player')}
               </th>
-              <th className="px-3 py-2 text-right font-medium text-muted-foreground">
+              <th
+                scope="col"
+                className="px-3 py-2 text-right font-medium text-muted-foreground"
+              >
                 {t('results.vote')}
               </th>
             </tr>
