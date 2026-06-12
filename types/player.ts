@@ -14,9 +14,5 @@ export interface PlayerGame {
   createdById: string;
   createdBy: string;
   playerId: string;
-  joinToken?: string;
-  joinTokenHash?: string;
-  playerTokenHash?: string;
-  adminTokenHash?: string;
   isAllowMembersToManageSession?: boolean;
 }

@@ -13,14 +13,12 @@ export async function GET(
   const { gameId } = await context.params;
   const cookieStore = await cookies();
   const playerToken = cookieStore.get(cookieNames.playerToken(gameId))?.value;
-  const adminToken = cookieStore.get(cookieNames.adminToken(gameId))?.value;
 
   if (!playerToken) {
     return NextResponse.json({ state: 'missing' as const });
   }
 
   const playerTokenHash = hashToken(playerToken);
-  const adminTokenHash = adminToken ? hashToken(adminToken) : undefined;
   const viewerState = await fetchQuery(api.games.getViewerGameState, {
     gameId,
     playerTokenHash,
@@ -30,8 +28,6 @@ export async function GET(
     return NextResponse.json({
       state: 'active' as const,
       playerId: viewerState.currentPlayerId,
-      playerTokenHash,
-      adminTokenHash,
     });
   }
 

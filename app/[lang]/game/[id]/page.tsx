@@ -6,6 +6,8 @@ import { notFound, redirect } from 'next/navigation';
 import { Poker } from '@/components/poker/poker';
 import { PokerErrorBoundary } from '@/components/poker/poker-error-boundary';
 import { api } from '@/convex/_generated/api';
+import { i18n, isLocale } from '@/lib/i18n/config';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 import { cookieNames } from '@/lib/security/cookies';
 import { hashToken } from '@/lib/security/tokens';
 
@@ -22,6 +24,8 @@ export default async function GamePage({
   params: Promise<{ lang: string; id: string }>;
 }) {
   const { lang, id } = await params;
+  const locale = isLocale(lang) ? lang : i18n.defaultLocale;
+  const dictionary = await getDictionary(locale);
   const cookieStore = await cookies();
   const playerToken = cookieStore.get(cookieNames.playerToken(id))?.value;
 
@@ -54,7 +58,11 @@ export default async function GamePage({
       >
         <div className="h-[420px] w-[600px] translate-y-[-10%] rounded-full bg-primary/8 blur-[120px]" />
       </div>
-      <PokerErrorBoundary>
+      <PokerErrorBoundary
+        genericErrorMessage={dictionary.errorBoundary.genericError}
+        retryLabel={dictionary.errorBoundary.retry}
+        sessionErrorMessage={dictionary.errorBoundary.sessionError}
+      >
         <Poker
           gameId={id}
           initialSession={{

@@ -124,7 +124,7 @@ export function JoinGame({
     dispatch({ type: 'set-error', value: null });
     dispatch({ type: 'set-loading', value: true });
     try {
-      const { playerId, playerTokenHash, joinTokenHash } = await joinGame(
+      const { playerId } = await joinGame(
         state.joinGameId,
         state.inviteToken,
         state.playerName
@@ -138,9 +138,6 @@ export function JoinGame({
         createdBy: '',
         createdById: '',
         playerId,
-        joinToken: state.inviteToken,
-        joinTokenHash,
-        playerTokenHash,
       });
 
       posthog.capture('planning_poker_game_joined', {

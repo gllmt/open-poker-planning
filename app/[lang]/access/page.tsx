@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { i18n, isLocale } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { sanitizeInternalPath } from '@/lib/security/safe-redirect';
 
 import { submitAccessCode } from './actions';
 
@@ -26,13 +27,6 @@ function readSearchParam(
   value: string | string[] | undefined
 ): string | undefined {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function sanitizeNext(raw: string | undefined, fallback: string): string {
-  if (!raw) return fallback;
-  if (!raw.startsWith('/')) return fallback;
-  if (raw.startsWith('//')) return fallback;
-  return raw;
 }
 
 export default async function AccessPage({
@@ -50,7 +44,7 @@ export default async function AccessPage({
   const dictionary = await getDictionary(locale);
   const gateEnabled = Boolean(process.env.SITE_ACCESS_CODE);
   const resolvedSearchParams = await searchParams;
-  const nextPath = sanitizeNext(
+  const nextPath = sanitizeInternalPath(
     readSearchParam(resolvedSearchParams?.next),
     `/${locale}`
   );

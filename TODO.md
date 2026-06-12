@@ -17,8 +17,3 @@
 - [ ] Add unit tests for optimistic rollback.
   - Implementation: simulate API failure for `onReveal`, `onReset`, `onTimerUpdate` and assert UI state returns to previous values.
   - Files: test setup needed for `components/poker/poker.tsx` (framework choice required).
-
-## Accessibility
-- [ ] Add `aria-label` to the Auto Reveal switch.
-  - Implementation: pass a localized label to the button for screen readers.
-  - File: `components/poker/game-controller/auto-reveal-toggle.tsx`.

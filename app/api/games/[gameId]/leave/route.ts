@@ -17,7 +17,7 @@ export async function POST(
 ) {
   const { gameId } = await context.params;
   const body = (await request.json().catch(() => ({}))) as LeaveBody;
-  if (!body.callerPlayerId) {
+  if (typeof body.callerPlayerId !== 'string' || body.callerPlayerId === '') {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 

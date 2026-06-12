@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames } from '@/lib/security/cookies';
+import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
 import { generateToken, hashToken } from '@/lib/security/tokens';
 
 type InviteBody = {
@@ -16,8 +17,13 @@ export async function POST(
   context: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await context.params;
+  const ip = getClientIp(request.headers);
+  if (isRateLimited(`create-invite:${gameId}:${ip}`, 30, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const body = (await request.json().catch(() => ({}))) as InviteBody;
-  if (!body.callerPlayerId) {
+  if (typeof body.callerPlayerId !== 'string' || body.callerPlayerId === '') {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
@@ -45,6 +51,15 @@ export async function POST(
     }
     if (code === 'UNAUTHORIZED') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (code === 'TOO_MANY_INVITES') {
+      return NextResponse.json(
+        { error: 'Too many invites for this game' },
+        { status: 429 }
+      );
+    }
+    if (code === 'INVALID_INPUT') {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to create invite' },

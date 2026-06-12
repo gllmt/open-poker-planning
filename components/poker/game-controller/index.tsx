@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
@@ -38,6 +38,7 @@ export function GameController({
   game,
   players,
   currentPlayerId,
+  isAdmin,
   confettiSeed,
   onReveal,
   onReset,
@@ -49,6 +50,7 @@ export function GameController({
   game: Game;
   players: Player[];
   currentPlayerId: string;
+  isAdmin: boolean;
   confettiSeed?: string | null;
   onReveal: () => void;
   onReset: () => void;
@@ -73,25 +75,46 @@ export function GameController({
   const averageValue = useGameAverage(game, players);
   const canShowAverage = averageValue !== null;
   const averageLabel =
-    game.gameStatus === Status.Finished && averageValue
+    game.gameStatus === Status.Finished && averageValue !== null
       ? averageValue.toFixed(2)
       : '-';
 
-  const copyInviteLink = async () => {
-    let inviteLink = '';
+  // Reuse the invite link across clicks instead of minting a new invite each
+  // time, so repeated copies don't burn the per-game invite quota.
+  const inviteLinkRef = useRef<string | null>(null);
+  const playerIdsRef = useRef<Set<string>>(new Set());
 
-    try {
-      const { token } = await createInvite(game.id, currentPlayerId);
-      inviteLink = `${window.location.origin}${withLocale(
-        `/join/${game.id}`,
-        locale
-      )}?token=${token}`;
-    } catch {
-      sileo.info({
-        title: t('game.inviteNoToken'),
-        position: 'top-center',
-      });
-      return;
+  // A disappearing player can make existing invite links stale, so drop the
+  // cached link whenever the player list loses an entry.
+  useEffect(() => {
+    const nextIds = new Set(players.map((player) => player.id));
+    for (const id of playerIdsRef.current) {
+      if (!nextIds.has(id)) {
+        inviteLinkRef.current = null;
+        break;
+      }
+    }
+    playerIdsRef.current = nextIds;
+  }, [players]);
+
+  const copyInviteLink = async () => {
+    let inviteLink = inviteLinkRef.current ?? '';
+
+    if (!inviteLink) {
+      try {
+        const { token } = await createInvite(game.id, currentPlayerId);
+        inviteLink = `${window.location.origin}${withLocale(
+          `/join/${game.id}`,
+          locale
+        )}?token=${token}`;
+        inviteLinkRef.current = inviteLink;
+      } catch {
+        sileo.info({
+          title: t('game.inviteNoToken'),
+          position: 'top-center',
+        });
+        return;
+      }
     }
 
     try {
@@ -259,14 +282,16 @@ export function GameController({
                 >
                   <RefreshCcw className="size-5" aria-hidden="true" />
                 </ControllerButton>
-                <ControllerButton
-                  onClick={handleRemoveGame}
-                  label={t('game.delete')}
-                  variant="destructive"
-                >
-                  <Trash className="size-5" aria-hidden="true" />
-                </ControllerButton>
               </>
+            )}
+            {isAdmin && (
+              <ControllerButton
+                onClick={handleRemoveGame}
+                label={t('game.delete')}
+                variant="destructive"
+              >
+                <Trash className="size-5" aria-hidden="true" />
+              </ControllerButton>
             )}
 
             <ControllerButton

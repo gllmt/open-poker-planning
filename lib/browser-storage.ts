@@ -9,6 +9,13 @@ import type { PlayerGame } from '@/types/player';
 
 const PLAYER_GAMES_KEY = 'playerGames';
 const RECENT_PLAYER_NAME_KEY = 'recentPlayerName';
+const HASH_SUFFIX = 'TokenHash';
+const STRIPPED_PLAYER_GAME_KEYS = [
+  'joinToken',
+  `join${HASH_SUFFIX}`,
+  `player${HASH_SUFFIX}`,
+  `admin${HASH_SUFFIX}`,
+] as const;
 
 function safeGetItem(key: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -90,8 +97,28 @@ export function getPlayerGamesFromCache(): PlayerGame[] {
   const raw = safeGetItem(PLAYER_GAMES_KEY);
   if (!raw) return [];
   try {
-    const parsed = JSON.parse(raw) as PlayerGame[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    let stripped = false;
+    const cleaned = parsed.map((entry) => {
+      if (typeof entry !== 'object' || entry === null) return entry;
+
+      const record = entry as Record<string, unknown>;
+      if (!STRIPPED_PLAYER_GAME_KEYS.some((key) => key in record)) {
+        return entry;
+      }
+
+      stripped = true;
+      const next = { ...record };
+      for (const key of STRIPPED_PLAYER_GAME_KEYS) {
+        delete next[key];
+      }
+      return next;
+    }) as PlayerGame[];
+
+    if (stripped) updatePlayerGamesInCache(cleaned);
+    return cleaned;
   } catch {
     return [];
   }
@@ -114,10 +141,6 @@ export function clearPlayerGameSession(gameId: string) {
         ? {
             ...game,
             playerId: '',
-            joinToken: undefined,
-            joinTokenHash: undefined,
-            playerTokenHash: undefined,
-            adminTokenHash: undefined,
           }
         : game
     )

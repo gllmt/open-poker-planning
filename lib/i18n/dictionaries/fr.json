@@ -74,6 +74,11 @@
     "cta": "Cliquez sur la carte pour voter",
     "notReady": "Session terminée !"
   },
+  "errorBoundary": {
+    "sessionError": "Impossible de continuer avec la session actuelle.",
+    "genericError": "Une erreur est survenue lors du chargement de la partie.",
+    "retry": "Réessayer"
+  },
   "players": {
     "title": "Joueurs"
   },

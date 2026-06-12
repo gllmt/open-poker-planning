@@ -36,7 +36,7 @@ export function useGameAverage(game: Game, players: Player[]) {
       }
     });
 
-    if (!count) return 0;
+    if (!count) return null;
     return Math.round((values / count) * 100) / 100;
   }, [game.gameType, game.cards, players]);
 }

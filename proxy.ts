@@ -96,12 +96,18 @@ function setLocaleCookie(response: NextResponse, locale: Locale) {
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    PUBLIC_FILE.test(pathname)
-  ) {
+  if (pathname.startsWith('/_next') || PUBLIC_FILE.test(pathname)) {
     return NextResponse.next();
+  }
+
+  const secret = process.env.SITE_ACCESS_CODE;
+  const cookieValue = request.cookies.get(ACCESS_COOKIE_NAME)?.value;
+
+  if (pathname.startsWith('/api')) {
+    if (!secret || (cookieValue && isValidAccessCookie(cookieValue, secret))) {
+      return NextResponse.next();
+    }
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const pathnameLocale = getLocaleFromPathname(pathname);
@@ -112,12 +118,10 @@ export function proxy(request: NextRequest) {
     return setLocaleCookie(NextResponse.redirect(nextUrl), locale);
   }
 
-  const secret = process.env.SITE_ACCESS_CODE;
   const nextResponse = setLocaleCookie(NextResponse.next(), pathnameLocale);
 
   if (!secret || isPublicPath(pathname)) return nextResponse;
 
-  const cookieValue = request.cookies.get(ACCESS_COOKIE_NAME)?.value;
   if (cookieValue && isValidAccessCookie(cookieValue, secret)) {
     return nextResponse;
   }

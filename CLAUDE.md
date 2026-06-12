@@ -38,17 +38,18 @@ Real-time planning poker app using **Next.js 16 App Router** + **Convex**.
 
 ### Security Model
 - **No login**: Token-based access only
-- **Tokens**: 256-bit random strings, SHA256 hashed before storage
+- **Tokens**: 256-bit random strings stored in HttpOnly cookies; Convex stores SHA-256 hashes
 - **Cookies**: HttpOnly, Secure (prod), SameSite=Lax, 30-day expiry
-- **Data access**: Convex functions enforce token hashes and membership state
-- **Realtime**: Convex subscriptions keep game state synchronized
+- **Data access**: Convex functions enforce token hashes and membership state. On direct browser-to-Convex gameplay mutations, the hash itself is the bearer credential.
+- **Credential exposure**: token hashes are not stored in localStorage and are not returned in API JSON responses
+- **Realtime**: Convex subscriptions stream game state directly to clients
 
 ### Data Flow
-1. Game creation returns `joinToken` (share via URL) and `adminToken` (stored in cookie)
-2. Players join with invite token, receive `playerToken` in cookie
-3. Route Handlers verify token flows that need HttpOnly cookies
-4. Gameplay updates call Convex mutations with hashed credentials
-5. Convex subscriptions stream game state changes back to clients
+1. Game creation stores admin/player tokens in HttpOnly cookies and returns only non-secret ids to the browser
+2. Invite links carry invite tokens; players join through Route Handlers and receive `playerToken` in an HttpOnly cookie
+3. Route Handlers cover create, join, invite, leave, and session flows that need cookie access
+4. Gameplay updates call Convex mutations directly from the browser with hashed bearer credentials
+5. Convex `useQuery` subscriptions stream current game state back to clients without a refetch loop
 
 ## Coding Conventions
 

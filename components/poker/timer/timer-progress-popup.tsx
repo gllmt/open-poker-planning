@@ -32,6 +32,7 @@ type TimerProps = {
   onTimerClose: () => void;
   onTimerStateUpdate: (update: {
     startedAt: number | null;
+    elapsedSeconds?: number;
     pausedAt: number | null;
     totalSeconds: number;
     soundOn: boolean;
@@ -297,6 +298,7 @@ function TimerProgressMod({
     const startAt = Date.now() - baseElapsed * 1000;
     onTimerStateUpdate({
       startedAt: startAt,
+      elapsedSeconds: baseElapsed,
       pausedAt: null,
       totalSeconds: resolvedDraftTotal,
       soundOn,
@@ -410,6 +412,9 @@ function TimerProgressMod({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button
+            aria-label={
+              soundOn ? t('timer.disableSound') : t('timer.enableSound')
+            }
             title={soundOn ? t('timer.disableSound') : t('timer.enableSound')}
             onClick={() => isMod && toggleSound()}
             type="button"
@@ -485,6 +490,7 @@ function TimerProgressMod({
           )}
           {isMod && (
             <Button
+              aria-label={t('timer.closeTitle')}
               type="button"
               title={t('timer.closeTitle')}
               onClick={onTimerClose}
@@ -568,6 +574,7 @@ function TimerControlButton({
 }) {
   return (
     <Button
+      aria-label={title}
       title={title}
       className={`text-muted-foreground hover:text-foreground ${className}`}
       onClick={callback}
