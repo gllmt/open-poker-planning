@@ -163,14 +163,7 @@ export function CreateGame() {
             : getCards(state.gameType),
       };
 
-      const {
-        gameId,
-        joinToken,
-        joinTokenHash,
-        playerId,
-        playerTokenHash,
-        adminTokenHash,
-      } = await createGame(payload);
+      const { gameId, playerId } = await createGame(payload);
 
       setRecentPlayerName(state.createdBy);
       upsertPlayerGame({
@@ -179,10 +172,6 @@ export function CreateGame() {
         createdBy: state.createdBy,
         createdById: playerId,
         playerId,
-        joinToken,
-        joinTokenHash,
-        playerTokenHash,
-        adminTokenHash,
         isAllowMembersToManageSession: state.allowMembersToManageSession,
       });
 

@@ -313,12 +313,17 @@ async function getViewerState(
   }
 
   const players = await getActivePlayersByGameId(ctx, gameId);
+  const revealed = game.gameStatus === STATUS.Finished;
 
   return {
     type: 'ready',
     currentPlayerId: viewer.playerId,
     game: sanitizeGame(game),
-    players: players.map(sanitizePlayer),
+    players: players.map((player) => {
+      const sanitized = sanitizePlayer(player);
+      if (revealed || player.playerId === viewer.playerId) return sanitized;
+      return { ...sanitized, value: undefined, emoji: undefined };
+    }),
   };
 }
 

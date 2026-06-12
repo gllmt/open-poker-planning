@@ -1,10 +1,11 @@
 'use server';
 
 import { createHmac } from 'node:crypto';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
+import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
 import { sanitizeInternalPath } from '@/lib/security/safe-redirect';
 import { generateToken, safeEqual } from '@/lib/security/tokens';
 
@@ -26,10 +27,16 @@ export async function submitAccessCode(formData: FormData) {
   // If not configured, the gate is disabled.
   if (!secret) redirect(nextPath);
 
+  const errorPath = `/${locale}/access?error=1&next=${encodeURIComponent(nextPath)}`;
+  const ip = getClientIp(await headers());
+  if (isRateLimited(`access-code:${ip}`, 5, 60_000)) {
+    redirect(errorPath);
+  }
+
   const codeValue = formData.get('code');
   const code = typeof codeValue === 'string' ? codeValue : '';
   if (!code || !safeEqual(code, secret)) {
-    redirect(`/${locale}/access?error=1&next=${encodeURIComponent(nextPath)}`);
+    redirect(errorPath);
   }
 
   const issuedAt = Math.floor(Date.now() / 1000);

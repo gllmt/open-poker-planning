@@ -5,10 +5,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 import { api } from '@/convex/_generated/api';
 import { leaveGame as leaveGameRequest } from '@/lib/api/games';
-import {
-  getPlayerGamesFromCache,
-  upsertPlayerGame,
-} from '@/lib/browser-storage';
+import { upsertPlayerGame } from '@/lib/browser-storage';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -302,24 +299,16 @@ export function usePokerController({
         clearQueryError: true,
       });
 
-      const cached = getPlayerGamesFromCache().find(
-        (entry) => entry.id === gameId
-      );
-
       upsertPlayerGame({
         id: serverGame.id,
         name: serverGame.name,
         createdBy: serverGame.createdBy,
         createdById: serverGame.createdById,
         playerId: currentPlayerId,
-        joinToken: cached?.joinToken,
-        joinTokenHash: cached?.joinTokenHash,
-        playerTokenHash: authRef.current.playerTokenHash,
-        adminTokenHash: authRef.current.adminTokenHash,
         isAllowMembersToManageSession: serverGame.isAllowMembersToManageSession,
       });
     },
-    [applyGameState, gameId]
+    [applyGameState]
   );
 
   const gameState = useQuery(api.games.getViewerGameState, {

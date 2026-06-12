@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
+import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
 import { generateToken, hashToken } from '@/lib/security/tokens';
 
 // Mirror the authoritative bounds enforced in convex/games.ts so we can return
@@ -24,6 +25,11 @@ type CreateGameBody = {
 };
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request.headers);
+  if (isRateLimited(`create-game:${ip}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const body = (await request
     .json()
     .catch(() => null)) as CreateGameBody | null;
@@ -87,11 +93,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json(
     {
       gameId,
-      joinToken,
-      joinTokenHash,
       playerId: createdById,
-      playerTokenHash,
-      adminTokenHash,
     },
     { status: 201 }
   );

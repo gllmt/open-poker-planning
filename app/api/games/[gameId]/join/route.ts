@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
+import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
 import { generateToken, hashToken } from '@/lib/security/tokens';
 
 type JoinBody = {
@@ -16,6 +17,11 @@ export async function POST(
   context: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await context.params;
+  const ip = getClientIp(request.headers);
+  if (isRateLimited(`join-game:${gameId}:${ip}`, 20, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const body = (await request.json().catch(() => null)) as JoinBody | null;
   if (
     typeof body?.playerName !== 'string' ||
@@ -56,14 +62,7 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to join' }, { status: 500 });
   }
 
-  const response = NextResponse.json(
-    {
-      playerId,
-      playerTokenHash,
-      joinTokenHash,
-    },
-    { status: 201 }
-  );
+  const response = NextResponse.json({ playerId }, { status: 201 });
 
   response.cookies.set(
     cookieNames.playerToken(gameId),
