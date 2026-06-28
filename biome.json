@@ -31,7 +31,7 @@
       "next": "all"
     },
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "warn",
         "noArrayIndexKey": "off"
