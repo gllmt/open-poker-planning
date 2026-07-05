@@ -1,61 +1,91 @@
-# Free Planning Poker (Next.js + Convex)
+# Open Poker Planning
 
-Real-time planning poker built with **Next.js App Router** and **Convex**.
+Real-time planning poker for agile teams. Create a room, share a link, and estimate together. No account, nothing to install for players.
 
-## Setup
+**Live at [openpokerplanning.com](https://openpokerplanning.com)** (currently in private beta, behind an access code)
 
-1) Run `pnpm install`.
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Convex](https://img.shields.io/badge/Convex-EE342F?style=flat-square)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=flat-square)
 
-2) Initialize Convex (creates `convex/_generated` and fills `.env.local`):
-- `npx convex dev`
+![Open Poker Planning](public/og-image-en.jpg)
 
-3) Create `.env.local` from `.env.example` for optional settings:
-- `NEXT_PUBLIC_CONVEX_URL` (public)
-- `CONVEX_DEPLOYMENT` (server-only)
-- Optional: `SITE_ACCESS_CODE` (server-only) to enable the global access-code gate at `/access`
-- Optional: `SITE_URL` (server-only) absolute URL used for SEO metadata and sitemap
+<!-- Best upgrade here: replace the image above with a short GIF of one full round (create room, vote, reveal, confetti). -->
+
+## Features
+
+- Real-time voting synced across everyone in the room, powered by Convex subscriptions.
+- No login. Rooms are token-based: share an invite link and people join instantly.
+- Round timer to keep estimation sessions moving.
+- Confetti on reveal when the table agrees.
+- Optional access-code gate to keep an instance private.
+- Bilingual interface (English and French).
+
+## Built with
+
+Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and database), Tailwind CSS v4 with Base UI, Biome, Vitest. Deployed on Vercel.
+
+## How it works (security)
+
+- Access is **token-based**, no login required.
+- Create, join, invite, leave, and session flows go through `app/api/**` Route Handlers, because they need HttpOnly cookie access.
+- Gameplay actions (vote, reveal, reset, timer, auto-reveal, remove player, delete game) call Convex mutations directly from the browser, authorized by token hashes.
+- Tokens are **256-bit random values stored in HttpOnly cookies**. Convex stores only **SHA-256 hashes**, which the browser presents as bearer credentials for direct mutations.
+- Realtime game state streams through a Convex `useQuery` subscription.
+
+## Analytics & privacy
+
+Analytics is optional: leave the analytics environment variables unset to disable it. When enabled, both tools are cookieless. PostHog runs memory-only with no autocapture and no session recording; Umami is self-hosted. No analytics identity is stored in cookies or localStorage. The app captures pageviews plus two product events with pseudonymous game ids and non-secret metadata: game created (game type, cards count, whether members can manage the session, locale) and game joined (join source, join reason, locale).
+
+## Getting started
+
+```bash
+pnpm install
+pnpm exec convex dev         # long-running: generates convex/_generated and fills the Convex vars in .env.local
+```
+
+For optional overrides such as analytics or the access gate, copy only the relevant commented variables from `.env.example` into `.env.local` after Convex has written its variables.
+
+Then, in a second terminal:
+
+```bash
+pnpm dev
+```
+
+Open http://localhost:3000.
+
+## Environment
+
+| Variable | Required | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_CONVEX_URL` | yes | Convex deployment URL (public) |
+| `CONVEX_DEPLOYMENT` | yes | Convex deployment (server-only) |
+| `SITE_URL` | recommended | Absolute URL for SEO metadata and sitemap (server-only) |
+| `SITE_ACCESS_CODE` | optional | Enables the global access-code gate at `/access` (server-only) |
+| `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | optional | PostHog analytics (cookieless) |
+| `NEXT_PUBLIC_UMAMI_HOST`, `NEXT_PUBLIC_UMAMI_WEBSITE_ID` | optional | Self-hosted Umami analytics |
+| `NEXT_PUBLIC_TIMER_DEBUG` | optional | Timer debug presets in development |
+| `ALLOWED_DEV_ORIGINS` | optional | Comma-separated origins allowed to reach `next dev` |
 
 ## Commands
 
-- Dev: `pnpm dev`
-- Lint: `pnpm lint`
-- Build: `pnpm build`
-- Run production: `pnpm start`
-
-## How It Works (Security)
-
-- No login: access is **token-based**.
-- Create, join, invite, leave, and session flows go through `app/api/**` Route
-  Handlers because they need HttpOnly cookie access.
-- Gameplay actions (vote, reveal, reset, timer, auto-reveal, remove player, and
-  delete game) call Convex mutations directly from the browser, authorized by
-  token hashes.
-- Realtime game state streams through a Convex `useQuery` subscription.
-- Tokens are 256-bit random values stored in HttpOnly cookies. Convex stores
-  SHA-256 token hashes; for direct gameplay mutations, the browser presents
-  those hashes as bearer credentials.
-
-## Usage Notes
-
-- Use the **Invite** button to generate and share `/join/<gameId>?token=...`.
-- Admin/player tokens are stored in **HttpOnly cookies** scoped per game.
-
-## Analytics & Privacy
-
-Analytics is optional in local development: leave the analytics environment
-variables unset to disable it.
-
-When enabled, the app uses two browser analytics tools:
-
-- **PostHog** is configured cookieless: memory-only identity, no autocapture,
-  no session recording, no surveys, no conversations, and no product tours.
-- **Umami** is self-hosted and cookieless by design.
-
-Analytics identity is not stored in cookies or localStorage. The app captures
-pageviews plus two explicit product events: game created and game joined. Those
-events include pseudonymous game ids and non-secret metadata such as game type,
-card count, join source, reason, and locale.
+```bash
+pnpm dev      # develop
+pnpm lint     # Biome lint
+pnpm test     # Vitest
+pnpm build    # production build
+pnpm start    # run the production build
+```
 
 ## Deploy
 
-Deploy on Vercel and set the same environment variables in the Vercel project settings.
+Deploy on Vercel and set the same environment variables in the project settings. Convex runs as the realtime backend.
+
+## License
+
+Licensed under the [GNU AGPL-3.0](LICENSE). You are free to use, study, modify, and self-host it. Any distributed or network-hosted fork must also be released under the AGPL-3.0, which keeps derivatives open.
+
+© 2026 Pierre Guillemot
