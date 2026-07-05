@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
-const umamiHost =
-  process.env.NEXT_PUBLIC_UMAMI_HOST || "https://umami.pierreguillemot.dev";
+const umamiHost = (process.env.NEXT_PUBLIC_UMAMI_HOST ?? "").replace(/\/$/, "");
 const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
   .split(",")
   .map((origin) => origin.trim())
@@ -21,7 +20,9 @@ const scriptSrc = [
   "'unsafe-inline'",
   ...(isDevelopment ? ["'unsafe-eval'"] : []),
   umamiHost,
-].join(" ");
+]
+  .filter(Boolean)
+  .join(" ");
 
 const contentSecurityPolicy = [
   "default-src 'self'",

@@ -12,19 +12,15 @@ import { isTheme, THEME_COOKIE_NAME } from '@/lib/theme/constants';
 import './globals.css';
 
 const notoSans = Noto_Sans({ variable: '--font-sans' });
-const umamiHost = (
-  process.env.NEXT_PUBLIC_UMAMI_HOST || 'https://umami.pierreguillemot.dev'
-).replace(/\/$/, '');
-const umamiWebsiteId =
-  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ||
-  '72235807-ee28-4c05-9f7a-a68539283061';
+const umamiHost = (process.env.NEXT_PUBLIC_UMAMI_HOST ?? '').replace(/\/$/, '');
+const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? '';
 
 const themeScript =
   "(function(){try{var root=document.documentElement;var stored=localStorage.getItem('theme');var match=document.cookie.match(/(?:^|; )pp_theme=(light|dark)(?:;|$)/);var cookieTheme=match?match[1]:null;var theme=(stored==='light'||stored==='dark')?stored:((cookieTheme==='light'||cookieTheme==='dark')?cookieTheme:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));root.classList.remove('light','dark');root.classList.add(theme);}catch(e){}})();";
 
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
-  applicationName: 'Planning Poker',
+  applicationName: 'Open Poker Planning',
   generator: 'Next.js',
   referrer: 'origin-when-cross-origin',
   formatDetection: {
@@ -32,7 +28,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  title: 'Planning Poker',
+  title: 'Open Poker Planning',
 };
 
 export const viewport: Viewport = {
