@@ -1,9 +1,9 @@
 {
   "meta": {
-    "title": "Planning Poker | Estimation agile gratuite",
+    "title": "Open Poker Planning | Estimation agile gratuite",
     "description": "Planning poker gratuit pour équipes agiles. Créez une session, invitez votre équipe, estimez en temps réel.",
-    "siteName": "Planning Poker",
-    "ogAlt": "Planning Poker - planning poker gratuit en temps réel pour équipes agiles"
+    "siteName": "Open Poker Planning",
+    "ogAlt": "Open Poker Planning - planning poker gratuit en temps réel pour équipes agiles"
   },
   "home": {
     "eyebrow": "Planning poker open source",
@@ -32,9 +32,12 @@
     "avgWithColon": "Moyenne :"
   },
   "toolbar": {
-    "brand": "Planning Poker",
+    "brand": "Open Poker Planning",
     "new": "Nouveau",
     "join": "Rejoindre"
+  },
+  "footer": {
+    "source": "Code source sur GitHub"
   },
   "theme": {
     "toggle": "Changer le thème",

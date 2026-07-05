@@ -22,9 +22,10 @@ export function Toolbar() {
         <Link
           href={withLocale('/', locale)}
           className="flex items-center gap-2 group"
+          aria-label={t('toolbar.brand')}
         >
           <Spade className="size-5 text-primary transition-transform duration-200 group-hover:scale-110" />
-          <span className="md:text-xl text-sm font-semibold tracking-tight">
+          <span className="hidden sm:inline md:text-xl text-sm font-semibold tracking-tight">
             {t('toolbar.brand')}
           </span>
         </Link>
