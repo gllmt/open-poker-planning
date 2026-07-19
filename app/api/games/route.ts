@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
+import { getConvexServiceSecret } from '@/lib/security/convex-service';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
 import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
 import { generateToken, hashToken } from '@/lib/security/tokens';
@@ -25,6 +26,11 @@ type CreateGameBody = {
 };
 
 export async function POST(request: Request) {
+  const serviceSecret = getConvexServiceSecret();
+  if (!serviceSecret) {
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
+  }
+
   const ip = getClientIp(request.headers);
   if (isRateLimited(`create-game:${ip}`, 10, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -67,6 +73,7 @@ export async function POST(request: Request) {
 
   try {
     await fetchMutation(api.games.createGame, {
+      serviceSecret,
       gameId,
       name: body.name,
       createdBy: body.createdBy,
@@ -81,8 +88,15 @@ export async function POST(request: Request) {
       playerTokenHash,
     });
   } catch (error) {
-    if (getConvexErrorCode(error) === 'INVALID_INPUT') {
+    const code = getConvexErrorCode(error);
+    if (code === 'INVALID_INPUT') {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+    if (code === 'UNAUTHORIZED') {
+      return NextResponse.json(
+        { error: 'Service unavailable' },
+        { status: 503 }
+      );
     }
     return NextResponse.json(
       { error: 'Failed to create game' },

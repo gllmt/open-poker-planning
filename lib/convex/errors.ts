@@ -5,6 +5,7 @@ const KNOWN_CODES = new Set([
   'GAME_FINISHED',
   'INVALID_INPUT',
   'TOO_MANY_INVITES',
+  'TOO_MANY_PLAYERS',
 ]);
 
 type ConvexErrorCode =
@@ -13,7 +14,8 @@ type ConvexErrorCode =
   | 'INVALID_INVITE'
   | 'GAME_FINISHED'
   | 'INVALID_INPUT'
-  | 'TOO_MANY_INVITES';
+  | 'TOO_MANY_INVITES'
+  | 'TOO_MANY_PLAYERS';
 
 // Convex redacts plain Error messages in production and wraps them with
 // request metadata in dev, so the only reliable channel for an application
