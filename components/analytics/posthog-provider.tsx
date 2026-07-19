@@ -1,5 +1,8 @@
-import { PostHogPageView, PostHogProvider } from '@posthog/next';
-import { Suspense } from 'react';
+import { PostHogProvider } from '@posthog/next';
+
+import { POSTHOG_URL_PRIVACY_OPTIONS } from '@/lib/analytics-url';
+
+import { SafePostHogPageView } from './safe-posthog-page-view';
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -20,8 +23,11 @@ export function AppPostHogProvider({
       // Cookieless analytics: memory-only identity, no autocapture, no recordings.
       // Only manual pageviews and explicit product events are sent.
       clientOptions={{
+        ...POSTHOG_URL_PRIVACY_OPTIONS,
         advanced_disable_flags: true,
         autocapture: false,
+        capture_pageview: false,
+        capture_pageleave: false,
         defaults: '2026-01-30',
         disable_conversations: true,
         disable_external_dependency_loading: true,
@@ -32,9 +38,7 @@ export function AppPostHogProvider({
         ...(posthogHost ? { api_host: posthogHost } : {}),
       }}
     >
-      <Suspense fallback={null}>
-        <PostHogPageView />
-      </Suspense>
+      <SafePostHogPageView />
       {children}
     </PostHogProvider>
   );

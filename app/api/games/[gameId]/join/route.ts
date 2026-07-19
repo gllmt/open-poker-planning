@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
+import { getConvexServiceSecret } from '@/lib/security/convex-service';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
 import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
 import { generateToken, hashToken } from '@/lib/security/tokens';
@@ -17,6 +18,11 @@ export async function POST(
   context: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await context.params;
+  const serviceSecret = getConvexServiceSecret();
+  if (!serviceSecret) {
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
+  }
+
   const ip = getClientIp(request.headers);
   if (isRateLimited(`join-game:${gameId}:${ip}`, 20, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -39,6 +45,7 @@ export async function POST(
 
   try {
     await fetchMutation(api.games.joinGame, {
+      serviceSecret,
       gameId,
       playerId,
       playerName: body.playerName,
@@ -58,6 +65,18 @@ export async function POST(
     }
     if (code === 'INVALID_INPUT') {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+    if (code === 'UNAUTHORIZED') {
+      return NextResponse.json(
+        { error: 'Service unavailable' },
+        { status: 503 }
+      );
+    }
+    if (code === 'TOO_MANY_PLAYERS') {
+      return NextResponse.json(
+        { error: 'Too many players for this game' },
+        { status: 429 }
+      );
     }
     return NextResponse.json({ error: 'Failed to join' }, { status: 500 });
   }

@@ -38,6 +38,19 @@ type PlayerDoc = Doc<'players'>;
 type GameInviteDoc = Doc<'gameInvites'>;
 type DbReaderCtx = { db: DatabaseReader };
 
+const SERVICE_SECRET_MIN_LENGTH = 32;
+
+function assertServiceSecret(serviceSecret: string) {
+  const expected = process.env.CONVEX_SERVICE_SECRET;
+  if (
+    !expected ||
+    expected.length < SERVICE_SECRET_MIN_LENGTH ||
+    !timingSafeStringEqual(serviceSecret, expected)
+  ) {
+    throw new ConvexError('UNAUTHORIZED');
+  }
+}
+
 const resetTimerProps = (timerProps: unknown) => {
   if (timerProps === undefined) return undefined;
   if (timerProps === null) return null;
@@ -111,17 +124,25 @@ async function getActivePlayersByGameId(ctx: DbReaderCtx, gameId: string) {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
-async function getPlayerByGameAndPlayerId(
+async function getPlayersByGameAndPlayerId(
   ctx: DbReaderCtx,
   gameId: string,
   playerId: string
 ) {
-  const results = (await ctx.db
+  return (await ctx.db
     .query('players')
     .withIndex('by_gameId_playerId', (q) =>
       q.eq('gameId', gameId).eq('playerId', playerId)
     )
     .collect()) as PlayerDoc[];
+}
+
+async function getPlayerByGameAndPlayerId(
+  ctx: DbReaderCtx,
+  gameId: string,
+  playerId: string
+) {
+  const results = await getPlayersByGameAndPlayerId(ctx, gameId, playerId);
   return results[0] ?? null;
 }
 
@@ -130,13 +151,26 @@ async function getPlayerByGameAndPlayerTokenHash(
   gameId: string,
   playerTokenHash: string
 ) {
-  const results = (await ctx.db
+  return (await ctx.db
     .query('players')
     .withIndex('by_gameId_playerTokenHash', (q) =>
       q.eq('gameId', gameId).eq('playerTokenHash', playerTokenHash)
     )
-    .collect()) as PlayerDoc[];
-  return results[0] ?? null;
+    .first()) as PlayerDoc | null;
+}
+
+async function getPlayerByGameAndCredentials(
+  ctx: DbReaderCtx,
+  gameId: string,
+  playerId: string,
+  playerTokenHash: string
+) {
+  const player = await getPlayerByGameAndPlayerTokenHash(
+    ctx,
+    gameId,
+    playerTokenHash
+  );
+  return player?.playerId === playerId ? player : null;
 }
 
 async function getInvitesByGameId(ctx: DbReaderCtx, gameId: string) {
@@ -196,6 +230,50 @@ async function reserveInviteSlot(ctx: MutationCtx, gameId: string) {
   }
 }
 
+async function reservePlayerSlot(
+  ctx: MutationCtx,
+  gameId: string,
+  playerId: string,
+  playerTokenHash: string
+) {
+  const existingPlayer = await getPlayerByGameAndPlayerId(
+    ctx,
+    gameId,
+    playerId
+  );
+  if (existingPlayer) throw new ConvexError('INVALID_INPUT');
+
+  const existingToken = await getPlayerByGameAndPlayerTokenHash(
+    ctx,
+    gameId,
+    playerTokenHash
+  );
+  if (existingToken) throw new ConvexError('INVALID_INPUT');
+
+  const players = (await ctx.db
+    .query('players')
+    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
+    .take(LIMITS.playersPerGame + 1)) as PlayerDoc[];
+  const activeCount = players.filter(isActivePlayer).length;
+  if (activeCount >= LIMITS.playersPerGame) {
+    throw new ConvexError('TOO_MANY_PLAYERS');
+  }
+
+  // Keep the total row count bounded without letting left or removed players
+  // permanently exhaust the room. One slot must remain for the pending insert.
+  const overflow = players.length - (LIMITS.playersPerGame - 1);
+  if (overflow > 0) {
+    const prunable = players
+      .filter((player) => !isActivePlayer(player))
+      .sort((a, b) => a.updatedAt - b.updatedAt || a.createdAt - b.createdAt)
+      .slice(0, overflow);
+    if (prunable.length < overflow) {
+      throw new ConvexError('TOO_MANY_PLAYERS');
+    }
+    await Promise.all(prunable.map((player) => ctx.db.delete(player._id)));
+  }
+}
+
 async function revokeActiveInvites(
   ctx: MutationCtx,
   gameId: string,
@@ -235,17 +313,14 @@ async function assertCanManage(
   if (!game.isAllowMembersToManageSession) return false;
   if (!callerPlayerId || !playerTokenHash) return false;
 
-  const caller = await getPlayerByGameAndPlayerId(
+  const caller = await getPlayerByGameAndCredentials(
     ctx,
     game.gameId,
-    callerPlayerId
+    callerPlayerId,
+    playerTokenHash
   );
 
-  return Boolean(
-    caller &&
-      isActivePlayer(caller) &&
-      timingSafeStringEqual(caller.playerTokenHash, playerTokenHash)
-  );
+  return Boolean(caller && isActivePlayer(caller));
 }
 
 async function assertCanCreateInvite(
@@ -262,13 +337,14 @@ async function assertCanCreateInvite(
     return true;
   }
 
-  const caller = await getPlayerByGameAndPlayerId(ctx, game.gameId, playerId);
-
-  return Boolean(
-    caller &&
-      isActivePlayer(caller) &&
-      timingSafeStringEqual(caller.playerTokenHash, playerTokenHash)
+  const caller = await getPlayerByGameAndCredentials(
+    ctx,
+    game.gameId,
+    playerId,
+    playerTokenHash
   );
+
+  return Boolean(caller && isActivePlayer(caller));
 }
 
 async function getViewerState(
@@ -321,7 +397,7 @@ async function getViewerState(
     game: sanitizeGame(game),
     players: players.map((player) => {
       const sanitized = sanitizePlayer(player);
-      if (revealed || player.playerId === viewer.playerId) return sanitized;
+      if (revealed || player._id === viewer._id) return sanitized;
       return { ...sanitized, value: undefined, emoji: undefined };
     }),
   };
@@ -339,6 +415,7 @@ export const getViewerGameState = query({
 
 export const createGame = mutation({
   args: {
+    serviceSecret: v.string(),
     gameId: v.string(),
     name: v.string(),
     createdBy: v.string(),
@@ -351,6 +428,7 @@ export const createGame = mutation({
     playerTokenHash: v.string(),
   },
   handler: async (ctx, args) => {
+    assertServiceSecret(args.serviceSecret);
     const gameId = assertId(args.gameId);
     const createdById = assertId(args.createdById);
     const name = assertText(args.name, LIMITS.name);
@@ -447,6 +525,7 @@ export const createInvite = mutation({
 
 export const joinGame = mutation({
   args: {
+    serviceSecret: v.string(),
     gameId: v.string(),
     playerId: v.string(),
     playerName: v.string(),
@@ -454,6 +533,7 @@ export const joinGame = mutation({
     joinTokenHash: v.string(),
   },
   handler: async (ctx, args) => {
+    assertServiceSecret(args.serviceSecret);
     const playerName = assertText(args.playerName, LIMITS.personName);
     assertId(args.playerId);
     assertTokenHash(args.playerTokenHash);
@@ -470,6 +550,13 @@ export const joinGame = mutation({
     if (!hasValidInvite) {
       throw new ConvexError('INVALID_INVITE');
     }
+
+    await reservePlayerSlot(
+      ctx,
+      args.gameId,
+      args.playerId,
+      args.playerTokenHash
+    );
 
     const now = Date.now();
     await ctx.db.insert('players', {
@@ -499,16 +586,13 @@ export const leaveGame = mutation({
     const game = await getGameByGameId(ctx, args.gameId);
     if (!game) throw new ConvexError('NOT_FOUND');
 
-    const player = await getPlayerByGameAndPlayerId(
+    const player = await getPlayerByGameAndCredentials(
       ctx,
       args.gameId,
-      args.playerId
+      args.playerId,
+      args.playerTokenHash
     );
-    if (
-      !player ||
-      !isActivePlayer(player) ||
-      !timingSafeStringEqual(player.playerTokenHash, args.playerTokenHash)
-    ) {
+    if (!player || !isActivePlayer(player)) {
       throw new ConvexError('UNAUTHORIZED');
     }
 
@@ -536,16 +620,13 @@ export const vote = mutation({
     const game = await getGameByGameId(ctx, args.gameId);
     if (!game) throw new ConvexError('NOT_FOUND');
 
-    const player = await getPlayerByGameAndPlayerId(
+    const player = await getPlayerByGameAndCredentials(
       ctx,
       args.gameId,
-      args.playerId
+      args.playerId,
+      args.playerTokenHash
     );
-    if (
-      !player ||
-      !isActivePlayer(player) ||
-      !timingSafeStringEqual(player.playerTokenHash, args.playerTokenHash)
-    ) {
+    if (!player || !isActivePlayer(player)) {
       throw new ConvexError('UNAUTHORIZED');
     }
 
@@ -574,9 +655,7 @@ export const vote = mutation({
       const allFinished =
         players.length > 0 &&
         players.every((entry) =>
-          entry.playerId === args.playerId
-            ? true
-            : entry.status === STATUS.Finished
+          entry._id === player._id ? true : entry.status === STATUS.Finished
         );
       if (allFinished) nextStatus = STATUS.Finished;
     }
@@ -754,12 +833,12 @@ export const removePlayer = mutation({
     );
     if (!authorized) throw new ConvexError('UNAUTHORIZED');
 
-    const target = await getPlayerByGameAndPlayerId(
+    const targets = await getPlayersByGameAndPlayerId(
       ctx,
       args.gameId,
       args.playerId
     );
-    if (!target) throw new ConvexError('NOT_FOUND');
+    if (targets.length === 0) throw new ConvexError('NOT_FOUND');
 
     // Only the admin (creator) may remove the creator. A member with
     // "manage session" rights cannot evict the owner.
@@ -767,18 +846,22 @@ export const removePlayer = mutation({
       args.adminTokenHash &&
         timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
     );
-    if (target.playerId === game.createdById && !isAdmin) {
+    if (args.playerId === game.createdById && !isAdmin) {
       throw new ConvexError('UNAUTHORIZED');
     }
 
     const now = Date.now();
-    await ctx.db.patch(target._id, {
-      membershipStatus: MEMBERSHIP.Removed,
-      status: STATUS.NotStarted,
-      value: 0,
-      emoji: null,
-      updatedAt: now,
-    });
+    await Promise.all(
+      targets.map((target) =>
+        ctx.db.patch(target._id, {
+          membershipStatus: MEMBERSHIP.Removed,
+          status: STATUS.NotStarted,
+          value: 0,
+          emoji: null,
+          updatedAt: now,
+        })
+      )
+    );
     await revokeActiveInvites(ctx, args.gameId, 'player_removed', now);
     await ctx.db.patch(game._id, { updatedAt: now });
   },
@@ -804,11 +887,15 @@ export const deleteGame = mutation({
     );
     if (!isAdmin) throw new ConvexError('UNAUTHORIZED');
 
-    const players = await getPlayersByGameId(ctx, args.gameId);
-    const invites = await getInvitesByGameId(ctx, args.gameId);
+    const [players, invites] = await Promise.all([
+      getPlayersByGameId(ctx, args.gameId),
+      getInvitesByGameId(ctx, args.gameId),
+    ]);
 
-    await Promise.all(players.map((player) => ctx.db.delete(player._id)));
-    await Promise.all(invites.map((invite) => ctx.db.delete(invite._id)));
+    await Promise.all([
+      ...players.map((player) => ctx.db.delete(player._id)),
+      ...invites.map((invite) => ctx.db.delete(invite._id)),
+    ]);
     await ctx.db.delete(game._id);
   },
 });

@@ -51,7 +51,12 @@ export default async function RootLayout({
   const initialThemeClass = isTheme(cookieTheme) ? cookieTheme : undefined;
 
   return (
-    <html lang={lang} className={initialThemeClass} suppressHydrationWarning>
+    <html
+      lang={lang}
+      className={initialThemeClass}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         <Script id="theme-script" strategy="beforeInteractive">
           {themeScript}
@@ -65,6 +70,8 @@ export default async function RootLayout({
         {umamiHost && umamiWebsiteId ? (
           <Script
             src={`${umamiHost}/script.js`}
+            data-exclude-hash="true"
+            data-exclude-search="true"
             data-website-id={umamiWebsiteId}
             strategy="afterInteractive"
           />

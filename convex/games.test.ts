@@ -7,6 +7,7 @@ import { GameType } from '../types/game';
 import { Status } from '../types/status';
 import { api } from './_generated/api';
 import schema from './schema';
+import { LIMITS } from './validation';
 
 type GlobImportMeta = ImportMeta & {
   glob: (pattern: string) => Record<string, () => Promise<unknown>>;
@@ -26,6 +27,9 @@ const HASH_D = 'd'.repeat(64);
 const HASH_E = 'e'.repeat(64);
 const HASH_F = '1'.repeat(64);
 const HASH_X = 'f'.repeat(64);
+const SERVICE_SECRET = 'service-secret-'.padEnd(64, 's');
+
+process.env.CONVEX_SERVICE_SECRET = SERVICE_SECRET;
 
 const CARDS = [
   { value: 1, displayValue: '1', color: '#fff' },
@@ -41,6 +45,7 @@ type TestBackend = ReturnType<typeof createBackend>;
 async function setupGame(opts?: { allowMembersToManage?: boolean }) {
   const t = createBackend();
   await t.mutation(api.games.createGame, {
+    serviceSecret: SERVICE_SECRET,
     gameId: GAME_ID,
     name: 'Test game',
     createdBy: 'Alice',
@@ -65,6 +70,7 @@ async function joinPlayer(
   }
 ) {
   await t.mutation(api.games.joinGame, {
+    serviceSecret: SERVICE_SECRET,
     gameId: GAME_ID,
     playerId: opts?.playerId ?? BOB_ID,
     playerName: opts?.playerName ?? 'Bob',
@@ -162,6 +168,72 @@ describe('getViewerGameState', () => {
         playerTokenHash: HASH_C,
       })
     ).resolves.toEqual({ type: 'not_found' });
+  });
+});
+
+describe('server-only mutation authorization', () => {
+  it('rejects game creation when the service secret is not configured', async () => {
+    const configuredSecret = process.env.CONVEX_SERVICE_SECRET;
+    delete process.env.CONVEX_SERVICE_SECRET;
+
+    try {
+      const t = createBackend();
+      await expectConvexError(
+        t.mutation(api.games.createGame, {
+          serviceSecret: SERVICE_SECRET,
+          gameId: GAME_ID,
+          name: 'Test game',
+          createdBy: 'Alice',
+          createdById: ALICE_ID,
+          gameType: GameType.Fibonacci,
+          cards: CARDS,
+          isAllowMembersToManageSession: false,
+          joinTokenHash: HASH_A,
+          adminTokenHash: HASH_B,
+          playerTokenHash: HASH_C,
+        }),
+        'UNAUTHORIZED'
+      );
+    } finally {
+      process.env.CONVEX_SERVICE_SECRET = configuredSecret;
+    }
+  });
+
+  it('rejects direct game creation without the configured service secret', async () => {
+    const t = createBackend();
+
+    await expectConvexError(
+      t.mutation(api.games.createGame, {
+        serviceSecret: 'wrong-service-secret'.padEnd(64, 'x'),
+        gameId: GAME_ID,
+        name: 'Test game',
+        createdBy: 'Alice',
+        createdById: ALICE_ID,
+        gameType: GameType.Fibonacci,
+        cards: CARDS,
+        isAllowMembersToManageSession: false,
+        joinTokenHash: HASH_A,
+        adminTokenHash: HASH_B,
+        playerTokenHash: HASH_C,
+      }),
+      'UNAUTHORIZED'
+    );
+  });
+
+  it('rejects direct joins without the configured service secret', async () => {
+    const t = await setupGame();
+
+    await expectConvexError(
+      t.mutation(api.games.joinGame, {
+        serviceSecret: 'wrong-service-secret'.padEnd(64, 'x'),
+        gameId: GAME_ID,
+        playerId: BOB_ID,
+        playerName: 'Bob',
+        playerTokenHash: HASH_D,
+        joinTokenHash: HASH_A,
+      }),
+      'UNAUTHORIZED'
+    );
   });
 });
 
@@ -328,6 +400,7 @@ describe('removePlayer and deleteGame authorization', () => {
 
     await expectConvexError(
       t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
         gameId: GAME_ID,
         playerId: CAROL_ID,
         playerName: 'Carol',
@@ -336,6 +409,45 @@ describe('removePlayer and deleteGame authorization', () => {
       }),
       'INVALID_INVITE'
     );
+  });
+
+  it('removes every legacy duplicate row for the selected player id', async () => {
+    const t = await setupGame();
+    await joinPlayer(t);
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert('players', {
+        playerId: BOB_ID,
+        gameId: GAME_ID,
+        name: 'Legacy duplicate Bob',
+        status: Status.NotStarted,
+        membershipStatus: 'active',
+        value: 0,
+        emoji: null,
+        createdAt: now,
+        updatedAt: now,
+        playerTokenHash: HASH_E,
+      });
+    });
+
+    await t.mutation(api.games.removePlayer, {
+      gameId: GAME_ID,
+      playerId: BOB_ID,
+      adminTokenHash: HASH_B,
+    });
+
+    const duplicates = await t.run(async (ctx) =>
+      ctx.db
+        .query('players')
+        .withIndex('by_gameId_playerId', (q) =>
+          q.eq('gameId', GAME_ID).eq('playerId', BOB_ID)
+        )
+        .collect()
+    );
+    expect(duplicates).toHaveLength(2);
+    expect(
+      duplicates.every((player) => player.membershipStatus === 'removed')
+    ).toBe(true);
   });
 
   it('keeps deleteGame admin-only', async () => {
@@ -375,6 +487,7 @@ describe('createInvite and joinGame authorization', () => {
 
     await expectConvexError(
       t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
         gameId: GAME_ID,
         playerId: BOB_ID,
         playerName: 'Bob',
@@ -396,6 +509,7 @@ describe('createInvite and joinGame authorization', () => {
 
     await expectConvexError(
       t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
         gameId: GAME_ID,
         playerId: CAROL_ID,
         playerName: 'Carol',
@@ -414,6 +528,7 @@ describe('createInvite and joinGame authorization', () => {
 
     await expectConvexError(
       t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
         gameId: GAME_ID,
         playerId: CAROL_ID,
         playerName: 'Carol',
@@ -478,6 +593,109 @@ describe('createInvite and joinGame authorization', () => {
         playerTokenHash: HASH_X,
       }),
       'UNAUTHORIZED'
+    );
+  });
+
+  it('rejects a duplicate player id', async () => {
+    const t = await setupGame();
+
+    await expectConvexError(
+      t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
+        gameId: GAME_ID,
+        playerId: ALICE_ID,
+        playerName: 'Mallory',
+        playerTokenHash: HASH_D,
+        joinTokenHash: HASH_A,
+      }),
+      'INVALID_INPUT'
+    );
+  });
+
+  it('rejects a duplicate player token hash', async () => {
+    const t = await setupGame();
+
+    await expectConvexError(
+      t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
+        gameId: GAME_ID,
+        playerId: BOB_ID,
+        playerName: 'Mallory',
+        playerTokenHash: HASH_C,
+        joinTokenHash: HASH_A,
+      }),
+      'INVALID_INPUT'
+    );
+  });
+
+  it('prunes the oldest inactive row while keeping the total row budget', async () => {
+    const t = await setupGame();
+
+    await t.run(async (ctx) => {
+      for (let i = 1; i < LIMITS.playersPerGame; i++) {
+        const now = Date.now() + i;
+        await ctx.db.insert('players', {
+          playerId: `seed-player-${i}`,
+          gameId: GAME_ID,
+          name: `Seed player ${i}`,
+          status: Status.NotStarted,
+          membershipStatus: 'left',
+          value: 0,
+          emoji: null,
+          createdAt: now,
+          updatedAt: now,
+          playerTokenHash: hashFor(10_000 + i),
+        });
+      }
+    });
+
+    await joinPlayer(t);
+
+    const players = await t.run(async (ctx) =>
+      ctx.db
+        .query('players')
+        .withIndex('by_gameId', (q) => q.eq('gameId', GAME_ID))
+        .collect()
+    );
+
+    expect(players).toHaveLength(LIMITS.playersPerGame);
+    expect(players.some((player) => player.playerId === BOB_ID)).toBe(true);
+    expect(players.some((player) => player.playerId === 'seed-player-1')).toBe(
+      false
+    );
+  });
+
+  it('rejects joins when every player slot is active', async () => {
+    const t = await setupGame();
+
+    await t.run(async (ctx) => {
+      for (let i = 1; i < LIMITS.playersPerGame; i++) {
+        const now = Date.now() + i;
+        await ctx.db.insert('players', {
+          playerId: `active-player-${i}`,
+          gameId: GAME_ID,
+          name: `Active player ${i}`,
+          status: Status.NotStarted,
+          membershipStatus: 'active',
+          value: 0,
+          emoji: null,
+          createdAt: now,
+          updatedAt: now,
+          playerTokenHash: hashFor(20_000 + i),
+        });
+      }
+    });
+
+    await expectConvexError(
+      t.mutation(api.games.joinGame, {
+        serviceSecret: SERVICE_SECRET,
+        gameId: GAME_ID,
+        playerId: BOB_ID,
+        playerName: 'Bob',
+        playerTokenHash: HASH_D,
+        joinTokenHash: HASH_A,
+      }),
+      'TOO_MANY_PLAYERS'
     );
   });
 
@@ -741,6 +959,87 @@ describe('vote masking', () => {
     const bob = getPlayer(state, BOB_ID);
 
     expect(JSON.stringify(bob)).not.toContain('2');
+  });
+
+  it('uses the player document identity when masking legacy duplicate ids', async () => {
+    const t = await setupGame();
+    await t.mutation(api.games.vote, {
+      gameId: GAME_ID,
+      playerId: ALICE_ID,
+      playerTokenHash: HASH_C,
+      value: 2,
+    });
+
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert('players', {
+        playerId: ALICE_ID,
+        gameId: GAME_ID,
+        name: 'Mallory',
+        status: Status.NotStarted,
+        membershipStatus: 'active',
+        value: 0,
+        emoji: null,
+        createdAt: now,
+        updatedAt: now,
+        playerTokenHash: HASH_D,
+      });
+    });
+
+    const state = expectReady(await getViewer(t, HASH_D));
+    const alice = state.players.find((player) => player.name === 'Alice');
+    const mallory = state.players.find((player) => player.name === 'Mallory');
+
+    expect(alice).toBeDefined();
+    expect(mallory).toBeDefined();
+    if (!alice || !mallory) throw new Error('Expected both duplicate-id rows');
+    expect(alice.value).toBeUndefined();
+    expect(alice.emoji).toBeUndefined();
+    expect(mallory.value).toBe(0);
+  });
+
+  it('lets legacy duplicate rows vote independently before auto-reveal', async () => {
+    const t = await setupGame();
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert('players', {
+        playerId: ALICE_ID,
+        gameId: GAME_ID,
+        name: 'Legacy duplicate Alice',
+        status: Status.NotStarted,
+        membershipStatus: 'active',
+        value: 0,
+        emoji: null,
+        createdAt: now,
+        updatedAt: now,
+        playerTokenHash: HASH_D,
+      });
+    });
+    await t.mutation(api.games.setAutoReveal, {
+      gameId: GAME_ID,
+      autoReveal: true,
+      adminTokenHash: HASH_B,
+    });
+
+    await t.mutation(api.games.vote, {
+      gameId: GAME_ID,
+      playerId: ALICE_ID,
+      playerTokenHash: HASH_C,
+      value: 1,
+    });
+    expect(expectReady(await getViewer(t)).game.gameStatus).toBe(
+      Status.InProgress
+    );
+
+    await t.mutation(api.games.vote, {
+      gameId: GAME_ID,
+      playerId: ALICE_ID,
+      playerTokenHash: HASH_D,
+      value: 2,
+    });
+    expect(expectReady(await getViewer(t)).game.gameStatus).toBe(
+      Status.Finished
+    );
   });
 });
 

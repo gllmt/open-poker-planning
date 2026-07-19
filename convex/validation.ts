@@ -15,6 +15,7 @@ export const LIMITS = {
   cardColor: 64,
   id: 80,
   invitesPerGame: 100,
+  playersPerGame: 50,
   // Generous upper bound: large enough for epoch-ms timestamps, small enough
   // to reject absurd values.
   timerNumber: 1e15,

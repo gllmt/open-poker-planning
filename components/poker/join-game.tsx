@@ -80,10 +80,12 @@ export function JoinGame({
   initialGameId,
   initialInviteToken,
   initialReason,
+  shouldClearSession = false,
 }: {
   initialGameId?: string;
   initialInviteToken?: string;
   initialReason?: 'left' | 'missing-session' | 'removed';
+  shouldClearSession?: boolean;
 }) {
   const posthog = usePostHog();
   const router = useRouter();
@@ -102,10 +104,25 @@ export function JoinGame({
   }, [state.playerName]);
 
   useEffect(() => {
+    if (!initialInviteToken) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('token')) return;
+
+    url.searchParams.delete('token');
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${url.pathname}${url.search}${url.hash}`
+    );
+  }, [initialInviteToken]);
+
+  useEffect(() => {
     if (!initialGameId || !initialReason) return;
 
-    clearPlayerGameSession(initialGameId);
-    void clearGameSession(initialGameId).catch(() => {});
+    if (shouldClearSession) {
+      clearPlayerGameSession(initialGameId);
+      void clearGameSession(initialGameId).catch(() => {});
+    }
 
     const titleByReason = {
       left: t('joinGame.leftSession'),
@@ -117,7 +134,7 @@ export function JoinGame({
       title: titleByReason[initialReason],
       position: 'top-center',
     });
-  }, [initialGameId, initialReason, t]);
+  }, [initialGameId, initialReason, shouldClearSession, t]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

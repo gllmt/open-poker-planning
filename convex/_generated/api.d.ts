@@ -9,6 +9,7 @@
  */
 
 import type * as games from "../games.js";
+import type * as validation from "../validation.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +19,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   games: typeof games;
+  validation: typeof validation;
 }>;
 
 /**

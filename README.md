@@ -49,7 +49,16 @@ pnpm exec convex dev         # long-running: generates convex/_generated and fil
 
 For optional overrides such as analytics or the access gate, copy only the relevant commented variables from `.env.example` into `.env.local` after Convex has written its variables.
 
-Then, in a second terminal:
+Create the shared development secret once, without putting its value in shell history:
+
+```bash
+task_service_secret="$(openssl rand -hex 32)"
+printf '\nCONVEX_SERVICE_SECRET=%s\n' "$task_service_secret" >> .env.local
+printf '%s' "$task_service_secret" | pnpm exec convex env set CONVEX_SERVICE_SECRET
+unset task_service_secret
+```
+
+Then, with `pnpm exec convex dev` still running, start Next.js in another terminal:
 
 ```bash
 pnpm dev
@@ -63,6 +72,7 @@ Open http://localhost:3000.
 |---|---|---|
 | `NEXT_PUBLIC_CONVEX_URL` | yes | Convex deployment URL (public) |
 | `CONVEX_DEPLOYMENT` | yes | Convex deployment (server-only) |
+| `CONVEX_SERVICE_SECRET` | yes | Shared server secret configured in both Next.js and Convex, used to authorize create/join mutations |
 | `SITE_URL` | recommended | Absolute URL for SEO metadata and sitemap (server-only) |
 | `SITE_ACCESS_CODE` | optional | Enables the global access-code gate at `/access` (server-only) |
 | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | optional | PostHog analytics (cookieless) |
@@ -82,7 +92,7 @@ pnpm start    # run the production build
 
 ## Deploy
 
-Deploy on Vercel and set the same environment variables in the project settings. Convex runs as the realtime backend.
+Deploy on Vercel and set the same environment variables in the project settings. Convex runs as the realtime backend. Set `CONVEX_SERVICE_SECRET` to the same random value in Vercel and in the production Convex deployment with `pnpm exec convex env set --prod CONVEX_SERVICE_SECRET`. Omitting the value makes the CLI read it interactively or from stdin instead of saving it in shell history.
 
 ## License
 

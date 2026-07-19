@@ -10,6 +10,7 @@ import { api } from '@/convex/_generated/api';
 import { i18n, isLocale } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { cookieNames } from '@/lib/security/cookies';
+import { resolveJoinSession } from '@/lib/security/session-exit';
 import { hashToken } from '@/lib/security/tokens';
 
 export const metadata: Metadata = {
@@ -40,30 +41,21 @@ export default async function JoinGamePage({
   const dictionary = await getDictionary(locale);
   const resolvedSearchParams = await searchParams;
   const initialInviteToken = readSearchParam(resolvedSearchParams?.token) ?? '';
-  let initialReason = readSearchParam(resolvedSearchParams?.reason) as
-    | 'left'
-    | 'missing-session'
-    | 'removed'
-    | undefined;
-
-  if (!initialReason) {
-    const cookieStore = await cookies();
-    const playerToken = cookieStore.get(cookieNames.playerToken(id))?.value;
-
-    if (playerToken) {
-      const viewerState = await fetchQuery(api.games.getViewerGameState, {
+  const cookieStore = await cookies();
+  const playerToken = cookieStore.get(cookieNames.playerToken(id))?.value;
+  const viewerState = playerToken
+    ? await fetchQuery(api.games.getViewerGameState, {
         gameId: id,
         playerTokenHash: hashToken(playerToken),
-      });
+      })
+    : null;
+  const session = resolveJoinSession({
+    reasonParam: resolvedSearchParams?.reason,
+    viewerState,
+  });
 
-      if (viewerState.type === 'ready') {
-        redirect(`/${locale}/game/${id}`);
-      }
-
-      if (viewerState.type === 'revoked') {
-        initialReason = viewerState.reason;
-      }
-    }
+  if (session.redirectToGame) {
+    redirect(`/${locale}/game/${id}`);
   }
 
   return (
@@ -81,7 +73,8 @@ export default async function JoinGamePage({
             <JoinGame
               initialGameId={id}
               initialInviteToken={initialInviteToken}
-              initialReason={initialReason}
+              initialReason={session.reason}
+              shouldClearSession={session.shouldClearSession}
             />
           </Suspense>
         </div>
