@@ -94,12 +94,14 @@ export function CardPicker({
               disabled={isDisabled}
               className={cn(
                 'relative rounded-[0.85rem] outline-none transition-[translate,rotate,scale,filter] duration-300 ease-out md:rounded-[1.1rem]',
+                !isDisabled && 'cursor-pointer',
                 !isDisabled &&
-                  'cursor-pointer hover:-translate-y-2 hover:drop-shadow-[0_18px_18px_rgba(15,10,25,0.24)] active:translate-y-0 active:scale-[0.97]',
+                  !isSelected &&
+                  'hover:-translate-y-2 hover:drop-shadow-[0_18px_18px_rgba(15,10,25,0.24)] active:translate-y-0 active:scale-[0.97]',
                 !isSelected &&
                   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400/70',
                 isDisabled && 'cursor-default',
-                isSelected && '-translate-y-1'
+                isSelected && 'z-10 -translate-y-4'
               )}
               style={
                 {
@@ -114,16 +116,8 @@ export function CardPicker({
               <PlanningCard
                 card={card}
                 face={isSelected && !isFinished ? 'back' : 'front'}
-                backLabel={t('cardPicker.validated')}
+                selected={isSelected}
                 className="animate-planning-card-deal"
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'pointer-events-none absolute -inset-1 rounded-[1rem] border border-orange-300/75 opacity-0 scale-[0.97] transition-[opacity,scale,box-shadow] duration-300 ease-out md:rounded-[1.25rem]',
-                  isSelected &&
-                    'scale-100 opacity-100 shadow-[0_0_20px_rgba(249,115,22,0.3)]'
-                )}
               />
             </button>
           );
