@@ -232,7 +232,7 @@ export function GameController({
   const timerProps = { isMod, ...(game.timerProps ?? {}) };
 
   return (
-    <div className="flex flex-col items-center w-full md:w-[450px]">
+    <div className="flex w-full flex-col items-center lg:w-[450px]">
       <div className="w-full max-w-xl my-5 glass-card dark:dark-glass-card rounded-2xl overflow-hidden">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-3 border-b border-border/40 px-5 py-3.5">

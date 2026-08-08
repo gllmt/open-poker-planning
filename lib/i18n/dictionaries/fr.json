@@ -75,7 +75,12 @@
   },
   "cardPicker": {
     "cta": "Cliquez sur la carte pour voter",
-    "notReady": "Session terminée !"
+    "notReady": "Votes révélés",
+    "selectCard": "Choisir la carte {value}",
+    "selectedCard": "Carte {value} sélectionnée",
+    "revealedCard": "Carte {value}",
+    "validated": "Vote validé",
+    "changeVote": "Votre vote est validé. Choisissez une autre carte pour le modifier."
   },
   "errorBoundary": {
     "sessionError": "Impossible de continuer avec la session actuelle.",
@@ -87,7 +92,10 @@
   },
   "playerCard": {
     "removeTitle": "Retirer",
-    "removeButton": "Retirer le joueur"
+    "removeButton": "Retirer le joueur",
+    "waiting": "En attente du vote",
+    "voted": "A voté · carte cachée",
+    "revealed": "Vote révélé : {value}"
   },
   "game": {
     "status": {
