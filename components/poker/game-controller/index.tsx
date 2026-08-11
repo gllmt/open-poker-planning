@@ -24,7 +24,6 @@ import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { useGameAverage } from '../hooks/use-game-average';
 import { ResultsSection } from '../results/results-section';
 import { Timer } from '../timer/timer';
 import { AutoRevealToggle } from './auto-reveal-toggle';
@@ -71,13 +70,6 @@ export function GameController({
     currentPlayerId,
     game.isAllowMembersToManageSession
   );
-
-  const averageValue = useGameAverage(game, players);
-  const canShowAverage = averageValue !== null;
-  const averageLabel =
-    game.gameStatus === Status.Finished && averageValue !== null
-      ? averageValue.toFixed(2)
-      : '-';
 
   // Reuse the invite link across clicks instead of minting a new invite each
   // time, so repeated copies don't burn the per-game invite quota.
@@ -309,12 +301,7 @@ export function GameController({
               <Share className="size-5" aria-hidden="true" />
             </ControllerButton>
           </div>
-          <ResultsSection
-            game={game}
-            players={players}
-            averageLabel={averageLabel}
-            showAverage={canShowAverage}
-          />
+          <ResultsSection game={game} players={players} />
         </div>
       </div>
       {confettiSeed ? <ConfettiOverlay key={confettiSeed} /> : null}

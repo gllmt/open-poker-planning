@@ -122,10 +122,13 @@
   },
   "results": {
     "title": "Résultats",
-    "avg": "Moyenne",
-    "player": "Joueur",
-    "vote": "Vote",
-    "noVote": "Pas de vote."
+    "averageCard": "Carte moyenne",
+    "averageDescription": "La carte moyenne est…",
+    "averageUnavailable": "Aucune moyenne numérique n'est disponible.",
+    "mostPlayedCard": "Carte la plus jouée",
+    "mostPlayedDescription": "La carte la plus jouée est…",
+    "mostPlayedTie": "Plusieurs cartes sont à égalité.",
+    "noRevealedVote": "Aucun vote révélé n'est disponible."
   },
   "story": {
     "label": "Nom de la story :",
