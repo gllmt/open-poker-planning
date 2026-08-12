@@ -16,6 +16,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { createInvite } from '@/lib/api/games';
 import { withLocale } from '@/lib/i18n/paths';
@@ -24,7 +35,6 @@ import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { useGameAverage } from '../hooks/use-game-average';
 import { ResultsSection } from '../results/results-section';
 import { Timer } from '../timer/timer';
 import { AutoRevealToggle } from './auto-reveal-toggle';
@@ -71,13 +81,6 @@ export function GameController({
     currentPlayerId,
     game.isAllowMembersToManageSession
   );
-
-  const averageValue = useGameAverage(game, players);
-  const canShowAverage = averageValue !== null;
-  const averageLabel =
-    game.gameStatus === Status.Finished && averageValue !== null
-      ? averageValue.toFixed(2)
-      : '-';
 
   // Reuse the invite link across clicks instead of minting a new invite each
   // time, so repeated copies don't burn the per-game invite quota.
@@ -213,18 +216,7 @@ export function GameController({
     autoRevealValue,
     baseAutoReveal,
   ]);
-  const leaveGame = () => {
-    void onLeaveGame().catch(() => {
-      sileo.info({
-        title: t('game.leaveFailed'),
-        position: 'top-center',
-      });
-    });
-  };
-
   const handleRemoveGame = async () => {
-    const confirm = window.confirm(t('game.confirmDelete'));
-    if (!confirm) return;
     await onDeleteGame();
     router.push(withLocale('/', locale));
   };
@@ -232,7 +224,7 @@ export function GameController({
   const timerProps = { isMod, ...(game.timerProps ?? {}) };
 
   return (
-    <div className="flex flex-col items-center w-full md:w-[450px]">
+    <div className="flex w-full flex-col items-center lg:w-[450px]">
       <div className="w-full max-w-xl my-5 glass-card dark:dark-glass-card rounded-2xl overflow-hidden">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-3 border-b border-border/40 px-5 py-3.5">
@@ -289,15 +281,30 @@ export function GameController({
                 onClick={handleRemoveGame}
                 label={t('game.delete')}
                 variant="destructive"
+                confirmation={{
+                  title: t('game.confirmDeleteTitle'),
+                  description: t('game.confirmDelete'),
+                  cancelLabel: t('common.cancel'),
+                  actionLabel: t('game.delete'),
+                  actionVariant: 'destructive',
+                  failureMessage: t('game.deleteFailed'),
+                }}
               >
                 <Trash className="size-5" aria-hidden="true" />
               </ControllerButton>
             )}
 
             <ControllerButton
-              onClick={leaveGame}
+              onClick={onLeaveGame}
               label={t('game.exit')}
               variant="outline"
+              confirmation={{
+                title: t('game.confirmLeaveTitle'),
+                description: t('game.confirmLeave'),
+                cancelLabel: t('common.cancel'),
+                actionLabel: t('game.exit'),
+                failureMessage: t('game.leaveFailed'),
+              }}
             >
               <LogOut className="size-5" aria-hidden="true" />
             </ControllerButton>
@@ -309,12 +316,7 @@ export function GameController({
               <Share className="size-5" aria-hidden="true" />
             </ControllerButton>
           </div>
-          <ResultsSection
-            game={game}
-            players={players}
-            averageLabel={averageLabel}
-            showAverage={canShowAverage}
-          />
+          <ResultsSection game={game} players={players} />
         </div>
       </div>
       {confettiSeed ? <ConfettiOverlay key={confettiSeed} /> : null}
@@ -326,19 +328,100 @@ function ControllerButton({
   onClick,
   label,
   variant = 'outline',
+  confirmation,
   children,
 }: {
-  onClick: () => void;
+  onClick: () => void | Promise<void>;
   label: string;
   variant?: React.ComponentProps<typeof Button>['variant'];
+  confirmation?: {
+    title: string;
+    description: string;
+    cancelLabel: string;
+    actionLabel: string;
+    actionVariant?: React.ComponentProps<typeof Button>['variant'];
+    failureMessage: string;
+  };
   children: React.ReactNode;
 }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleConfirmedAction = async () => {
+    if (!confirmation || isPending) return;
+
+    setIsPending(true);
+    try {
+      await onClick();
+      setDialogOpen(false);
+    } catch {
+      sileo.info({
+        title: confirmation.failureMessage,
+        position: 'top-center',
+      });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  if (confirmation) {
+    return (
+      <AlertDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!isPending) setDialogOpen(open);
+        }}
+      >
+        <div className="flex flex-col items-center gap-1.5">
+          <AlertDialogTrigger
+            render={
+              <Button
+                type="button"
+                aria-label={label}
+                className="rounded-xl hover:shadow-md active:scale-[0.95] transition-all duration-150"
+                title={label}
+                size="icon"
+                variant={variant}
+              />
+            }
+          >
+            <span className="text-2xl">{children}</span>
+          </AlertDialogTrigger>
+          <span className="text-muted-foreground text-xs">{label}</span>
+        </div>
+
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmation.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>
+              {confirmation.cancelLabel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              variant={confirmation.actionVariant}
+              disabled={isPending}
+              aria-busy={isPending}
+              onClick={() => void handleConfirmedAction()}
+            >
+              {confirmation.actionLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-1.5">
       <Button
         type="button"
         aria-label={label}
-        onClick={onClick}
+        onClick={() => void onClick()}
         className="rounded-xl hover:shadow-md active:scale-[0.95] transition-all duration-150"
         title={label}
         size="icon"

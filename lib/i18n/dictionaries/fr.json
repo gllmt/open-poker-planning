@@ -75,7 +75,12 @@
   },
   "cardPicker": {
     "cta": "Cliquez sur la carte pour voter",
-    "notReady": "Session terminée !"
+    "notReady": "Votes révélés",
+    "selectCard": "Choisir la carte {value}",
+    "selectedCard": "Carte {value} sélectionnée",
+    "revealedCard": "Carte {value}",
+    "validated": "Vote validé",
+    "changeVote": "Votre vote est validé. Choisissez une autre carte pour le modifier."
   },
   "errorBoundary": {
     "sessionError": "Impossible de continuer avec la session actuelle.",
@@ -87,7 +92,10 @@
   },
   "playerCard": {
     "removeTitle": "Retirer",
-    "removeButton": "Retirer le joueur"
+    "removeButton": "Retirer le joueur",
+    "waiting": "En attente du vote",
+    "voted": "A voté · carte cachée",
+    "revealed": "Vote révélé : {value}"
   },
   "game": {
     "status": {
@@ -100,10 +108,14 @@
     "inviteCopied": "Lien d'invitation copié dans le presse-papiers !",
     "invitePrompt": "Copie automatique impossible. Utilisez ce lien d'invitation :",
     "openInvite": "Ouvrir le lien",
-    "confirmDelete": "Etes-vous sur ? Cette action supprimera cette session et tous les joueurs.",
+    "confirmDeleteTitle": "Supprimer la session ?",
+    "confirmDelete": "Cette action est irréversible. La session et tous les joueurs seront supprimés.",
+    "confirmLeaveTitle": "Quitter la partie ?",
+    "confirmLeave": "Vous devrez rejoindre la session à nouveau pour continuer à participer.",
     "reveal": "Voir les votes",
     "restart": "Recommencer",
     "delete": "Supprimer",
+    "deleteFailed": "Impossible de supprimer la session pour le moment.",
     "exit": "Quitter",
     "leaveFailed": "Impossible de quitter la partie pour le moment.",
     "invite": "Inviter",
@@ -114,10 +126,13 @@
   },
   "results": {
     "title": "Résultats",
-    "avg": "Moyenne",
-    "player": "Joueur",
-    "vote": "Vote",
-    "noVote": "Pas de vote."
+    "averageCard": "Carte moyenne",
+    "averageDescription": "La carte moyenne est…",
+    "averageUnavailable": "Aucune moyenne numérique n'est disponible.",
+    "mostPlayedCard": "Carte la plus jouée",
+    "mostPlayedDescription": "La carte la plus jouée est…",
+    "mostPlayedTie": "Plusieurs cartes sont à égalité.",
+    "noRevealedVote": "Aucun vote révélé n'est disponible."
   },
   "story": {
     "label": "Nom de la story :",

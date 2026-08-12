@@ -75,7 +75,12 @@
   },
   "cardPicker": {
     "cta": "Click on the card to vote",
-    "notReady": "Voting is closed - votes are revealed"
+    "notReady": "Votes revealed",
+    "selectCard": "Choose card {value}",
+    "selectedCard": "Card {value} selected",
+    "revealedCard": "Card {value}",
+    "validated": "Vote confirmed",
+    "changeVote": "Your vote is confirmed. Choose another card to change it."
   },
   "errorBoundary": {
     "sessionError": "Unable to continue with the current session.",
@@ -87,7 +92,10 @@
   },
   "playerCard": {
     "removeTitle": "Remove",
-    "removeButton": "Remove player"
+    "removeButton": "Remove player",
+    "waiting": "Waiting for vote",
+    "voted": "Voted · card hidden",
+    "revealed": "Revealed vote: {value}"
   },
   "game": {
     "status": {
@@ -100,10 +108,14 @@
     "inviteCopied": "Invite link copied to clipboard!",
     "invitePrompt": "Automatic copy failed. Use this invite link:",
     "openInvite": "Open link",
-    "confirmDelete": "Are you sure? This will delete this session and remove all players.",
+    "confirmDeleteTitle": "Delete this session?",
+    "confirmDelete": "This action cannot be undone. The session and all players will be deleted.",
+    "confirmLeaveTitle": "Leave the game?",
+    "confirmLeave": "You will need to join the session again to keep participating.",
     "reveal": "Reveal",
     "restart": "Restart",
     "delete": "Delete",
+    "deleteFailed": "Unable to delete the session right now.",
     "exit": "Exit",
     "leaveFailed": "Unable to leave the game right now.",
     "invite": "Invite",
@@ -114,10 +126,13 @@
   },
   "results": {
     "title": "Results",
-    "avg": "Avg",
-    "player": "Player",
-    "vote": "Vote",
-    "noVote": "No vote"
+    "averageCard": "Average card",
+    "averageDescription": "The average card is…",
+    "averageUnavailable": "No numeric average is available.",
+    "mostPlayedCard": "Most played card",
+    "mostPlayedDescription": "The most played card is…",
+    "mostPlayedTie": "Several cards are tied.",
+    "noRevealedVote": "No revealed vote is available."
   },
   "story": {
     "label": "Story Name:",

@@ -38,8 +38,8 @@ export function GameArea({
 }) {
   return (
     <>
-      <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-start">
-        <div className="animate-scale-in stagger-1 w-full md:w-auto">
+      <div className="flex w-full flex-col items-start justify-center gap-4 lg:flex-row">
+        <div className="animate-scale-in stagger-1 w-full lg:w-auto">
           <GameController
             game={game}
             players={players}
@@ -54,7 +54,7 @@ export function GameArea({
             onLeaveGame={onLeaveGame}
           />
         </div>
-        <div className="animate-scale-in stagger-2 w-full md:w-auto">
+        <div className="animate-scale-in stagger-2 w-full lg:w-auto">
           <Players
             game={game}
             players={players}

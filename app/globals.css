@@ -216,6 +216,56 @@ html.theme-transitioning * {
   animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Planning cards: a CSS-only 3D flip keeps voting interactions responsive. */
+.planning-card-scene {
+  perspective: 1000px;
+}
+
+.planning-card-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.78s cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+
+.planning-card-scene[data-face="front"] .planning-card-inner {
+  transform: rotateY(180deg);
+}
+
+.planning-card-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.planning-card-front {
+  transform: rotateY(180deg);
+}
+
+@keyframes planning-card-deal {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-planning-card-deal {
+  animation: planning-card-deal 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--planning-card-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planning-card-inner {
+    transition-delay: 0ms !important;
+    transition-duration: 0.01ms;
+  }
+
+  .animate-planning-card-deal {
+    animation: none;
+  }
+}
+
 /* stagger delays */
 .stagger-1 {
   animation-delay: 0ms;
