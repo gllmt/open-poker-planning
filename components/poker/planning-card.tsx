@@ -16,7 +16,7 @@ const surfaceRadiusClasses = {
 } as const;
 
 const cardSurfaceClasses =
-  'planning-card-face absolute inset-0 overflow-hidden bg-[linear-gradient(145deg,#c77547_0%,#914b2b_52%,#542a1b_100%)] text-[#fff4e8] shadow-[0_14px_30px_rgba(65,28,15,0.3),inset_0_0_24px_rgba(255,218,188,0.09)]';
+  'planning-card-face absolute inset-0 overflow-hidden bg-primary text-primary-foreground shadow-[0_14px_30px_rgba(65,28,15,0.3),inset_0_0_24px_rgba(255,218,188,0.09)]';
 
 const cardPatternClasses =
   'absolute inset-0 bg-[radial-gradient(circle_at_50%_44%,rgba(255,205,170,0.18),transparent_36%),repeating-linear-gradient(45deg,transparent_0,transparent_7px,rgba(255,235,219,0.1)_7px,rgba(255,235,219,0.1)_8px),repeating-linear-gradient(-45deg,transparent_0,transparent_9px,rgba(255,244,235,0.04)_9px,rgba(255,244,235,0.04)_10px)]';
