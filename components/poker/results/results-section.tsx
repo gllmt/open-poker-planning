@@ -36,9 +36,10 @@ export function ResultsSection({
     () => getResultSummary(game, players),
     [game, players]
   );
+  const isFinished = game.gameStatus === Status.Finished;
 
   useEffect(() => {
-    if (game.gameStatus !== Status.Finished) {
+    if (!isFinished) {
       setAreCardsRevealed(false);
       return;
     }
@@ -48,25 +49,32 @@ export function ResultsSection({
     });
 
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [game.gameStatus]);
-
-  if (game.gameStatus !== Status.Finished) return null;
+  }, [isFinished]);
 
   const averageDisplayValue =
-    summary.average === null ? '?' : formatAverage(summary.average, locale);
+    !isFinished || summary.average === null
+      ? '?'
+      : formatAverage(summary.average, locale);
   const averageCard: CardConfig = {
-    value: summary.average ?? unavailableCard.value,
+    value:
+      isFinished && summary.average !== null
+        ? summary.average
+        : unavailableCard.value,
     displayValue: averageDisplayValue,
     color: '#fca5a5',
   };
-  const mostPlayedCard = summary.mostPlayedCard ?? unavailableCard;
-  const cardFace: PlanningCardFace = areCardsRevealed ? 'front' : 'back';
+  const mostPlayedCard =
+    isFinished && summary.mostPlayedCard
+      ? summary.mostPlayedCard
+      : unavailableCard;
+  const cardFace: PlanningCardFace =
+    isFinished && areCardsRevealed ? 'front' : 'back';
   const averageDescription =
-    summary.average === null
+    !isFinished || summary.average === null
       ? t('results.averageUnavailable')
       : t('results.averageDescription');
   const mostPlayedDescription =
-    summary.mostPlayedCount === 0
+    !isFinished || summary.mostPlayedCount === 0
       ? t('results.noRevealedVote')
       : summary.isMostPlayedTie
         ? t('results.mostPlayedTie')
