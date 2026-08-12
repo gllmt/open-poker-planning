@@ -2,9 +2,9 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { I18nProvider } from '@/components/i18n/provider';
 import { getCards } from '@/components/poker/card-configs';
 import { ResultsSection } from '@/components/poker/results/results-section';
+import { I18nContext } from '@/lib/i18n/context';
 import en from '@/lib/i18n/dictionaries/en.json';
 import { type Game, GameType } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -32,8 +32,8 @@ describe('ResultsSection', () => {
 
     const markup = renderToStaticMarkup(
       createElement(
-        I18nProvider,
-        { locale: 'en', dictionary: en },
+        I18nContext.Provider,
+        { value: { locale: 'en', dictionary: en } },
         createElement(ResultsSection, { game, players })
       )
     );
