@@ -22,6 +22,7 @@ import {
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getTimerSnapshot } from '@/lib/timer/timer-snapshot';
 
 type TimerProps = {
   isMod?: boolean;
@@ -107,21 +108,15 @@ function TimerProgressView({
   soundOn = true,
 }: TimerProps) {
   const { t } = useI18n();
-  const startedAtValue = startedAt ?? 0;
-  const inProgress = startedAt != null;
+  const inProgress = startedAt !== null;
   const now = useNow(inProgress);
-  const elapsed = inProgress
-    ? Math.floor((now - startedAtValue) / 1000)
-    : (pausedAt ?? 0);
-  const clampedElapsed = Math.min(
-    Math.max(elapsed, 0),
-    Math.max(totalSeconds, 0)
+  const { remaining, percentage } = getTimerSnapshot(
+    { startedAt, pausedAt, totalSeconds },
+    now
   );
-  const remaining = Math.max(0, totalSeconds - clampedElapsed);
 
   const [minutes, seconds] = getMinutesAndSeconds(totalSeconds);
   const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
-  const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
   const totalMinutesLabel = minutes.toString().padStart(2, '0');
   const totalSecondsLabel = seconds.toString().padStart(2, '0');
 
@@ -201,17 +196,13 @@ function TimerProgressMod({
   const finishedRef = useRef(false);
   const pendingUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startedAtValue = startedAt ?? 0;
-  const isRunning = startedAt != null;
+  const isRunning = startedAt !== null;
   const now = useNow(isRunning);
-  const elapsed = isRunning
-    ? Math.floor((now - startedAtValue) / 1000)
-    : (pausedAt ?? 0);
-  const clampedElapsed = Math.min(
-    Math.max(elapsed, 0),
-    Math.max(totalSeconds, 0)
-  );
-  const remaining = Math.max(0, totalSeconds - clampedElapsed);
+  const {
+    elapsed: clampedElapsed,
+    remaining,
+    percentage,
+  } = getTimerSnapshot({ startedAt, pausedAt, totalSeconds }, now);
   const activeDraftTotal =
     draftTotal !== null && draftTotal !== totalSeconds ? draftTotal : null;
   const resolvedDraftTotal = activeDraftTotal ?? totalSeconds;
@@ -403,7 +394,6 @@ function TimerProgressMod({
 
   const [minutes, seconds] = getMinutesAndSeconds(displayTotal);
   const [runningMinutes, runningSeconds] = getMinutesAndSeconds(remaining);
-  const percentage = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
   const [currentMinutesRunning, currentSecondsRunning] =
     getMinutesAndSeconds(clampedElapsed);
 
