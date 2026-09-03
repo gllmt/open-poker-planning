@@ -1,11 +1,11 @@
 // @vitest-environment edge-runtime
 
 import { convexTest } from 'convex-test';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { GameType } from '../types/game';
 import { Status } from '../types/status';
-import { api } from './_generated/api';
+import { api, internal } from './_generated/api';
 import schema from './schema';
 import { LIMITS } from './validation';
 
@@ -1060,15 +1060,62 @@ describe('sanitized viewer output', () => {
 });
 
 describe('updateTimer server stamping', () => {
-  async function getStoredTimerProps(t: TestBackend) {
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  async function getStoredGame(t: TestBackend) {
     return t.run(async (ctx) => {
       const game = await ctx.db
         .query('games')
         .withIndex('by_gameId', (q) => q.eq('gameId', GAME_ID))
         .unique();
       expect(game).not.toBeNull();
-      return game?.timerProps as Record<string, unknown> | null | undefined;
+      if (!game) throw new Error('Expected stored game');
+      return game;
     });
+  }
+
+  async function getStoredTimerProps(t: TestBackend) {
+    const game = await getStoredGame(t);
+    return game.timerProps as Record<string, unknown> | null | undefined;
+  }
+
+  async function getScheduledFunctionCount(t: TestBackend) {
+    return t.run(async (ctx) => {
+      const scheduledFunctions = await ctx.db.system
+        .query('_scheduled_functions')
+        .collect();
+      return scheduledFunctions.length;
+    });
+  }
+
+  async function startTimer(
+    t: TestBackend,
+    options: { elapsedSeconds?: number; totalSeconds?: number } = {}
+  ) {
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: Date.now() + 9_999_999,
+        elapsedSeconds: options.elapsedSeconds ?? 0,
+        pausedAt: null,
+        totalSeconds: options.totalSeconds ?? 60,
+        soundOn: true,
+      },
+    });
+
+    const timerProps = await getStoredTimerProps(t);
+    const startedAt = timerProps?.startedAt;
+    const totalSeconds = timerProps?.totalSeconds;
+    expect(typeof startedAt).toBe('number');
+    expect(typeof totalSeconds).toBe('number');
+    return {
+      startedAt: startedAt as number,
+      totalSeconds: totalSeconds as number,
+    };
   }
 
   it('re-stamps start payloads with server time and strips elapsedSeconds', async () => {
@@ -1146,5 +1193,291 @@ describe('updateTimer server stamping', () => {
       }),
       'UNAUTHORIZED'
     );
+  });
+
+  it('rejects a new client-provided start timestamp without elapsedSeconds', async () => {
+    const t = await setupGame();
+
+    await expectConvexError(
+      t.mutation(api.games.updateTimer, {
+        gameId: GAME_ID,
+        adminTokenHash: HASH_B,
+        timerProps: {
+          startedAt: Date.now(),
+          pausedAt: null,
+          totalSeconds: 60,
+          soundOn: true,
+        },
+      }),
+      'INVALID_INPUT'
+    );
+  });
+
+  it('accepts an echoed start timestamp without scheduling a duplicate', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const schedule = await startTimer(t);
+
+    await expect(getScheduledFunctionCount(t)).resolves.toBe(1);
+
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: schedule.startedAt,
+        pausedAt: null,
+        totalSeconds: schedule.totalSeconds,
+        soundOn: false,
+      },
+    });
+
+    await expect(getScheduledFunctionCount(t)).resolves.toBe(1);
+    await expect(getStoredTimerProps(t)).resolves.toMatchObject({
+      startedAt: schedule.startedAt,
+      totalSeconds: schedule.totalSeconds,
+      soundOn: false,
+    });
+  });
+
+  it('replaces a stale optimistic start echo with the server timestamp', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const schedule = await startTimer(t);
+
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: schedule.startedAt + 5000,
+        pausedAt: null,
+        totalSeconds: schedule.totalSeconds,
+        soundOn: false,
+      },
+    });
+
+    await expect(getScheduledFunctionCount(t)).resolves.toBe(1);
+    await expect(getStoredTimerProps(t)).resolves.toMatchObject({
+      startedAt: schedule.startedAt,
+      totalSeconds: schedule.totalSeconds,
+      soundOn: false,
+    });
+  });
+
+  it('finishes the game and records completion at the scheduled deadline', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    await startTimer(t);
+
+    await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+    const game = await getStoredGame(t);
+    expect(game.gameStatus).toBe(Status.Finished);
+    expect(game.timerProps).toMatchObject({
+      startedAt: null,
+      pausedAt: 0,
+      totalSeconds: 60,
+      soundOn: true,
+    });
+    expect(game.timerCompletedAt).toBe(1_800_000_060_000);
+    expect(expectReady(await getViewer(t)).game.timerCompletedAt).toBe(
+      1_800_000_060_000
+    );
+  });
+
+  it('finishes at the deadline even when autoReveal is enabled', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    await t.mutation(api.games.setAutoReveal, {
+      gameId: GAME_ID,
+      autoReveal: true,
+      adminTokenHash: HASH_B,
+    });
+    await startTimer(t);
+
+    await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+    const game = await getStoredGame(t);
+    expect(game.gameStatus).toBe(Status.Finished);
+    expect(game.timerCompletedAt).toBe(1_800_000_060_000);
+  });
+
+  it('ignores completion after the timer is paused', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const schedule = await startTimer(t);
+
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: null,
+        pausedAt: 10,
+        totalSeconds: 60,
+        soundOn: true,
+      },
+    });
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...schedule,
+    });
+
+    const game = await getStoredGame(t);
+    expect(game.gameStatus).toBe(Status.Started);
+    expect(game.timerCompletedAt).toBeUndefined();
+  });
+
+  it('ignores completion after a round reset', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const schedule = await startTimer(t);
+
+    await t.mutation(api.games.reset, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+    });
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...schedule,
+    });
+
+    const game = await getStoredGame(t);
+    expect(game.gameStatus).toBe(Status.Started);
+    expect(game.timerCompletedAt).toBeUndefined();
+  });
+
+  it('ignores completion after a manual reveal', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const schedule = await startTimer(t);
+
+    await t.mutation(api.games.reveal, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+    });
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...schedule,
+    });
+
+    const game = await getStoredGame(t);
+    expect(game.gameStatus).toBe(Status.Finished);
+    expect(game.timerCompletedAt).toBeUndefined();
+  });
+
+  it('ignores completion after an early auto-reveal', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    await t.mutation(api.games.setAutoReveal, {
+      gameId: GAME_ID,
+      autoReveal: true,
+      adminTokenHash: HASH_B,
+    });
+    const schedule = await startTimer(t);
+
+    await t.mutation(api.games.vote, {
+      gameId: GAME_ID,
+      playerId: ALICE_ID,
+      playerTokenHash: HASH_C,
+      value: 1,
+    });
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...schedule,
+    });
+
+    const game = await getStoredGame(t);
+    expect(game.gameStatus).toBe(Status.Finished);
+    expect(game.timerCompletedAt).toBeUndefined();
+  });
+
+  it('ignores completion after the game is deleted', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const schedule = await startTimer(t);
+
+    await t.mutation(api.games.deleteGame, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+    });
+
+    await expect(
+      t.mutation(internal.games.completeTimer, {
+        gameId: GAME_ID,
+        ...schedule,
+      })
+    ).resolves.toBeNull();
+  });
+
+  it('only lets the latest restart complete the timer', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const staleSchedule = await startTimer(t);
+
+    vi.setSystemTime(1_800_000_010_000);
+    const currentSchedule = await startTimer(t, {
+      elapsedSeconds: 5,
+      totalSeconds: 120,
+    });
+
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...staleSchedule,
+    });
+    expect((await getStoredGame(t)).timerCompletedAt).toBeUndefined();
+
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...currentSchedule,
+    });
+    const completedAt = (await getStoredGame(t)).timerCompletedAt;
+    expect(completedAt).toBe(1_800_000_010_000);
+
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...currentSchedule,
+    });
+    expect((await getStoredGame(t)).timerCompletedAt).toBe(completedAt);
+  });
+
+  it('reschedules a changed duration without letting the old deadline win', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const t = await setupGame();
+    const staleSchedule = await startTimer(t);
+
+    await t.mutation(api.games.updateTimer, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      timerProps: {
+        startedAt: staleSchedule.startedAt,
+        pausedAt: null,
+        totalSeconds: 120,
+        soundOn: true,
+      },
+    });
+
+    await expect(getScheduledFunctionCount(t)).resolves.toBe(2);
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      ...staleSchedule,
+    });
+    expect((await getStoredGame(t)).timerCompletedAt).toBeUndefined();
+
+    await t.mutation(internal.games.completeTimer, {
+      gameId: GAME_ID,
+      startedAt: staleSchedule.startedAt,
+      totalSeconds: 120,
+    });
+    expect((await getStoredGame(t)).timerCompletedAt).toBe(1_800_000_000_000);
   });
 });

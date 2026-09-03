@@ -192,6 +192,21 @@ describe('timer helpers', () => {
       'INVALID_INPUT'
     );
   });
+
+  it('assertTimerInput bounds timer duration and start progress', () => {
+    expect(() =>
+      assertTimerInput({ totalSeconds: LIMITS.timerTotalSeconds + 1 })
+    ).toThrow('INVALID_INPUT');
+    expect(() => assertTimerInput({ totalSeconds: -1 })).toThrow(
+      'INVALID_INPUT'
+    );
+    expect(() => assertTimerInput({ startedAt: 1000 })).toThrow(
+      'INVALID_INPUT'
+    );
+    expect(() =>
+      assertTimerInput({ elapsedSeconds: 61, totalSeconds: 60 })
+    ).toThrow('INVALID_INPUT');
+  });
 });
 
 describe('isAllowedVoteValue', () => {

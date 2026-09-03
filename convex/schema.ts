@@ -14,6 +14,7 @@ export default defineSchema({
     autoReveal: v.boolean(),
     gameStatus: v.string(),
     timerProps: v.any(),
+    timerCompletedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     joinTokenHash: v.string(),

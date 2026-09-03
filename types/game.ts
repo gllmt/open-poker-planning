@@ -26,6 +26,7 @@ export interface Game {
   createdAt?: string;
   updatedAt?: string;
   timerProps?: TimerProps;
+  timerCompletedAt?: number;
 }
 
 export interface NewGame {
