@@ -177,6 +177,8 @@ describe('createRateLimiter', () => {
         now: 10_202,
       })
     ).toBe(true);
+    // The previous hit refreshed active-oldest. At capacity, adding one more
+    // bucket must evict new-bucket, whose next request starts a fresh window.
     expect(
       isRateLimited({
         ...request,

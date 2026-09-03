@@ -9,4 +9,4 @@
   - Simulate failures for `onReveal`, `onReset`, and `onTimerUpdate`, then assert that each action restores the exact previous state.
   - Migrate one mutation at a time (`vote`, `reveal`, then `reset`) and remove the reducer only after the last migration.
   - Preserve rapid-vote coalescing with a minimal local draft instead of stacking the current overlay with a Convex optimistic update.
-  - Files: test setup needed for `components/poker/poker.tsx` (framework choice required).
+  - File: test setup needed for `components/poker/use-poker-controller.ts` (framework choice required).
