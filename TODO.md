@@ -6,10 +6,7 @@
   - File: `components/poker/game-controller/index.tsx`.
 - [ ] Add controller regression tests before migrating to Convex optimistic updates.
   - Cover rapid A → B voting, exact rollback after a rejected vote, and a server push during an optimistic reveal.
+  - Simulate failures for `onReveal`, `onReset`, and `onTimerUpdate`, then assert that each action restores the exact previous state.
   - Migrate one mutation at a time (`vote`, `reveal`, then `reset`) and remove the reducer only after the last migration.
   - Preserve rapid-vote coalescing with a minimal local draft instead of stacking the current overlay with a Convex optimistic update.
-
-## Quality / Tests
-- [ ] Add unit tests for optimistic rollback.
-  - Implementation: simulate API failure for `onReveal`, `onReset`, `onTimerUpdate` and assert UI state returns to previous values.
   - Files: test setup needed for `components/poker/poker.tsx` (framework choice required).

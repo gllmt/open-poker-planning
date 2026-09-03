@@ -448,13 +448,17 @@ function getGameStatusIcon(gameStatus: string) {
   }
 }
 
-function getStatusLabel(status: Status, t: Translate) {
-  const statusKeyMap: Record<Status, DictionaryKey> = {
-    [Status.NotStarted]: 'game.status.notStarted',
-    [Status.Started]: 'game.status.started',
-    [Status.InProgress]: 'game.status.inProgress',
-    [Status.Finished]: 'game.status.finished',
-  };
+const STATUS_KEY_BY_VALUE = {
+  [Status.NotStarted]: 'game.status.notStarted',
+  [Status.Started]: 'game.status.started',
+  [Status.InProgress]: 'game.status.inProgress',
+  [Status.Finished]: 'game.status.finished',
+} satisfies Record<Status, DictionaryKey>;
 
-  return t(statusKeyMap[status]);
+function isKnownStatus(status: string): status is Status {
+  return Object.hasOwn(STATUS_KEY_BY_VALUE, status);
+}
+
+function getStatusLabel(status: string, t: Translate) {
+  return isKnownStatus(status) ? t(STATUS_KEY_BY_VALUE[status]) : status;
 }

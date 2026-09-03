@@ -108,6 +108,92 @@ describe('createRateLimiter', () => {
     expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(false);
     expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(true);
   });
+
+  it('blocks the 61st scoped request from one IP with the default global limit', () => {
+    const isRateLimited = createRateLimiter({ maxScopedBuckets: 1 });
+    const request = {
+      ip: '203.0.113.8',
+      limit: 20,
+      windowMs: 60_000,
+      now: 9_000,
+    };
+
+    for (let index = 0; index < 60; index += 1) {
+      const gameId = `00000000-0000-4000-8000-${index
+        .toString(16)
+        .padStart(12, '0')}`;
+      expect(isRateLimited({ ...request, scope: `join-game:${gameId}` })).toBe(
+        false
+      );
+    }
+
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'join-game:00000000-0000-4000-8000-00000000003c',
+      })
+    ).toBe(true);
+  });
+
+  it('removes expired buckets before evicting an active bucket', () => {
+    const isRateLimited = createRateLimiter({
+      globalIpLimit: 10,
+      maxScopedBuckets: 2,
+    });
+    const request = {
+      ip: '203.0.113.9',
+      limit: 1,
+    };
+
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'active-oldest',
+        windowMs: 10_000,
+        now: 10_000,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'expired-newer',
+        windowMs: 100,
+        now: 10_100,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'new-bucket',
+        windowMs: 10_000,
+        now: 10_201,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'active-oldest',
+        windowMs: 10_000,
+        now: 10_202,
+      })
+    ).toBe(true);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'newest-bucket',
+        windowMs: 10_000,
+        now: 10_203,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'new-bucket',
+        windowMs: 10_000,
+        now: 10_204,
+      })
+    ).toBe(false);
+  });
 });
 
 describe('getClientIp', () => {

@@ -13,5 +13,3 @@ const dictionaries = {
 export const getDictionary = cache((locale: Locale): Promise<Dictionary> => {
   return dictionaries[locale]();
 });
-
-export type { Dictionary } from './types';
