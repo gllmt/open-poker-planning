@@ -22,7 +22,10 @@ import {
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getTimerSnapshot } from '@/lib/timer/timer-snapshot';
+import {
+  clampTimerElapsed,
+  getTimerSnapshot,
+} from '@/lib/timer/timer-snapshot';
 
 type TimerProps = {
   isMod?: boolean;
@@ -38,17 +41,10 @@ type TimerProps = {
     totalSeconds: number;
     soundOn: boolean;
   }) => void;
-  onTimerComplete?: () => void;
 };
 
 const getMinutesAndSeconds = (time: number) =>
   [Math.floor(time / 60), time % 60] as const;
-
-const playNotification = () => {
-  if (typeof Audio === 'undefined') return;
-  const notification = new Audio('/timer-notification.mp3');
-  notification.play().catch(() => {});
-};
 
 const nowStore = {
   current: 0,
@@ -189,11 +185,9 @@ function TimerProgressMod({
   onTimerClose,
   onTimerStateUpdate,
   soundOn = true,
-  onTimerComplete,
 }: TimerProps) {
   const { t } = useI18n();
   const [draftTotal, setDraftTotal] = useState<number | null>(null);
-  const finishedRef = useRef(false);
   const pendingUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRunning = startedAt !== null;
@@ -207,34 +201,6 @@ function TimerProgressMod({
     draftTotal !== null && draftTotal !== totalSeconds ? draftTotal : null;
   const resolvedDraftTotal = activeDraftTotal ?? totalSeconds;
   const displayTotal = isRunning ? totalSeconds : resolvedDraftTotal;
-
-  useEffect(() => {
-    if (!isRunning) {
-      finishedRef.current = false;
-      return;
-    }
-    if (remaining > 0) {
-      finishedRef.current = false;
-      return;
-    }
-    if (finishedRef.current) return;
-    finishedRef.current = true;
-    playNotification();
-    onTimerStateUpdate({
-      startedAt: null,
-      pausedAt: 0,
-      totalSeconds,
-      soundOn,
-    });
-    onTimerComplete?.();
-  }, [
-    isRunning,
-    remaining,
-    totalSeconds,
-    soundOn,
-    onTimerStateUpdate,
-    onTimerComplete,
-  ]);
 
   useEffect(() => {
     return () => {
@@ -285,7 +251,7 @@ function TimerProgressMod({
 
   const startTimer = useCallback(() => {
     cancelPendingUpdate();
-    const baseElapsed = pausedAt ?? 0;
+    const baseElapsed = clampTimerElapsed(pausedAt ?? 0, resolvedDraftTotal);
     const startAt = Date.now() - baseElapsed * 1000;
     onTimerStateUpdate({
       startedAt: startAt,

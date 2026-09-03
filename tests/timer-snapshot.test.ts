@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTimerSnapshot } from '@/lib/timer/timer-snapshot';
+import {
+  clampTimerElapsed,
+  getTimerSnapshot,
+} from '@/lib/timer/timer-snapshot';
+
+describe('clampTimerElapsed', () => {
+  it('bounds elapsed time to the configured duration', () => {
+    expect(clampTimerElapsed(-1, 60)).toBe(0);
+    expect(clampTimerElapsed(30, 60)).toBe(30);
+    expect(clampTimerElapsed(61, 60)).toBe(60);
+  });
+});
 
 describe('getTimerSnapshot', () => {
   it('calculates a running timer from its start timestamp', () => {

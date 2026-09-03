@@ -195,11 +195,6 @@ export function GameController({
     [autoRevealPending, baseAutoReveal, onAutoReveal]
   );
 
-  const handleTimerComplete = useCallback(() => {
-    if (autoRevealValue) return;
-    onReveal();
-  }, [autoRevealValue, onReveal]);
-
   useEffect(() => {
     if (autoRevealPending) return;
     if (autoRevealPendingSync) {
@@ -241,8 +236,8 @@ export function GameController({
           <div className="pb-3">
             <Timer
               timerProps={timerProps}
+              timerCompletedAt={game.timerCompletedAt}
               onTimerUpdate={onTimerUpdate}
-              onTimerComplete={handleTimerComplete}
             />
           </div>
           {isMod && (

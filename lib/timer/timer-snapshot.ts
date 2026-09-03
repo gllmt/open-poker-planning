@@ -11,6 +11,10 @@ export type TimerSnapshot = {
   percentage: number;
 };
 
+export function clampTimerElapsed(elapsed: number, totalSeconds: number) {
+  return Math.min(Math.max(elapsed, 0), Math.max(totalSeconds, 0));
+}
+
 export function getTimerSnapshot(
   { startedAt = null, pausedAt = 0, totalSeconds }: TimerSnapshotInput,
   now: number
@@ -20,7 +24,7 @@ export function getTimerSnapshot(
   const rawElapsed = isRunning
     ? Math.floor((now - startedAt) / 1000)
     : (pausedAt ?? 0);
-  const elapsed = Math.min(Math.max(rawElapsed, 0), safeTotalSeconds);
+  const elapsed = clampTimerElapsed(rawElapsed, safeTotalSeconds);
   const remaining = Math.max(0, safeTotalSeconds - elapsed);
   const percentage =
     safeTotalSeconds > 0 ? (remaining / safeTotalSeconds) * 100 : 100;
