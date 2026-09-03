@@ -19,6 +19,7 @@ export const LIMITS = {
   // Generous upper bound: large enough for epoch-ms timestamps, small enough
   // to reject absurd values.
   timerNumber: 1e15,
+  timerTotalSeconds: 24 * 60 * 60,
 } as const;
 
 const TIMER_FIELDS = [
@@ -180,6 +181,28 @@ export function assertTimerInput(
   if (
     out.elapsedSeconds !== undefined &&
     (typeof out.elapsedSeconds !== 'number' || out.elapsedSeconds < 0)
+  ) {
+    throw new ConvexError('INVALID_INPUT');
+  }
+  if (
+    out.totalSeconds !== undefined &&
+    (typeof out.totalSeconds !== 'number' ||
+      out.totalSeconds < 0 ||
+      out.totalSeconds > LIMITS.timerTotalSeconds)
+  ) {
+    throw new ConvexError('INVALID_INPUT');
+  }
+  if (
+    (typeof out.startedAt === 'number' ||
+      typeof out.elapsedSeconds === 'number') &&
+    typeof out.totalSeconds !== 'number'
+  ) {
+    throw new ConvexError('INVALID_INPUT');
+  }
+  if (
+    typeof out.elapsedSeconds === 'number' &&
+    typeof out.totalSeconds === 'number' &&
+    out.elapsedSeconds > out.totalSeconds
   ) {
     throw new ConvexError('INVALID_INPUT');
   }

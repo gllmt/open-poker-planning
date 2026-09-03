@@ -19,7 +19,7 @@ Real-time planning poker for agile teams. Create a room, share a link, and estim
 
 - Real-time voting synced across everyone in the room, powered by Convex subscriptions.
 - No login. Rooms are token-based: share an invite link and people join instantly.
-- Round timer to keep estimation sessions moving.
+- Server-scheduled round timer to keep estimation sessions moving.
 - Confetti on reveal when the table agrees.
 - Optional access-code gate to keep an instance private.
 - Bilingual interface (English and French).
@@ -27,6 +27,10 @@ Real-time planning poker for agile teams. Create a room, share a link, and estim
 ## Built with
 
 Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and database), Tailwind CSS v4 with Base UI, Biome, Vitest. Deployed on Vercel.
+
+## Timer behavior
+
+Starting or resuming the timer schedules its deadline as an internal Convex mutation. The server reveals the round at that deadline even if the moderator closes or backgrounds their browser; paused, reset, restarted, manually revealed, or deleted games make older scheduled tasks harmless no-ops. Auto-reveal remains an earlier trigger when every active player has voted, while timer expiry always reveals. When sound is enabled, each connected client attempts to play the notification from the server completion event; browser autoplay policies can still block it.
 
 ## How it works (security)
 

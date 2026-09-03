@@ -50,6 +50,14 @@ Real-time planning poker app using **Next.js 16 App Router** + **Convex**.
 3. Route Handlers cover create, join, invite, leave, and session flows that need cookie access
 4. Gameplay updates call Convex mutations directly from the browser with hashed bearer credentials
 5. Convex `useQuery` subscriptions stream current game state back to clients without a refetch loop
+6. Starting or resuming the timer schedules an internal Convex mutation for its server-authoritative deadline; stale tasks verify the stored timer identity and exit without changing the game
+
+### Timer Contract
+
+- Timer expiry always reveals the round. `autoReveal` may reveal it earlier once every active player has voted.
+- The browser renders the countdown but never owns completion. Convex stops the timer, finishes the game, and updates `timerCompletedAt`.
+- Every connected client with sound enabled reacts once to a fresh `timerCompletedAt` value. Audio remains best effort because browsers may enforce autoplay restrictions.
+- Pause, reset, restart, manual reveal, auto-reveal, and game deletion invalidate previously scheduled completions through the `(startedAt, totalSeconds)` guard; scheduled jobs are intentionally not cancelled or persisted in the game document.
 
 ## Coding Conventions
 

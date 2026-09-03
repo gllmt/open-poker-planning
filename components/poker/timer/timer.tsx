@@ -12,12 +12,20 @@ import {
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
+import { shouldPlayTimerCompletionSound } from '@/lib/timer/completion-sound';
+import { clampTimerElapsed } from '@/lib/timer/timer-snapshot';
 import type { TimerProps as GameTimerProps } from '@/types/game';
 
 const TimerProgress = dynamic(
   () => import('./timer-progress-popup').then((m) => m.TimerProgress),
   { ssr: false }
 );
+
+const playNotification = () => {
+  if (typeof Audio === 'undefined') return;
+  const notification = new Audio('/timer-notification.mp3');
+  notification.play().catch(() => {});
+};
 
 type VisibilityStore = {
   getSnapshot: () => boolean;
@@ -68,8 +76,8 @@ function createVisibilityStore(initialValue: boolean): VisibilityStore {
 
 export function Timer({
   timerProps,
+  timerCompletedAt,
   onTimerUpdate,
-  onTimerComplete,
 }: {
   timerProps: {
     isMod?: boolean;
@@ -81,8 +89,8 @@ export function Timer({
     currentSeconds?: number;
     timerPaused?: boolean;
   };
+  timerCompletedAt?: number;
   onTimerUpdate: (timer: GameTimerProps) => Promise<void>;
-  onTimerComplete?: () => void;
 }) {
   const { t } = useI18n();
   const {
@@ -95,6 +103,22 @@ export function Timer({
     currentSeconds,
     timerPaused,
   } = timerProps;
+  const previousCompletedAtRef = useRef(timerCompletedAt);
+
+  useEffect(() => {
+    const previousCompletedAt = previousCompletedAtRef.current;
+    previousCompletedAtRef.current = timerCompletedAt;
+    if (
+      shouldPlayTimerCompletionSound(
+        previousCompletedAt,
+        timerCompletedAt,
+        soundOn,
+        Date.now()
+      )
+    ) {
+      playNotification();
+    }
+  }, [soundOn, timerCompletedAt]);
 
   const commitTimerUpdate = useCallback(
     (update: GameTimerProps) => onTimerUpdate(update),
@@ -126,10 +150,14 @@ export function Timer({
     legacyMigrationRef.current = true;
 
     if (timerPaused === false) {
-      const legacyStartedAt = Date.now() - currentSeconds * 1000;
+      const legacyElapsedSeconds = clampTimerElapsed(
+        currentSeconds,
+        totalSeconds
+      );
+      const legacyStartedAt = Date.now() - legacyElapsedSeconds * 1000;
       fireAndForgetTimerUpdate({
         startedAt: legacyStartedAt,
-        elapsedSeconds: currentSeconds,
+        elapsedSeconds: legacyElapsedSeconds,
         pausedAt: null,
         totalSeconds,
         soundOn,
@@ -225,7 +253,6 @@ export function Timer({
         })
       }
       soundOn={soundOn}
-      onTimerComplete={onTimerComplete}
     />
   );
 }

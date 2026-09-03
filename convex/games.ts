@@ -3,9 +3,11 @@ import { ConvexError, v } from 'convex/values';
 import type { Game } from '../types/game';
 import type { Player } from '../types/player';
 import { Status } from '../types/status';
+import { internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import {
   type DatabaseReader,
+  internalMutation,
   type MutationCtx,
   mutation,
   query,
@@ -88,6 +90,7 @@ function sanitizeGame(game: GameDoc): Game {
       game.timerProps === null || game.timerProps === undefined
         ? undefined
         : (game.timerProps as Game['timerProps']),
+    timerCompletedAt: game.timerCompletedAt,
     createdAt: new Date(game.createdAt).toISOString(),
     updatedAt: new Date(game.updatedAt).toISOString(),
   };
@@ -755,7 +758,8 @@ export const updateTimer = mutation({
     callerPlayerId: v.optional(v.string()),
     playerTokenHash: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
     const game = await getGameByGameId(ctx, args.gameId);
     if (!game) throw new ConvexError('NOT_FOUND');
 
@@ -770,16 +774,87 @@ export const updateTimer = mutation({
 
     const now = Date.now();
     const timerProps = assertTimerInput(args.timerProps);
-    if (timerProps && typeof timerProps.elapsedSeconds === 'number') {
-      timerProps.startedAt = now - timerProps.elapsedSeconds * 1000;
+    const previousTimerProps = pickTimerFields(game.timerProps);
+    const previousStartedAt = previousTimerProps.startedAt;
+    const previousTotalSeconds = previousTimerProps.totalSeconds;
+    const elapsedSeconds = timerProps?.elapsedSeconds;
+
+    if (
+      timerProps &&
+      typeof timerProps.startedAt === 'number' &&
+      typeof elapsedSeconds !== 'number'
+    ) {
+      if (typeof previousStartedAt !== 'number') {
+        throw new ConvexError('INVALID_INPUT');
+      }
+      timerProps.startedAt = previousStartedAt;
+    }
+
+    if (timerProps && typeof elapsedSeconds === 'number') {
+      timerProps.startedAt = now - elapsedSeconds * 1000;
       timerProps.pausedAt = null;
       delete timerProps.elapsedSeconds;
     }
+
+    const nextStartedAt = timerProps?.startedAt;
+    const nextTotalSeconds = timerProps?.totalSeconds;
+    const scheduleChanged =
+      typeof nextStartedAt === 'number' &&
+      typeof nextTotalSeconds === 'number' &&
+      (nextStartedAt !== previousStartedAt ||
+        nextTotalSeconds !== previousTotalSeconds);
 
     await ctx.db.patch(game._id, {
       timerProps,
       updatedAt: now,
     });
+
+    if (scheduleChanged) {
+      const deadline = nextStartedAt + nextTotalSeconds * 1000;
+      await ctx.scheduler.runAt(
+        Math.max(now, deadline),
+        internal.games.completeTimer,
+        {
+          gameId: args.gameId,
+          startedAt: nextStartedAt,
+          totalSeconds: nextTotalSeconds,
+        }
+      );
+    }
+
+    return null;
+  },
+});
+
+export const completeTimer = internalMutation({
+  args: {
+    gameId: v.string(),
+    startedAt: v.number(),
+    totalSeconds: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
+    const game = await getGameByGameId(ctx, args.gameId);
+    if (!game) return null;
+
+    const timerProps = pickTimerFields(game.timerProps);
+    if (
+      timerProps.startedAt !== args.startedAt ||
+      timerProps.totalSeconds !== args.totalSeconds
+    ) {
+      return null;
+    }
+
+    const now = Date.now();
+    const nextTimerProps = resetTimerProps(game.timerProps);
+    await ctx.db.patch(game._id, {
+      gameStatus: STATUS.Finished,
+      ...(nextTimerProps !== undefined ? { timerProps: nextTimerProps } : {}),
+      timerCompletedAt: now,
+      updatedAt: now,
+    });
+
+    return null;
   },
 });
 
