@@ -1,36 +1,200 @@
 import { describe, expect, it } from 'vitest';
 
-import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
+import { createRateLimiter, getClientIp } from '@/lib/security/rate-limit';
 
-describe('isRateLimited', () => {
+describe('createRateLimiter', () => {
   it('allows requests up to the configured limit', () => {
-    const key = 'under-limit';
+    const isRateLimited = createRateLimiter();
+    const request = {
+      ip: '203.0.113.1',
+      scope: 'under-limit',
+      limit: 3,
+      windowMs: 60_000,
+    };
 
-    expect(isRateLimited(key, 3, 60_000, 1_000)).toBe(false);
-    expect(isRateLimited(key, 3, 60_000, 1_100)).toBe(false);
-    expect(isRateLimited(key, 3, 60_000, 1_200)).toBe(false);
+    expect(isRateLimited({ ...request, now: 1_000 })).toBe(false);
+    expect(isRateLimited({ ...request, now: 1_100 })).toBe(false);
+    expect(isRateLimited({ ...request, now: 1_200 })).toBe(false);
   });
 
   it('blocks the first request over the limit in the same window', () => {
-    const key = 'over-limit';
+    const isRateLimited = createRateLimiter();
+    const request = {
+      ip: '203.0.113.2',
+      scope: 'over-limit',
+      limit: 2,
+      windowMs: 60_000,
+    };
 
-    expect(isRateLimited(key, 2, 60_000, 2_000)).toBe(false);
-    expect(isRateLimited(key, 2, 60_000, 2_100)).toBe(false);
-    expect(isRateLimited(key, 2, 60_000, 2_200)).toBe(true);
+    expect(isRateLimited({ ...request, now: 2_000 })).toBe(false);
+    expect(isRateLimited({ ...request, now: 2_100 })).toBe(false);
+    expect(isRateLimited({ ...request, now: 2_200 })).toBe(true);
   });
 
   it('resets after the window expires', () => {
-    const key = 'window-reset';
+    const isRateLimited = createRateLimiter();
+    const request = {
+      ip: '203.0.113.3',
+      scope: 'window-reset',
+      limit: 1,
+      windowMs: 1_000,
+    };
 
-    expect(isRateLimited(key, 1, 1_000, 3_000)).toBe(false);
-    expect(isRateLimited(key, 1, 1_000, 3_500)).toBe(true);
-    expect(isRateLimited(key, 1, 1_000, 4_001)).toBe(false);
+    expect(isRateLimited({ ...request, now: 3_000 })).toBe(false);
+    expect(isRateLimited({ ...request, now: 3_500 })).toBe(true);
+    expect(isRateLimited({ ...request, now: 4_001 })).toBe(false);
   });
 
   it('keeps independent buckets separate', () => {
-    expect(isRateLimited('bucket-a', 1, 60_000, 5_000)).toBe(false);
-    expect(isRateLimited('bucket-a', 1, 60_000, 5_100)).toBe(true);
-    expect(isRateLimited('bucket-b', 1, 60_000, 5_100)).toBe(false);
+    const isRateLimited = createRateLimiter();
+    const base = {
+      ip: '203.0.113.4',
+      limit: 1,
+      windowMs: 60_000,
+      now: 5_000,
+    };
+
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(false);
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(true);
+    expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(false);
+  });
+
+  it('counts fine-bucket rejections toward the global IP limit', () => {
+    const isRateLimited = createRateLimiter({ globalIpLimit: 2 });
+    const base = {
+      ip: '203.0.113.5',
+      limit: 1,
+      windowMs: 60_000,
+      now: 6_000,
+    };
+
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(false);
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(true);
+    expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(true);
+  });
+
+  it('keeps the IP bucket intact while scoped buckets are evicted', () => {
+    const isRateLimited = createRateLimiter({
+      globalIpLimit: 2,
+      maxIpBuckets: 1,
+      maxScopedBuckets: 1,
+    });
+    const base = {
+      ip: '203.0.113.6',
+      limit: 10,
+      windowMs: 60_000,
+      now: 7_000,
+    };
+
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(false);
+    expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(false);
+    expect(isRateLimited({ ...base, scope: 'bucket-c' })).toBe(true);
+  });
+
+  it('creates a real bucket after capacity eviction instead of failing open', () => {
+    const isRateLimited = createRateLimiter({
+      globalIpLimit: 10,
+      maxScopedBuckets: 1,
+    });
+    const base = {
+      ip: '203.0.113.7',
+      limit: 1,
+      windowMs: 60_000,
+      now: 8_000,
+    };
+
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(false);
+    expect(isRateLimited({ ...base, scope: 'bucket-a' })).toBe(true);
+    expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(false);
+    expect(isRateLimited({ ...base, scope: 'bucket-b' })).toBe(true);
+  });
+
+  it('blocks the 61st scoped request from one IP with the default global limit', () => {
+    const isRateLimited = createRateLimiter({ maxScopedBuckets: 1 });
+    const request = {
+      ip: '203.0.113.8',
+      limit: 20,
+      windowMs: 60_000,
+      now: 9_000,
+    };
+
+    for (let index = 0; index < 60; index += 1) {
+      const gameId = `00000000-0000-4000-8000-${index
+        .toString(16)
+        .padStart(12, '0')}`;
+      expect(isRateLimited({ ...request, scope: `join-game:${gameId}` })).toBe(
+        false
+      );
+    }
+
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'join-game:00000000-0000-4000-8000-00000000003c',
+      })
+    ).toBe(true);
+  });
+
+  it('removes expired buckets before evicting an active bucket', () => {
+    const isRateLimited = createRateLimiter({
+      globalIpLimit: 10,
+      maxScopedBuckets: 2,
+    });
+    const request = {
+      ip: '203.0.113.9',
+      limit: 1,
+    };
+
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'active-oldest',
+        windowMs: 10_000,
+        now: 10_000,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'expired-newer',
+        windowMs: 100,
+        now: 10_100,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'new-bucket',
+        windowMs: 10_000,
+        now: 10_201,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'active-oldest',
+        windowMs: 10_000,
+        now: 10_202,
+      })
+    ).toBe(true);
+    // The previous hit refreshed active-oldest. At capacity, adding one more
+    // bucket must evict new-bucket, whose next request starts a fresh window.
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'newest-bucket',
+        windowMs: 10_000,
+        now: 10_203,
+      })
+    ).toBe(false);
+    expect(
+      isRateLimited({
+        ...request,
+        scope: 'new-bucket',
+        windowMs: 10_000,
+        now: 10_204,
+      })
+    ).toBe(false);
   });
 });
 

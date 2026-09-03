@@ -29,9 +29,9 @@ REJECTED (with one-line rationale).
 - **002 before 003, 004, 008**: the characterization suite is the
   regression net for every change to auth/serialization code, and 008
   reuses its test harness.
-- **No CI plan**: every executor must run the local verification commands
-  listed in its plan (`pnpm lints`, `pnpm test`, and/or `pnpm build`) before
-  reporting done.
+- **CI and local checks**: GitHub Actions runs `pnpm lints`, `pnpm test`, and
+  `pnpm build` for pull requests and pushes to `main`. Executors must still run
+  the verification commands listed in their plan before reporting done.
 - **008 after 003 and 006**: 003 edits `convex/games.ts`, 006 edits
   `timer-progress-popup.tsx`; sequencing avoids merge conflicts in both.
 - **009 coordinate with 004**: both edit `use-poker-controller.ts`

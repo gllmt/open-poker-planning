@@ -166,14 +166,14 @@ export function Timer({
       await commitTimerUpdate({
         startedAt: null,
         pausedAt: 0,
-        totalSeconds: 300,
-        soundOn: true,
+        totalSeconds,
+        soundOn,
         timerVisible: true,
       });
     } catch {
       visibilityStore.setOverride(null);
     }
-  }, [commitTimerUpdate, visibilityStore]);
+  }, [commitTimerUpdate, soundOn, totalSeconds, visibilityStore]);
 
   const onTimerClose = useCallback(async () => {
     visibilityStore.setOverride(false);
@@ -181,14 +181,14 @@ export function Timer({
       await commitTimerUpdate({
         startedAt: null,
         pausedAt: 0,
-        totalSeconds: 300,
-        soundOn: true,
+        totalSeconds,
+        soundOn,
         timerVisible: false,
       });
     } catch {
       visibilityStore.setOverride(null);
     }
-  }, [commitTimerUpdate, visibilityStore]);
+  }, [commitTimerUpdate, soundOn, totalSeconds, visibilityStore]);
 
   if (!localTimerVisible) {
     if (!isMod) return null;

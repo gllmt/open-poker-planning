@@ -29,7 +29,14 @@ export async function submitAccessCode(formData: FormData) {
 
   const errorPath = `/${locale}/access?error=1&next=${encodeURIComponent(nextPath)}`;
   const ip = getClientIp(await headers());
-  if (isRateLimited(`access-code:${ip}`, 5, 60_000)) {
+  if (
+    isRateLimited({
+      ip,
+      scope: 'access-code',
+      limit: 5,
+      windowMs: 60_000,
+    })
+  ) {
     redirect(errorPath);
   }
 

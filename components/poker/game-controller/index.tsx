@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { createInvite } from '@/lib/api/games';
 import { withLocale } from '@/lib/i18n/paths';
+import type { DictionaryKey, Translate } from '@/lib/i18n/types';
 import { isModerator } from '@/lib/is-moderator';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -447,13 +448,17 @@ function getGameStatusIcon(gameStatus: string) {
   }
 }
 
-function getStatusLabel(status: Status, t: (key: string) => string) {
-  const statusKeyMap: Record<Status, string> = {
-    [Status.NotStarted]: 'game.status.notStarted',
-    [Status.Started]: 'game.status.started',
-    [Status.InProgress]: 'game.status.inProgress',
-    [Status.Finished]: 'game.status.finished',
-  };
+const STATUS_KEY_BY_VALUE = {
+  [Status.NotStarted]: 'game.status.notStarted',
+  [Status.Started]: 'game.status.started',
+  [Status.InProgress]: 'game.status.inProgress',
+  [Status.Finished]: 'game.status.finished',
+} satisfies Record<Status, DictionaryKey>;
 
-  return t(statusKeyMap[status] ?? status);
+function isKnownStatus(status: string): status is Status {
+  return Object.hasOwn(STATUS_KEY_BY_VALUE, status);
+}
+
+function getStatusLabel(status: string, t: Translate) {
+  return isKnownStatus(status) ? t(STATUS_KEY_BY_VALUE[status]) : status;
 }

@@ -32,7 +32,14 @@ export async function POST(request: Request) {
   }
 
   const ip = getClientIp(request.headers);
-  if (isRateLimited(`create-game:${ip}`, 10, 60_000)) {
+  if (
+    isRateLimited({
+      ip,
+      scope: 'create-game',
+      limit: 10,
+      windowMs: 60_000,
+    })
+  ) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 

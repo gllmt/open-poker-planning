@@ -21,22 +21,12 @@ export function ThemeControl() {
   useEffect(() => {
     const root = document.documentElement;
 
-    // Enable smooth theme transition
-    root.classList.add('theme-transitioning');
-
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
 
     if (hasStoredTheme) {
       persistTheme(theme);
     }
-
-    // Remove transition class after animation completes
-    const timer = setTimeout(() => {
-      root.classList.remove('theme-transitioning');
-    }, 350);
-
-    return () => clearTimeout(timer);
   }, [theme, hasStoredTheme]);
 
   useEffect(() => {

@@ -34,6 +34,7 @@ export function AppPostHogProvider({
         disable_product_tours: true,
         disable_session_recording: true,
         disable_surveys: true,
+        person_profiles: 'never',
         persistence: 'memory',
         ...(posthogHost ? { api_host: posthogHost } : {}),
       }}

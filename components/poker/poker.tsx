@@ -51,7 +51,7 @@ export function Poker({
           className="mt-4"
           onClick={() => window.location.reload()}
         >
-          {t('common.retry') || 'Retry'}
+          {t('errorBoundary.retry')}
         </Button>
       </div>
     );

@@ -143,20 +143,6 @@ button {
   }
 }
 
-@layer base {
-  html,
-  html * {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 0s;
-  }
-}
-
-html.theme-transitioning,
-html.theme-transitioning * {
-  transition-duration: 0.3s !important;
-  transition-timing-function: ease !important;
-}
-
 /* custom animations */
 @keyframes fade-in-down {
   0% {

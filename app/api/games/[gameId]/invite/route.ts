@@ -6,6 +6,7 @@ import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames } from '@/lib/security/cookies';
 import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
+import { isValidUuid } from '@/lib/security/request-validation';
 import { generateToken, hashToken } from '@/lib/security/tokens';
 
 type InviteBody = {
@@ -18,8 +19,21 @@ export async function POST(
 ) {
   const { gameId } = await context.params;
   const ip = getClientIp(request.headers);
-  if (isRateLimited(`create-invite:${gameId}:${ip}`, 30, 60_000)) {
+  const validGameId = isValidUuid(gameId);
+  if (
+    isRateLimited({
+      ip,
+      scope: validGameId
+        ? `create-invite:${gameId}`
+        : 'create-invite:invalid-id',
+      limit: 30,
+      windowMs: 60_000,
+    })
+  ) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+  if (!validGameId) {
+    return NextResponse.json({ error: 'Invalid game id' }, { status: 400 });
   }
 
   const body = (await request.json().catch(() => ({}))) as InviteBody;
