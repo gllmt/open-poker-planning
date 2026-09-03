@@ -3,7 +3,7 @@
 import { createContext } from 'react';
 
 import type { Locale } from './config';
-import type { Dictionary } from './dictionaries';
+import type { Dictionary } from './types';
 
 type I18nContextValue = {
   locale: Locale;

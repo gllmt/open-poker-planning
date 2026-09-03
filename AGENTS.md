@@ -35,5 +35,5 @@
 
 ## Commit & Pull Request Guidelines
 
-- Current history is minimal (“Initial commit…”). Use clear, imperative subjects (optionally `feat:` / `fix:`).
+- Use clear, imperative commit subjects (optionally `feat:` / `fix:`).
 - PRs: describe behavior changes, include screenshots for UI changes, and ensure `pnpm lint`, `pnpm test`, and `pnpm build` pass.

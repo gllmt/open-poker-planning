@@ -3,13 +3,19 @@
 import { useCallback, useContext } from 'react';
 
 import { I18nContext } from '@/lib/i18n/context';
-
-type InterpolationValues = Record<string, string | number>;
+import type {
+  DictionaryKey,
+  InterpolationValues,
+  Translate,
+} from '@/lib/i18n/types';
 
 type DictionaryRecord = Record<string, unknown>;
 type DictionaryValue = string | DictionaryRecord;
 
-function resolveKey(value: DictionaryValue | undefined, key: string): string {
+function resolveKey(
+  value: DictionaryValue | undefined,
+  key: DictionaryKey
+): string {
   if (!value || typeof value !== 'object') return key;
   const parts = key.split('.');
   let current: unknown = value;
@@ -35,8 +41,8 @@ export function useI18n() {
   }
   const { locale, dictionary } = context;
 
-  const t = useCallback(
-    (key: string, values?: InterpolationValues) => {
+  const t = useCallback<Translate>(
+    (key, values) => {
       const resolved = resolveKey(dictionary as DictionaryValue, key);
       return interpolate(resolved, values);
     },

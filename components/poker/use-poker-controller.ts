@@ -6,6 +6,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { api } from '@/convex/_generated/api';
 import { leaveGame as leaveGameRequest } from '@/lib/api/games';
 import { upsertPlayerGame } from '@/lib/browser-storage';
+import type { Translate } from '@/lib/i18n/types';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
@@ -139,7 +140,7 @@ function pokerReducer(state: PokerState, action: PokerAction): PokerState {
 type UsePokerControllerArgs = {
   gameId: string;
   initialSession: PokerSession;
-  translate: (key: string) => string;
+  translate: Translate;
 };
 
 export function usePokerController({
@@ -164,7 +165,6 @@ export function usePokerController({
   const resetRequestIdRef = useRef(0);
   const timerRequestIdRef = useRef(0);
   const lastGameStatusRef = useRef<Status | null>(null);
-  const gameRef = useRef<Game | null>(null);
   const playersRef = useRef<Player[] | null>(null);
   const confettiSeedRef = useRef<string | null>(null);
   const lastAppliedSnapshotRef = useRef<string | null>(null);
@@ -235,7 +235,6 @@ export function usePokerController({
       }
 
       lastAppliedSnapshotRef.current = nextSnapshotSignature;
-      gameRef.current = nextGame;
       playersRef.current = nextPlayers;
       confettiSeedRef.current = nextConfettiSeed;
 
@@ -377,7 +376,6 @@ export function usePokerController({
       timerProps: nextTimerProps,
     };
 
-    gameRef.current = nextGame;
     dispatch({ type: 'set-game', value: nextGame });
 
     try {
@@ -389,7 +387,6 @@ export function usePokerController({
       });
     } catch {
       if (revealRequestIdRef.current !== requestId) return;
-      gameRef.current = previousGame;
       dispatch({ type: 'set-game', value: previousGame });
     }
   }, [revealMutation, state.auth, state.currentPlayerId, state.game]);
@@ -419,7 +416,6 @@ export function usePokerController({
       value: 0,
     }));
 
-    gameRef.current = nextGame;
     playersRef.current = nextPlayers;
     confettiSeedRef.current = null;
     dispatch({
@@ -439,7 +435,6 @@ export function usePokerController({
       });
     } catch {
       if (resetRequestIdRef.current !== requestId) return;
-      gameRef.current = previousGame;
       playersRef.current = previousPlayers;
       confettiSeedRef.current = previousConfettiSeed;
       dispatch({
@@ -471,7 +466,6 @@ export function usePokerController({
         timerProps: { ...state.game.timerProps, ...timer },
       };
 
-      gameRef.current = nextGame;
       dispatch({ type: 'set-game', value: nextGame });
 
       try {
@@ -485,7 +479,6 @@ export function usePokerController({
       } catch (error) {
         if (timerRequestIdRef.current !== requestId) return;
         const revertedGame = { ...state.game, timerProps: previousTimerProps };
-        gameRef.current = revertedGame;
         dispatch({ type: 'set-game', value: revertedGame });
         throw error instanceof Error
           ? error
