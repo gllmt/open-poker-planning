@@ -6,6 +6,7 @@ import { getConvexErrorCode } from '@/lib/convex/errors';
 import { getConvexServiceSecret } from '@/lib/security/convex-service';
 import { cookieNames, cookieOptions } from '@/lib/security/cookies';
 import { getClientIp, isRateLimited } from '@/lib/security/rate-limit';
+import { isValidUuid } from '@/lib/security/request-validation';
 import { generateToken, hashToken } from '@/lib/security/tokens';
 
 type JoinBody = {
@@ -24,8 +25,19 @@ export async function POST(
   }
 
   const ip = getClientIp(request.headers);
-  if (isRateLimited(`join-game:${gameId}:${ip}`, 20, 60_000)) {
+  const validGameId = isValidUuid(gameId);
+  if (
+    isRateLimited({
+      ip,
+      scope: validGameId ? `join-game:${gameId}` : 'join-game:invalid-id',
+      limit: 20,
+      windowMs: 60_000,
+    })
+  ) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+  if (!validGameId) {
+    return NextResponse.json({ error: 'Invalid game id' }, { status: 400 });
   }
 
   const body = (await request.json().catch(() => null)) as JoinBody | null;

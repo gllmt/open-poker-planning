@@ -35,6 +35,7 @@ Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and data
 - Gameplay actions (vote, reveal, reset, timer, auto-reveal, remove player, delete game) call Convex mutations directly from the browser, authorized by token hashes.
 - Tokens are **256-bit random values stored in HttpOnly cookies**. Convex stores only **SHA-256 hashes**, which the browser presents as bearer credentials for direct mutations.
 - Realtime game state streams through a Convex `useQuery` subscription.
+- Public Route Handlers use a bounded, in-memory rate limiter with both a global per-IP budget and endpoint-specific budgets. This protection is best-effort per server instance; use a distributed limiter before removing the private access gate.
 
 ## Analytics & privacy
 
