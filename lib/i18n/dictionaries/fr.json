@@ -162,6 +162,7 @@
     "elapsed": "Temps écoulé {minutes}:{seconds}"
   },
   "recentGames": {
+    "retentionHint": "Les parties sont supprimées après 30 jours d’inactivité. Les invitations sont valables 30 jours.",
     "title": "Sessions recentes",
     "empty": "Aucune session récente trouvée",
     "name": "Nom",

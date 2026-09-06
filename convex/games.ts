@@ -1,4 +1,5 @@
 import { ConvexError, v } from 'convex/values';
+import { RETENTION_MS } from '../lib/retention';
 
 import type { Game } from '../types/game';
 import type { Player } from '../types/player';
@@ -12,6 +13,7 @@ import {
   mutation,
   query,
 } from './_generated/server';
+import { deleteGameData } from './gameDeletion';
 import {
   assertCards,
   assertGameType,
@@ -189,13 +191,6 @@ async function getPlayerByGameAndCredentials(
   return player?.playerId === playerId ? player : null;
 }
 
-async function getInvitesByGameId(ctx: DbReaderCtx, gameId: string) {
-  return (await ctx.db
-    .query('gameInvites')
-    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
-    .collect()) as GameInviteDoc[];
-}
-
 async function hasValidInviteToken(
   ctx: DbReaderCtx,
   game: GameDoc,
@@ -207,7 +202,11 @@ async function hasValidInviteToken(
       q.eq('gameId', game.gameId).eq('tokenHash', tokenHash)
     )
     .first()) as GameInviteDoc | null;
-  if (match) return match.revokedAt === null;
+  if (match) {
+    return (
+      match.revokedAt === null && match.createdAt > Date.now() - RETENTION_MS
+    );
+  }
 
   // Legacy fallback for games created before invite rows existed. Bounded to a
   // single read so it can't be turned into a scan.
@@ -216,7 +215,10 @@ async function hasValidInviteToken(
     .withIndex('by_gameId', (q) => q.eq('gameId', game.gameId))
     .first();
   if (anyInvite) return false;
-  return timingSafeStringEqual(tokenHash, game.joinTokenHash);
+  return (
+    game.createdAt > Date.now() - RETENTION_MS &&
+    timingSafeStringEqual(tokenHash, game.joinTokenHash)
+  );
 }
 
 // Enforces the per-game invite budget before inserting a new invite row.
@@ -231,7 +233,10 @@ async function reserveInviteSlot(ctx: MutationCtx, gameId: string) {
     .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
     .take(LIMITS.invitesPerGame + 1)) as GameInviteDoc[];
 
-  const activeCount = rows.filter((row) => row.revokedAt === null).length;
+  const cutoff = Date.now() - RETENTION_MS;
+  const activeCount = rows.filter(
+    (row) => row.revokedAt === null && row.createdAt > cutoff
+  ).length;
   if (activeCount >= LIMITS.invitesPerGame) {
     throw new ConvexError('TOO_MANY_INVITES');
   }
@@ -239,7 +244,7 @@ async function reserveInviteSlot(ctx: MutationCtx, gameId: string) {
   const overflow = rows.length - (LIMITS.invitesPerGame - 1);
   if (overflow > 0) {
     const prunable = rows
-      .filter((row) => row.revokedAt !== null)
+      .filter((row) => row.revokedAt !== null || row.createdAt <= cutoff)
       .sort((a, b) => a.createdAt - b.createdAt)
       .slice(0, overflow);
     await Promise.all(prunable.map((row) => ctx.db.delete(row._id)));
@@ -984,15 +989,6 @@ export const deleteGame = mutation({
     );
     if (!isAdmin) throw new ConvexError('UNAUTHORIZED');
 
-    const [players, invites] = await Promise.all([
-      getPlayersByGameId(ctx, args.gameId),
-      getInvitesByGameId(ctx, args.gameId),
-    ]);
-
-    await Promise.all([
-      ...players.map((player) => ctx.db.delete(player._id)),
-      ...invites.map((invite) => ctx.db.delete(invite._id)),
-    ]);
-    await ctx.db.delete(game._id);
+    await deleteGameData(ctx, game);
   },
 });

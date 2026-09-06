@@ -18,6 +18,9 @@ export function RecentGames() {
           <CardTitle>{t('recentGames.title')}</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {t('recentGames.retentionHint')}
+          </p>
           <p className="text-muted-foreground text-sm text-center">
             {t('recentGames.empty')}
           </p>
@@ -32,6 +35,9 @@ export function RecentGames() {
         <CardTitle className="truncate">{t('recentGames.title')}</CardTitle>
       </CardHeader>
       <CardContent>
+        <p className="mb-3 text-xs text-muted-foreground">
+          {t('recentGames.retentionHint')}
+        </p>
         <div className="overflow-x-auto rounded-lg" style={{ maxHeight: 250 }}>
           <table className="divide-border/50 min-w-full divide-y">
             <thead className="bg-muted/30">

@@ -32,6 +32,7 @@ import { createInvite } from '@/lib/api/games';
 import { withLocale } from '@/lib/i18n/paths';
 import type { DictionaryKey, Translate } from '@/lib/i18n/types';
 import { isModerator } from '@/lib/is-moderator';
+import { RETENTION_MS } from '@/lib/retention';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
@@ -83,7 +84,7 @@ export function GameController({
 
   // Reuse the invite link across clicks instead of minting a new invite each
   // time, so repeated copies don't burn the per-game invite quota.
-  const inviteLinkRef = useRef<string | null>(null);
+  const inviteLinkRef = useRef<{ url: string; createdAt: number } | null>(null);
   const playerIdsRef = useRef<Set<string>>(new Set());
 
   // A disappearing player can make existing invite links stale, so drop the
@@ -100,7 +101,9 @@ export function GameController({
   }, [players]);
 
   const copyInviteLink = async () => {
-    let inviteLink = inviteLinkRef.current ?? '';
+    const cached = inviteLinkRef.current;
+    let inviteLink =
+      cached && cached.createdAt > Date.now() - RETENTION_MS ? cached.url : '';
 
     if (!inviteLink) {
       try {
@@ -109,7 +112,7 @@ export function GameController({
           `/join/${game.id}`,
           locale
         )}?token=${token}`;
-        inviteLinkRef.current = inviteLink;
+        inviteLinkRef.current = { url: inviteLink, createdAt: Date.now() };
       } catch {
         sileo.info({
           title: t('game.inviteNoToken'),

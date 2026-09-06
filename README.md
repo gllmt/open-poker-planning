@@ -32,6 +32,16 @@ Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and data
 
 Starting or resuming the timer schedules its deadline as an internal Convex mutation. The server reveals the round at that deadline even if the moderator closes or backgrounds their browser; paused, reset, restarted, manually revealed, or deleted games make older scheduled tasks harmless no-ops. Auto-reveal remains an earlier trigger when every active player has voted, while timer expiry always reveals. When sound is enabled, each connected client attempts to play the notification from the server completion event; browser autoplay policies can still block it.
 
+## Data retention
+
+Games become eligible for permanent deletion after **30 days without a recorded game action**, measured from `games.updatedAt`. Voting, managing the round, joining/leaving, and creating invitations renew that timestamp; simply keeping a tab open does not. A daily Convex cron at **03:17 UTC** deletes eligible games with their players and invitations, in indexed batches of 10. Concurrent activity is checked within the deletion transaction. Existing scheduled timer completions become harmless no-ops after deletion.
+
+Invite links expire **30 days after creation**, including legacy links. Expired invites no longer consume the active invite quota; their rows remain until normal slot recycling or game deletion, preserving revocation and legacy-fallback semantics. A member can issue a new link for an active game.
+
+The browser keeps at most 20 recent entries, prunes dated entries after 30 days without a local visit, and timestamps entries on the next visit. Historical entries without a timestamp are retained until revisited; a link to a deleted game returns the existing not-found page. Browser history is not an authoritative list of games still on the server.
+
+Deploying the Convex functions enables this policy for existing data at the next scheduled run. Inspect the target database volumes and `updatedAt` values and export a backup before the first production deployment. Each valid game is bounded to 50 player rows and 100 invite rows; investigate legacy records exceeding those limits before enabling the purge on that database.
+
 ## How it works (security)
 
 - Access is **token-based**, no login required.

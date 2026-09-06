@@ -15,4 +15,5 @@ export interface PlayerGame {
   createdBy: string;
   playerId: string;
   isAllowMembersToManageSession?: boolean;
+  lastVisitedAt?: number;
 }

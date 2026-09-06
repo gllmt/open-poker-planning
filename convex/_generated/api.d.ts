@@ -8,7 +8,10 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
+import type * as gameDeletion from "../gameDeletion.js";
 import type * as games from "../games.js";
+import type * as retention from "../retention.js";
 import type * as validation from "../validation.js";
 
 import type {
@@ -18,7 +21,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
+  gameDeletion: typeof gameDeletion;
   games: typeof games;
+  retention: typeof retention;
   validation: typeof validation;
 }>;
 

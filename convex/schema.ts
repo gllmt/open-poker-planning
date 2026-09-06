@@ -19,7 +19,9 @@ export default defineSchema({
     updatedAt: v.number(),
     joinTokenHash: v.string(),
     adminTokenHash: v.string(),
-  }).index('by_gameId', ['gameId']),
+  })
+    .index('by_gameId', ['gameId'])
+    .index('by_updatedAt', ['updatedAt']),
   players: defineTable({
     playerId: v.string(),
     gameId: v.string(),
