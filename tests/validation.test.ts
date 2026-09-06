@@ -129,6 +129,19 @@ describe('assertCards', () => {
 });
 
 describe('timer helpers', () => {
+  it.each([
+    { startedAt: false, totalSeconds: 300 },
+    { pausedAt: true },
+    { pausedAt: -1 },
+    { soundOn: 1 },
+    { timerVisible: null },
+    { timerPaused: 0 },
+    { currentSeconds: false },
+    { elapsedSeconds: null },
+  ])('rejects field-incompatible timer values: %j', (value) => {
+    expect(() => assertTimerInput(value)).toThrow('INVALID_INPUT');
+  });
+
   it('pickTimerFields keeps only whitelisted primitives', () => {
     expect(
       pickTimerFields({

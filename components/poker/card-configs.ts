@@ -15,24 +15,6 @@ const palette = {
   purple1: '#c4b5fd',
 };
 
-const legacyNeutralCardColor = '#e7edf3';
-const legacyNeutralCardRgb = 'rgb(231,237,243)';
-const legacyCardVarPrefix = 'var(--card-';
-
-const isLegacyNeutralCard = (color: string | undefined) => {
-  if (!color) return false;
-  const normalized = color.toLowerCase().replace(/\s+/g, '');
-  return (
-    normalized === legacyNeutralCardColor || normalized === legacyNeutralCardRgb
-  );
-};
-
-const isLegacyVariableCard = (color: string | undefined) => {
-  if (!color) return false;
-  const normalized = color.toLowerCase().replace(/\s+/g, '');
-  return normalized.startsWith(legacyCardVarPrefix);
-};
-
 const fibonacciCards: CardConfig[] = [
   { value: 0, displayValue: '0', color: palette.zero },
   { value: 1, displayValue: '1', color: palette.blue1 },
@@ -122,19 +104,6 @@ export const getCards = (gameType: GameType | undefined): CardConfig[] => {
     default:
       return fibonacciCards;
   }
-};
-
-export const normalizeLegacyCards = (
-  gameType: GameType,
-  cards: CardConfig[]
-) => {
-  const defaults = getCards(gameType);
-  return cards.map((card) => {
-    if (!isLegacyNeutralCard(card.color) && !isLegacyVariableCard(card.color))
-      return card;
-    const fallback = defaults.find((entry) => entry.value === card.value);
-    return fallback ? { ...card, color: fallback.color } : card;
-  });
 };
 
 export const getCustomCards = (values: string[]) => {

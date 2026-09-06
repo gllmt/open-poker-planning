@@ -2,13 +2,8 @@
 
 import { Hourglass } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -26,53 +21,6 @@ const playNotification = () => {
   const notification = new Audio('/timer-notification.mp3');
   notification.play().catch(() => {});
 };
-
-type VisibilityStore = {
-  getSnapshot: () => boolean;
-  subscribe: (listener: () => void) => () => void;
-  setOverride: (value: boolean | null) => void;
-  setServerValue: (value: boolean) => void;
-};
-
-function createVisibilityStore(initialValue: boolean): VisibilityStore {
-  let override: boolean | null = null;
-  let serverValue = initialValue;
-  const listeners = new Set<() => void>();
-
-  const getSnapshot = () => override ?? serverValue;
-  const notify = () => {
-    listeners.forEach((listener) => {
-      listener();
-    });
-  };
-
-  const setOverride = (value: boolean | null) => {
-    const prevSnapshot = getSnapshot();
-    override = value;
-    if (override !== null && override === serverValue) {
-      override = null;
-    }
-    if (getSnapshot() !== prevSnapshot) notify();
-  };
-
-  const setServerValue = (value: boolean) => {
-    const prevSnapshot = getSnapshot();
-    serverValue = value;
-    if (override !== null && override === serverValue) {
-      override = null;
-    }
-    if (getSnapshot() !== prevSnapshot) notify();
-  };
-
-  const subscribe = (listener: () => void) => {
-    listeners.add(listener);
-    return () => {
-      listeners.delete(listener);
-    };
-  };
-
-  return { getSnapshot, subscribe, setOverride, setServerValue };
-}
 
 export function Timer({
   timerProps,
@@ -121,30 +69,26 @@ export function Timer({
   }, [soundOn, timerCompletedAt]);
 
   const commitTimerUpdate = useCallback(
-    (update: GameTimerProps) => onTimerUpdate(update),
-    [onTimerUpdate]
+    async (update: GameTimerProps) => {
+      try {
+        await onTimerUpdate(update);
+      } catch (error) {
+        sileo.info({ title: t('game.actionFailed'), position: 'top-center' });
+        throw error;
+      }
+    },
+    [onTimerUpdate, t]
   );
   const fireAndForgetTimerUpdate = useCallback(
     (update: GameTimerProps) => {
-      void onTimerUpdate(update).catch(() => {});
+      void commitTimerUpdate(update).catch(() => {});
     },
-    [onTimerUpdate]
+    [commitTimerUpdate]
   );
 
   const legacyMigrationRef = useRef(false);
-  const [visibilityStore] = useState(() => createVisibilityStore(timerVisible));
-  const localTimerVisible = useSyncExternalStore(
-    visibilityStore.subscribe,
-    visibilityStore.getSnapshot,
-    visibilityStore.getSnapshot
-  );
-
   useEffect(() => {
-    visibilityStore.setServerValue(timerVisible);
-  }, [timerVisible, visibilityStore]);
-
-  useEffect(() => {
-    if (startedAt !== undefined || pausedAt !== undefined) return;
+    if (!isMod || startedAt !== undefined || pausedAt !== undefined) return;
     if (typeof currentSeconds !== 'number') return;
     if (legacyMigrationRef.current) return;
     legacyMigrationRef.current = true;
@@ -178,6 +122,7 @@ export function Timer({
     pausedAt,
     currentSeconds,
     timerPaused,
+    isMod,
     totalSeconds,
     soundOn,
     timerVisible,
@@ -188,37 +133,17 @@ export function Timer({
   const normalizedPausedAt =
     pausedAt ?? (typeof currentSeconds === 'number' ? currentSeconds : null);
 
-  const onTimerOpen = useCallback(async () => {
-    visibilityStore.setOverride(true);
-    try {
-      await commitTimerUpdate({
-        startedAt: null,
-        pausedAt: 0,
-        totalSeconds,
-        soundOn,
-        timerVisible: true,
-      });
-    } catch {
-      visibilityStore.setOverride(null);
-    }
-  }, [commitTimerUpdate, soundOn, totalSeconds, visibilityStore]);
+  const setTimerVisible = (visible: boolean) => {
+    fireAndForgetTimerUpdate({
+      startedAt: null,
+      pausedAt: 0,
+      totalSeconds,
+      soundOn,
+      timerVisible: visible,
+    });
+  };
 
-  const onTimerClose = useCallback(async () => {
-    visibilityStore.setOverride(false);
-    try {
-      await commitTimerUpdate({
-        startedAt: null,
-        pausedAt: 0,
-        totalSeconds,
-        soundOn,
-        timerVisible: false,
-      });
-    } catch {
-      visibilityStore.setOverride(null);
-    }
-  }, [commitTimerUpdate, soundOn, totalSeconds, visibilityStore]);
-
-  if (!localTimerVisible) {
+  if (!timerVisible) {
     if (!isMod) return null;
     return (
       <div className="glass-inner dark:dark-glass-inner text-card-foreground flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2">
@@ -227,7 +152,7 @@ export function Timer({
           <span>{t('timer.disabled')}</span>
         </div>
         <Button
-          onClick={onTimerOpen}
+          onClick={() => setTimerVisible(true)}
           title={t('timer.show')}
           type="button"
           size="sm"
@@ -244,12 +169,12 @@ export function Timer({
       startedAt={normalizedStartedAt}
       pausedAt={normalizedPausedAt}
       totalSeconds={totalSeconds}
-      onTimerClose={onTimerClose}
+      onTimerClose={() => setTimerVisible(false)}
       isMod={isMod}
       onTimerStateUpdate={(update) =>
-        fireAndForgetTimerUpdate({
+        commitTimerUpdate({
           ...update,
-          timerVisible: localTimerVisible,
+          timerVisible: timerVisible,
         })
       }
       soundOn={soundOn}

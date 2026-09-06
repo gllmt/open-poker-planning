@@ -2,6 +2,7 @@
 
 import { CircleUserRound, X } from 'lucide-react';
 import { memo } from 'react';
+import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,26 +15,27 @@ import { PlanningCard } from './planning-card';
 
 export const PlayerCard = memo(function PlayerCard({
   gameStatus,
-  isCurrentPlayerModerator,
+  canRemove,
   player,
   card,
   revealDelayMs,
-  currentPlayerId,
   onRemovePlayer,
 }: {
   gameStatus: Status;
-  isCurrentPlayerModerator: boolean;
+  canRemove: boolean;
   player: Player;
   card?: CardConfig;
   revealDelayMs: number;
-  currentPlayerId: string;
   onRemovePlayer: (playerId: string) => Promise<void>;
 }) {
   const { t } = useI18n();
-  const canRemove = isCurrentPlayerModerator && player.id !== currentPlayerId;
 
   const onRemove = async () => {
-    await onRemovePlayer(player.id);
+    try {
+      await onRemovePlayer(player.id);
+    } catch {
+      sileo.info({ title: t('game.actionFailed'), position: 'top-center' });
+    }
   };
 
   const hasVoted = player.status === Status.Finished;
@@ -53,7 +55,7 @@ export const PlayerCard = memo(function PlayerCard({
   return (
     <div
       data-vote-state={voteState}
-      className={`flex w-full items-center justify-between gap-3 rounded-xl glass-inner dark:dark-glass-inner px-3 py-2 text-card-foreground max-w-content transition-all duration-200 ease-out hover:bg-accent/40 dark:hover:bg-accent/20 ${cardOpacityClass}`}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl glass-inner dark:dark-glass-inner px-3 py-2 text-card-foreground max-w-content transition duration-200 ease-out hover:bg-accent/40 dark:hover:bg-accent/20 ${cardOpacityClass}`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="sm" className="shrink-0">

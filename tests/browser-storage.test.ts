@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearPlayerGameSession,
   getPlayerGamesFromCache,
+  upsertPlayerGame,
 } from '@/lib/browser-storage';
+import { RETENTION_MS } from '@/lib/retention';
 
 const PLAYER_GAMES_KEY = 'playerGames';
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
@@ -48,6 +50,31 @@ afterEach(() => {
 });
 
 describe('browser player-game cache', () => {
+  it('expires dated entries without assuming an age for legacy entries', () => {
+    const localStorage = createLocalStorage();
+    installLocalStorage(localStorage);
+    localStorage.setItem(
+      PLAYER_GAMES_KEY,
+      JSON.stringify([
+        { id: 'old', lastVisitedAt: Date.now() - RETENTION_MS },
+        { id: 'recent', lastVisitedAt: Date.now() },
+        { id: 'legacy' },
+      ])
+    );
+    expect(getPlayerGamesFromCache().map((entry) => entry.id)).toEqual([
+      'recent',
+      'legacy',
+    ]);
+    expect(localStorage.getItem(PLAYER_GAMES_KEY)).not.toContain('"old"');
+    upsertPlayerGame({
+      id: 'legacy',
+      name: 'Sprint',
+      createdBy: 'Alice',
+      createdById: 'alice',
+      playerId: 'alice',
+    });
+    expect(getPlayerGamesFromCache()[0].lastVisitedAt).toBeGreaterThan(0);
+  });
   it('strips legacy credential fields and rewrites the cache', () => {
     const localStorage = createLocalStorage();
     installLocalStorage(localStorage);

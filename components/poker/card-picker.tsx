@@ -10,7 +10,7 @@ import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { getCards, normalizeLegacyCards } from './card-configs';
+import { getCards } from './card-configs';
 import { PlanningCard } from './planning-card';
 
 export function CardPicker({
@@ -27,10 +27,7 @@ export function CardPicker({
   error?: string | null;
 }) {
   const { t } = useI18n();
-  const cards = useMemo(() => {
-    const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
-    return normalizeLegacyCards(game.gameType, baseCards);
-  }, [game.cards, game.gameType]);
+  const cards = game.cards?.length ? game.cards : getCards(game.gameType);
   const currentValue = useMemo(() => {
     const currentPlayer = players.find((p) => p.id === currentPlayerId);
     return currentPlayer?.status === Status.Finished

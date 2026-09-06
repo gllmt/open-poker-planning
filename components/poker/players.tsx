@@ -4,7 +4,7 @@ import { useI18n } from '@/components/i18n/use-i18n';
 import { isModerator } from '@/lib/is-moderator';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
-import { getCards, normalizeLegacyCards } from './card-configs';
+import { getCards } from './card-configs';
 import { PlayerCard } from './player-card';
 
 export function Players({
@@ -25,8 +25,7 @@ export function Players({
     game.isAllowMembersToManageSession
   );
   const cardLookup = useMemo(() => {
-    const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
-    const cards = normalizeLegacyCards(game.gameType, baseCards);
+    const cards = game.cards?.length ? game.cards : getCards(game.gameType);
     return new Map(cards.map((card) => [card.value, card]));
   }, [game.cards, game.gameType]);
 
@@ -44,7 +43,11 @@ export function Players({
           <PlayerCard
             key={player.id}
             gameStatus={game.gameStatus}
-            isCurrentPlayerModerator={isCurrentPlayerModerator}
+            canRemove={
+              isCurrentPlayerModerator &&
+              player.id !== currentPlayerId &&
+              player.id !== game.createdById
+            }
             player={player}
             card={
               player.value === undefined
@@ -52,7 +55,6 @@ export function Players({
                 : cardLookup.get(player.value)
             }
             revealDelayMs={Math.min(index, 8) * 65}
-            currentPlayerId={currentPlayerId}
             onRemovePlayer={onRemovePlayer}
           />
         ))}

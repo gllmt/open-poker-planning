@@ -1,69 +1,11 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Lire [AGENTS.md](AGENTS.md) pour les commandes, invariants, règles de validation et limites d’autorisation communes à tous les agents. La configuration et le fonctionnement du site sont décrits dans [README.md](README.md). Ne pas maintenir ici une seconde copie de ces instructions.
 
-## Commands
+## Timer Contract
 
-```bash
-pnpm install          # Install dependencies
-pnpm dev              # Start development server
-pnpm build            # TypeScript check + production build
-pnpm lint             # Run Biome lint
-pnpm test             # Run Vitest tests
-pnpm lints            # Full lint suite: Biome + TypeScript
-pnpm biome:fix        # Auto-fix Biome issues
-pnpm format           # Format code with Biome
-```
-
-## Architecture
-
-Real-time planning poker app using **Next.js 16 App Router** + **Convex**.
-
-### Tech Stack
-- **Frontend**: React 19, Tailwind CSS v4, Base UI, shadcn/ui, Lucide icons
-- **Backend**: Convex queries/mutations plus Next.js Route Handlers for token and cookie flows
-- **Database/Realtime**: Convex
-- **i18n**: English (en) and French (fr) via `app/[lang]/` routes
-
-### Key Directories
-- `app/api/games/` - REST API endpoints (create, join, vote, reveal, reset, etc.)
-- `app/[lang]/` - Locale-based pages (home, game view, join flow)
-- `components/poker/` - Domain components (Poker, GameArea, Players, Timer, Results)
-- `components/ui/` - Primitive UI components
-- `lib/security/` - Token generation, hashing, cookie management (server-only)
-- `lib/convex/` - Convex error helpers
-- `lib/api/` - Browser fetch wrappers for API calls
-- `types/` - TypeScript interfaces (Game, Player, Status, CardConfig)
-- `convex/` - Convex schema, queries, and mutations
-
-### Security Model
-- **No login**: Token-based access only
-- **Tokens**: 256-bit random strings stored in HttpOnly cookies; Convex stores SHA-256 hashes
-- **Cookies**: HttpOnly, Secure (prod), SameSite=Lax, 30-day expiry
-- **Data access**: Convex functions enforce token hashes and membership state. On direct browser-to-Convex gameplay mutations, the hash itself is the bearer credential.
-- **Credential exposure**: token hashes are not stored in localStorage and are not returned in API JSON responses
-- **Realtime**: Convex subscriptions stream game state directly to clients
-
-### Data Flow
-1. Game creation stores admin/player tokens in HttpOnly cookies and returns only non-secret ids to the browser
-2. Invite links carry invite tokens; players join through Route Handlers and receive `playerToken` in an HttpOnly cookie
-3. Route Handlers cover create, join, invite, leave, and session flows that need cookie access
-4. Gameplay updates call Convex mutations directly from the browser with hashed bearer credentials
-5. Convex `useQuery` subscriptions stream current game state back to clients without a refetch loop
-6. Starting or resuming the timer schedules an internal Convex mutation for its server-authoritative deadline; stale tasks verify the stored timer identity and exit without changing the game
-
-### Timer Contract
-
-- Timer expiry always reveals the round. `autoReveal` may reveal it earlier once every active player has voted.
-- The browser renders the countdown but never owns completion. Convex stops the timer, finishes the game, and updates `timerCompletedAt`.
-- Every connected client with sound enabled reacts once to a fresh `timerCompletedAt` value. Audio remains best effort because browsers may enforce autoplay restrictions.
-- Pause, reset, restart, manual reveal, auto-reveal, and game deletion invalidate previously scheduled completions through the `(startedAt, totalSeconds)` guard; scheduled jobs are intentionally not cancelled or persisted in the game document.
-
-## Coding Conventions
-
-- TypeScript-first with strict mode
-- Named exports for components
-- Server-only code uses `server-only` import and must never touch `NEXT_PUBLIC_*` values
-- Tailwind for styling; use existing `components/ui/` primitives
-- Commit messages: imperative style with optional `feat:` / `fix:` prefix
-- Ensure `pnpm lint` + `pnpm build` pass before PRs
+- L’expiration du timer révèle toujours la manche. L’option `autoReveal` peut la terminer plus tôt lorsque tous les joueurs actifs ont voté.
+- Le navigateur affiche le compte à rebours ; Convex possède l’échéance, arrête le timer et renseigne `timerCompletedAt`.
+- Chaque client connecté avec le son activé réagit une fois à un nouvel événement de fin récent. L’autoplay du navigateur peut empêcher le son.
+- Pause, remise à zéro, redémarrage, révélation manuelle, auto-révélation et suppression rendent les anciennes tâches inoffensives grâce à la vérification de `(startedAt, totalSeconds)` et de l’existence de la partie. Ces tâches ne sont ni annulées ni conservées dans le document de partie.
+- Les nouveaux payloads du timer sont validés champ par champ. Les formes persistées historiques restent un contrat de compatibilité ; voir [docs/maintenance.md](docs/maintenance.md).

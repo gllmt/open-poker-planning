@@ -1,4 +1,5 @@
 import { fetchMutation } from 'convex/nextjs';
+import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { api } from '@/convex/_generated/api';
@@ -54,15 +55,23 @@ export async function POST(
   const playerToken = generateToken();
   const playerTokenHash = hashToken(playerToken);
   const joinTokenHash = hashToken(body.token);
+  const cookieStore = await cookies();
+  const existingPlayerToken = cookieStore.get(
+    cookieNames.playerToken(gameId)
+  )?.value;
+  let joined: { playerId: string; reused: boolean };
 
   try {
-    await fetchMutation(api.games.joinGame, {
+    joined = await fetchMutation(api.games.joinGame, {
       serviceSecret,
       gameId,
       playerId,
       playerName: body.playerName,
       playerTokenHash,
       joinTokenHash,
+      existingPlayerTokenHash: existingPlayerToken
+        ? hashToken(existingPlayerToken)
+        : undefined,
     });
   } catch (error) {
     const code = getConvexErrorCode(error);
@@ -93,11 +102,14 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to join' }, { status: 500 });
   }
 
-  const response = NextResponse.json({ playerId }, { status: 201 });
+  const response = NextResponse.json(
+    { playerId: joined.playerId },
+    { status: joined.reused ? 200 : 201 }
+  );
 
   response.cookies.set(
     cookieNames.playerToken(gameId),
-    playerToken,
+    joined.reused && existingPlayerToken ? existingPlayerToken : playerToken,
     cookieOptions
   );
   return response;

@@ -32,13 +32,23 @@ Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and data
 
 Starting or resuming the timer schedules its deadline as an internal Convex mutation. The server reveals the round at that deadline even if the moderator closes or backgrounds their browser; paused, reset, restarted, manually revealed, or deleted games make older scheduled tasks harmless no-ops. Auto-reveal remains an earlier trigger when every active player has voted, while timer expiry always reveals. When sound is enabled, each connected client attempts to play the notification from the server completion event; browser autoplay policies can still block it.
 
+## Data retention
+
+Games become eligible for permanent deletion after **30 days without a recorded game action**, measured from `games.updatedAt`. Voting, managing the round, joining/leaving, and creating invitations renew that timestamp; simply keeping a tab open does not. A daily Convex cron at **03:17 UTC** deletes eligible games with their players and invitations, in indexed batches of 10. Concurrent activity is checked within the deletion transaction. Existing scheduled timer completions become harmless no-ops after deletion.
+
+Invite links expire **30 days after creation**, including legacy links. Expired invites no longer consume the active invite quota; their rows remain until normal slot recycling or game deletion, preserving revocation and legacy-fallback semantics. A member can issue a new link for an active game.
+
+The browser keeps at most 20 recent entries, prunes dated entries after 30 days without a local visit, and timestamps entries on the next visit. Historical entries without a timestamp are retained until revisited; a link to a deleted game returns the existing not-found page. Browser history is not an authoritative list of games still on the server.
+
+Deploying the Convex functions enables this policy for existing data at the next scheduled run. Inspect the target database volumes and `updatedAt` values and export a backup before the first production deployment. Each valid game is bounded to 50 player rows and 100 invite rows; investigate legacy records exceeding those limits before enabling the purge on that database.
+
 ## How it works (security)
 
 - Access is **token-based**, no login required.
 - Create, join, invite, leave, and session flows go through `app/api/**` Route Handlers, because they need HttpOnly cookie access.
 - Gameplay actions (vote, reveal, reset, timer, auto-reveal, remove player, delete game) call Convex mutations directly from the browser, authorized by token hashes.
 - Tokens are **256-bit random values stored in HttpOnly cookies**. Convex stores only **SHA-256 hashes**, which the browser presents as bearer credentials for direct mutations.
-- Realtime game state streams through a Convex `useQuery` subscription.
+- The server preloads the authorized viewer state; `usePreloadedQuery` reuses it for the initial render and subscribes to subsequent updates. Other players' votes remain masked before reveal.
 - Public Route Handlers use a bounded, in-memory rate limiter with both a global per-IP budget and endpoint-specific budgets. This protection is best-effort per server instance; use a distributed limiter before removing the private access gate.
 - If neither `x-forwarded-for` nor `x-real-ip` is set by the deployment proxy, requests share the `unknown` IP bucket and therefore the same global budget.
 
@@ -91,12 +101,15 @@ Open http://localhost:3000.
 ```bash
 pnpm dev      # develop
 pnpm lint     # Biome lint
+pnpm lints    # formatting, lint and TypeScript
 pnpm test     # Vitest
 pnpm build    # production build
 pnpm start    # run the production build
 ```
 
 ## Deploy
+
+See [maintenance notes](docs/maintenance.md) for retained legacy contracts and the checks required before narrowing the data schema.
 
 Deploy on Vercel and set the same environment variables in the project settings. Convex runs as the realtime backend. Set `CONVEX_SERVICE_SECRET` to the same random value in Vercel and in the production Convex deployment with `pnpm exec convex env set --prod CONVEX_SERVICE_SECRET`. Omitting the value makes the CLI read it interactively or from stdin instead of saving it in shell history.
 

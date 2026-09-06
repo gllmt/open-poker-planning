@@ -1,4 +1,5 @@
 import { ConvexError, v } from 'convex/values';
+import { RETENTION_MS } from '../lib/retention';
 
 import type { Game } from '../types/game';
 import type { Player } from '../types/player';
@@ -12,6 +13,7 @@ import {
   mutation,
   query,
 } from './_generated/server';
+import { deleteGameData } from './gameDeletion';
 import {
   assertCards,
   assertGameType,
@@ -127,6 +129,19 @@ async function getActivePlayersByGameId(ctx: DbReaderCtx, gameId: string) {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
+async function getAutoRevealPatch(ctx: DbReaderCtx, game: GameDoc) {
+  if (!game.autoReveal || game.gameStatus === STATUS.Finished) return {};
+  const players = await getActivePlayersByGameId(ctx, game.gameId);
+  if (!players.length || players.some((p) => p.status !== STATUS.Finished)) {
+    return {};
+  }
+  const timerProps = resetTimerProps(game.timerProps);
+  return {
+    gameStatus: STATUS.Finished,
+    ...(timerProps !== undefined ? { timerProps } : {}),
+  };
+}
+
 async function getPlayersByGameAndPlayerId(
   ctx: DbReaderCtx,
   gameId: string,
@@ -176,13 +191,6 @@ async function getPlayerByGameAndCredentials(
   return player?.playerId === playerId ? player : null;
 }
 
-async function getInvitesByGameId(ctx: DbReaderCtx, gameId: string) {
-  return (await ctx.db
-    .query('gameInvites')
-    .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
-    .collect()) as GameInviteDoc[];
-}
-
 async function hasValidInviteToken(
   ctx: DbReaderCtx,
   game: GameDoc,
@@ -194,7 +202,11 @@ async function hasValidInviteToken(
       q.eq('gameId', game.gameId).eq('tokenHash', tokenHash)
     )
     .first()) as GameInviteDoc | null;
-  if (match) return match.revokedAt === null;
+  if (match) {
+    return (
+      match.revokedAt === null && match.createdAt > Date.now() - RETENTION_MS
+    );
+  }
 
   // Legacy fallback for games created before invite rows existed. Bounded to a
   // single read so it can't be turned into a scan.
@@ -203,7 +215,10 @@ async function hasValidInviteToken(
     .withIndex('by_gameId', (q) => q.eq('gameId', game.gameId))
     .first();
   if (anyInvite) return false;
-  return timingSafeStringEqual(tokenHash, game.joinTokenHash);
+  return (
+    game.createdAt > Date.now() - RETENTION_MS &&
+    timingSafeStringEqual(tokenHash, game.joinTokenHash)
+  );
 }
 
 // Enforces the per-game invite budget before inserting a new invite row.
@@ -218,7 +233,10 @@ async function reserveInviteSlot(ctx: MutationCtx, gameId: string) {
     .withIndex('by_gameId', (q) => q.eq('gameId', gameId))
     .take(LIMITS.invitesPerGame + 1)) as GameInviteDoc[];
 
-  const activeCount = rows.filter((row) => row.revokedAt === null).length;
+  const cutoff = Date.now() - RETENTION_MS;
+  const activeCount = rows.filter(
+    (row) => row.revokedAt === null && row.createdAt > cutoff
+  ).length;
   if (activeCount >= LIMITS.invitesPerGame) {
     throw new ConvexError('TOO_MANY_INVITES');
   }
@@ -226,7 +244,7 @@ async function reserveInviteSlot(ctx: MutationCtx, gameId: string) {
   const overflow = rows.length - (LIMITS.invitesPerGame - 1);
   if (overflow > 0) {
     const prunable = rows
-      .filter((row) => row.revokedAt !== null)
+      .filter((row) => row.revokedAt !== null || row.createdAt <= cutoff)
       .sort((a, b) => a.createdAt - b.createdAt)
       .slice(0, overflow);
     await Promise.all(prunable.map((row) => ctx.db.delete(row._id)));
@@ -534,6 +552,7 @@ export const joinGame = mutation({
     playerName: v.string(),
     playerTokenHash: v.string(),
     joinTokenHash: v.string(),
+    existingPlayerTokenHash: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     assertServiceSecret(args.serviceSecret);
@@ -552,6 +571,19 @@ export const joinGame = mutation({
     );
     if (!hasValidInvite) {
       throw new ConvexError('INVALID_INVITE');
+    }
+
+    if (args.existingPlayerTokenHash) {
+      assertTokenHash(args.existingPlayerTokenHash);
+      const existing = await getPlayerByGameAndPlayerTokenHash(
+        ctx,
+        args.gameId,
+        args.existingPlayerTokenHash
+      );
+      if (existing && isActivePlayer(existing)) {
+        await ctx.db.patch(game._id, { updatedAt: Date.now() });
+        return { playerId: existing.playerId, reused: true };
+      }
     }
 
     await reservePlayerSlot(
@@ -576,6 +608,7 @@ export const joinGame = mutation({
     });
 
     await ctx.db.patch(game._id, { updatedAt: now });
+    return { playerId: args.playerId, reused: false };
   },
 });
 
@@ -607,7 +640,10 @@ export const leaveGame = mutation({
       emoji: null,
       updatedAt: now,
     });
-    await ctx.db.patch(game._id, { updatedAt: now });
+    await ctx.db.patch(game._id, {
+      ...(await getAutoRevealPatch(ctx, game)),
+      updatedAt: now,
+    });
   },
 });
 
@@ -652,25 +688,9 @@ export const vote = mutation({
       updatedAt: now,
     });
 
-    let nextStatus: Status = STATUS.InProgress;
-    if (game.autoReveal) {
-      const players = await getActivePlayersByGameId(ctx, args.gameId);
-      const allFinished =
-        players.length > 0 &&
-        players.every((entry) =>
-          entry._id === player._id ? true : entry.status === STATUS.Finished
-        );
-      if (allFinished) nextStatus = STATUS.Finished;
-    }
-
-    const nextTimerProps =
-      game.autoReveal && nextStatus === STATUS.Finished
-        ? resetTimerProps(game.timerProps)
-        : undefined;
-
     await ctx.db.patch(game._id, {
-      gameStatus: nextStatus,
-      ...(nextTimerProps !== undefined ? { timerProps: nextTimerProps } : {}),
+      gameStatus: STATUS.InProgress,
+      ...(await getAutoRevealPatch(ctx, game)),
       updatedAt: now,
     });
   },
@@ -882,6 +902,10 @@ export const setAutoReveal = mutation({
     const now = Date.now();
     await ctx.db.patch(game._id, {
       autoReveal: args.autoReveal,
+      ...(await getAutoRevealPatch(ctx, {
+        ...game,
+        autoReveal: args.autoReveal,
+      })),
       updatedAt: now,
     });
   },
@@ -938,7 +962,10 @@ export const removePlayer = mutation({
       )
     );
     await revokeActiveInvites(ctx, args.gameId, 'player_removed', now);
-    await ctx.db.patch(game._id, { updatedAt: now });
+    await ctx.db.patch(game._id, {
+      ...(await getAutoRevealPatch(ctx, game)),
+      updatedAt: now,
+    });
   },
 });
 
@@ -946,6 +973,7 @@ export const deleteGame = mutation({
   args: {
     gameId: v.string(),
     adminTokenHash: v.optional(v.string()),
+    // Older open tabs still send these fields; only the admin hash authorizes deletion.
     callerPlayerId: v.optional(v.string()),
     playerTokenHash: v.optional(v.string()),
   },
@@ -962,15 +990,6 @@ export const deleteGame = mutation({
     );
     if (!isAdmin) throw new ConvexError('UNAUTHORIZED');
 
-    const [players, invites] = await Promise.all([
-      getPlayersByGameId(ctx, args.gameId),
-      getInvitesByGameId(ctx, args.gameId),
-    ]);
-
-    await Promise.all([
-      ...players.map((player) => ctx.db.delete(player._id)),
-      ...invites.map((invite) => ctx.db.delete(invite._id)),
-    ]);
-    await ctx.db.delete(game._id);
+    await deleteGameData(ctx, game);
   },
 });

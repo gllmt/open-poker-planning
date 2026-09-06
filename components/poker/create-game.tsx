@@ -127,10 +127,10 @@ export function CreateGame() {
 
   useEffect(() => {
     const recent = getRecentPlayerName();
-    if (recent && !state.createdBy) {
+    if (recent) {
       dispatch({ type: 'set-created-by', value: recent });
     }
-  }, [state.createdBy]);
+  }, []);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -268,8 +268,8 @@ export function CreateGame() {
                               dispatch({ type: 'set-game-type', value: type })
                             }
                           />
-                          <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition-all duration-200" />
-                          <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full scale-0 opacity-0 transition-all duration-200 peer-checked:opacity-100 peer-checked:scale-100" />
+                          <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-full border transition duration-200" />
+                          <span className="bg-primary-foreground pointer-events-none absolute size-1.5 rounded-full scale-90 opacity-0 transition duration-200 peer-checked:opacity-100 peer-checked:scale-100" />
                         </span>
                         <span>{t(labelKey)}</span>
                       </span>
@@ -307,8 +307,8 @@ export function CreateGame() {
                   checked={state.allowMembersToManageSession}
                   onChange={() => dispatch({ type: 'toggle-allow-members' })}
                 />
-                <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-sm border transition-all duration-200" />
-                <span className="text-primary-foreground pointer-events-none absolute text-[10px] font-semibold leading-none opacity-0 scale-0 transition-all duration-200 peer-checked:opacity-100 peer-checked:scale-100">
+                <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-sm border transition duration-200" />
+                <span className="text-primary-foreground pointer-events-none absolute text-[10px] font-semibold leading-none opacity-0 scale-90 transition duration-200 peer-checked:opacity-100 peer-checked:scale-100">
                   ✓
                 </span>
               </span>

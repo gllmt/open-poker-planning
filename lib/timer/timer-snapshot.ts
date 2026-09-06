@@ -4,7 +4,7 @@ type TimerSnapshotInput = {
   totalSeconds: number;
 };
 
-export type TimerSnapshot = {
+type TimerSnapshot = {
   isRunning: boolean;
   elapsed: number;
   remaining: number;

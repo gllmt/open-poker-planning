@@ -36,8 +36,8 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid game id' }, { status: 400 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as InviteBody;
-  if (typeof body.callerPlayerId !== 'string' || body.callerPlayerId === '') {
+  const body = (await request.json().catch(() => null)) as InviteBody | null;
+  if (typeof body?.callerPlayerId !== 'string' || body.callerPlayerId === '') {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 

@@ -3,9 +3,9 @@ import { type Game, GameType } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
 
-import { getCards, normalizeLegacyCards } from '../card-configs';
+import { getCards } from '../card-configs';
 
-export type ResultSummary = {
+type ResultSummary = {
   average: number | null;
   mostPlayedCard: CardConfig | null;
   mostPlayedCount: number;
@@ -27,8 +27,7 @@ function getNumericVote(
 }
 
 export function getResultSummary(game: Game, players: Player[]): ResultSummary {
-  const baseCards = game.cards?.length ? game.cards : getCards(game.gameType);
-  const cards = normalizeLegacyCards(game.gameType, baseCards);
+  const cards = game.cards?.length ? game.cards : getCards(game.gameType);
   const cardLookup = new Map(cards.map((card) => [card.value, card]));
   const voteCounts = new Map<number, number>();
   const supportsAverage =

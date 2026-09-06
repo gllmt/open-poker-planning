@@ -25,9 +25,6 @@ onlyBuiltDependencies:
   - protobufjs
   - sharp
   - unrs-resolver
-# 2026-06-12: security overrides for transitive advisories. Remove after
-# upstream deps carry patched postcss >=8.5.10, vite >=7.3.2, esbuild >=0.28.1.
+# Keep esbuild patched until all transitive ranges include this release.
 overrides:
   esbuild: 0.28.1
-  postcss: 8.5.15
-  vite: 7.3.2

@@ -54,7 +54,10 @@ Recorded so future audits don't re-litigate them.
 - **Players-list memoization / recent-games pagination** — ≤20 items,
   primitive props, stable callbacks; measurable cost is nil.
 - **Optimistic-update race conditions in `use-poker-controller.ts`** —
-  request-id guards and snapshot signatures are present and correct.
+  the initial rejection was superseded by the 2026-09-06 reproduction:
+  rapid A → B followed by rejection could restore unsent A. React
+  characterization tests now cover it; the controller uses the current query
+  plus one pending vote, and native Convex updates for game commands.
 - **`pnpm-workspace.yaml` in a single-package repo** — required by pnpm
   for `onlyBuiltDependencies`; by design.
 - **Duplicate non-locale pages (`app/join`, `app/game/[id]`, …)** —
@@ -112,5 +115,6 @@ Recorded so future audits don't re-litigate them.
   UI (list/revoke); round history + export (needs a design spike).
 - **Viewer-side clock-offset estimation for the timer** — designed but
   deferred in plan 008's maintenance notes.
-- **Route-handler integration tests for `app/api/**`** — valuable but
-  lower-leverage than the Convex suite (002); revisit after 002–005 land.
+- **Route-handler integration tests for `app/api/**`** — added on
+  2026-09-06 in `tests/api-games.test.ts` for malformed bodies and
+  idempotent rejoining; transport and cookies are mocked.

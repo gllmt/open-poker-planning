@@ -1,4 +1,4 @@
-import { fetchQuery } from 'convex/nextjs';
+import { preloadedQueryResult, preloadQuery } from 'convex/nextjs';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -36,10 +36,11 @@ export default async function GamePage({
   const playerTokenHash = hashToken(playerToken);
   const adminToken = cookieStore.get(cookieNames.adminToken(id))?.value;
   const adminTokenHash = adminToken ? hashToken(adminToken) : undefined;
-  const viewerState = await fetchQuery(api.games.getViewerGameState, {
+  const preloadedGame = await preloadQuery(api.games.getViewerGameState, {
     gameId: id,
     playerTokenHash,
   });
+  const viewerState = preloadedQueryResult(preloadedGame);
 
   if (viewerState.type === 'not_found') {
     notFound();
@@ -64,7 +65,9 @@ export default async function GamePage({
         sessionErrorMessage={dictionary.errorBoundary.sessionError}
       >
         <Poker
+          key={id}
           gameId={id}
+          preloadedGame={preloadedGame}
           initialSession={{
             adminTokenHash,
             playerId: viewerState.currentPlayerId,

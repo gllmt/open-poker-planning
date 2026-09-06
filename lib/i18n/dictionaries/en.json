@@ -21,15 +21,10 @@
     "loading": "Loading",
     "continue": "Continue",
     "cancel": "Cancel",
-    "save": "Save",
-    "saving": "Saving...",
-    "edit": "Edit",
     "create": "Create",
     "creating": "Creating...",
     "join": "Join",
-    "joining": "Joining...",
-    "avg": "Avg",
-    "avgWithColon": "Avg:"
+    "joining": "Joining..."
   },
   "toolbar": {
     "brand": "Open Poker Planning",
@@ -40,9 +35,7 @@
     "source": "Source on GitHub"
   },
   "theme": {
-    "toggle": "Toggle theme",
-    "light": "Light",
-    "dark": "Dark"
+    "toggle": "Toggle theme"
   },
   "createGame": {
     "title": "Create new session",
@@ -79,7 +72,6 @@
     "selectCard": "Choose card {value}",
     "selectedCard": "Card {value} selected",
     "revealedCard": "Card {value}",
-    "validated": "Vote confirmed",
     "changeVote": "Your vote is confirmed. Choose another card to change it."
   },
   "errorBoundary": {
@@ -122,7 +114,8 @@
     "autoReveal": "Auto Reveal",
     "autoRevealHint": "Auto Reveal when all members finished voting",
     "gameNotFound": "Game not found",
-    "voteFailed": "Failed to vote"
+    "voteFailed": "Failed to vote",
+    "actionFailed": "Unable to complete this action. Please try again."
   },
   "results": {
     "title": "Results",
@@ -134,11 +127,6 @@
     "mostPlayedTie": "Several cards are tied.",
     "noRevealedVote": "No revealed vote is available."
   },
-  "story": {
-    "label": "Story Name:",
-    "placeholder": "Enter story name or number",
-    "errorUpdateFailed": "Failed to update story"
-  },
   "timer": {
     "disabled": "Timer disabled",
     "show": "Show timer",
@@ -147,6 +135,8 @@
     "soundDisabled": "Sound disabled",
     "disableSound": "Disable sound",
     "enableSound": "Enable sound",
+    "minutes": "Minutes",
+    "seconds": "Seconds",
     "runningTime": "Running time: {minutes}m {seconds}s",
     "setTime": "Set time: {minutes}m {seconds}s",
     "total": "Total {minutes}:{seconds}",
@@ -159,6 +149,7 @@
     "elapsed": "Elapsed {minutes}:{seconds}"
   },
   "recentGames": {
+    "retentionHint": "Games are deleted after 30 days of inactivity. Invitations are valid for 30 days.",
     "title": "Recent sessions",
     "empty": "No recent sessions found",
     "name": "Name",

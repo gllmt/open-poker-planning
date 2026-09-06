@@ -8,7 +8,6 @@ import { GameType } from '../types/game';
 export const LIMITS = {
   name: 120,
   personName: 80,
-  gameType: 40,
   emoji: 64,
   cards: 60,
   cardDisplayValue: 60,
@@ -145,6 +144,14 @@ function isValidTimerValue(value: unknown): value is number | boolean | null {
   );
 }
 
+function isValidTimerInputField(key: string, value: unknown) {
+  if (['soundOn', 'timerVisible', 'timerPaused'].includes(key)) {
+    return typeof value === 'boolean';
+  }
+  if (value === null) return key === 'startedAt' || key === 'pausedAt';
+  return typeof value === 'number' && value >= 0 && isValidTimerValue(value);
+}
+
 // Lenient: keep only whitelisted primitive fields, silently dropping the rest.
 // Used when re-deriving timer state (reset/reveal) from possibly-legacy data.
 export function pickTimerFields(timerProps: unknown): Record<string, unknown> {
@@ -175,7 +182,9 @@ export function assertTimerInput(
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(input)) {
     if (!allowed.has(key)) throw new ConvexError('INVALID_INPUT');
-    if (!isValidTimerValue(input[key])) throw new ConvexError('INVALID_INPUT');
+    if (!isValidTimerInputField(key, input[key])) {
+      throw new ConvexError('INVALID_INPUT');
+    }
     out[key] = input[key];
   }
   if (

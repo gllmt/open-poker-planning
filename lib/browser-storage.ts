@@ -6,6 +6,7 @@ import {
   type Theme,
 } from '@/lib/theme/constants';
 import type { PlayerGame } from '@/types/player';
+import { RETENTION_MS } from './retention';
 
 const PLAYER_GAMES_KEY = 'playerGames';
 const RECENT_PLAYER_NAME_KEY = 'recentPlayerName';
@@ -117,8 +118,15 @@ export function getPlayerGamesFromCache(): PlayerGame[] {
       return next;
     }) as PlayerGame[];
 
-    if (stripped) updatePlayerGamesInCache(cleaned);
-    return cleaned;
+    const recent = cleaned.filter(
+      (entry) =>
+        entry &&
+        (entry.lastVisitedAt === undefined ||
+          entry.lastVisitedAt > Date.now() - RETENTION_MS)
+    );
+    if (stripped || recent.length !== cleaned.length)
+      updatePlayerGamesInCache(recent);
+    return recent;
   } catch {
     return [];
   }
@@ -130,7 +138,10 @@ function updatePlayerGamesInCache(playerGames: PlayerGame[]) {
 
 export function upsertPlayerGame(game: PlayerGame) {
   const games = getPlayerGamesFromCache();
-  const next = [game, ...games.filter((g) => g.id !== game.id)].slice(0, 20);
+  const next = [
+    { ...game, lastVisitedAt: Date.now() },
+    ...games.filter((g) => g.id !== game.id),
+  ].slice(0, 20);
   updatePlayerGamesInCache(next);
 }
 
