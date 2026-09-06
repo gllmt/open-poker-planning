@@ -1,25 +1,25 @@
 'use client';
 
-import { useMutation, useQuery } from 'convex/react';
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import type { OptimisticLocalStore } from 'convex/browser';
+import { type Preloaded, useMutation, usePreloadedQuery } from 'convex/react';
+import type { FunctionReturnType } from 'convex/server';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api } from '@/convex/_generated/api';
 import { leaveGame as leaveGameRequest } from '@/lib/api/games';
 import { upsertPlayerGame } from '@/lib/browser-storage';
 import type { Translate } from '@/lib/i18n/types';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
-import type { Game, TimerProps } from '@/types/game';
-import type { Player } from '@/types/player';
+import type { TimerProps } from '@/types/game';
 import { Status } from '@/types/status';
 
 import { isTieResult } from './hooks/use-confetti';
 
-type PendingVote = {
-  value: number;
-  emoji?: string;
-};
-
-type SessionExitReason = 'left' | 'missing-session' | 'removed';
+export type PreloadedGame = Preloaded<typeof api.games.getViewerGameState>;
+type ReadyState = Extract<
+  FunctionReturnType<typeof api.games.getViewerGameState>,
+  { type: 'ready' }
+>;
 
 type PokerSession = {
   playerId: string;
@@ -27,595 +27,262 @@ type PokerSession = {
   adminTokenHash?: string;
 };
 
-type PokerState = {
-  game: Game | null;
-  players: Player[] | null;
-  loading: boolean;
-  currentPlayerId: string | undefined;
-  voteError: string | null;
-  confettiSeed: string | null;
-  auth: PokerSession;
-  queryError: string | null;
-  sessionExitReason: SessionExitReason | null;
-};
-
-type PokerAction =
-  | { type: 'set-auth'; auth: PokerSession }
-  | { type: 'set-game'; value: Game | null }
-  | { type: 'set-players'; value: Player[] | null }
-  | { type: 'set-vote-error'; value: string | null }
-  | { type: 'set-query-error-and-stop-loading'; value: string }
-  | { type: 'set-session-exit'; value: SessionExitReason | null }
-  | {
-      type: 'apply-snapshot';
-      game: Game;
-      players: Player[];
-      confettiSeed: string | null;
-      currentPlayerId: string;
-      loading?: boolean;
-      clearQueryError?: boolean;
-    };
-
-function getInitialState(initialSession: PokerSession): PokerState {
-  return {
-    game: null,
-    players: null,
-    loading: true,
-    currentPlayerId: initialSession.playerId,
-    voteError: null,
-    confettiSeed: null,
-    auth: initialSession,
-    queryError: null,
-    sessionExitReason: null,
-  };
-}
-
-function getPlayersSignature(players: Player[]) {
-  return players
-    .map(
-      (player) =>
-        `${player.id}:${player.status}:${player.value ?? ''}:${player.emoji ?? ''}`
-    )
-    .join('|');
-}
-
-function getSnapshotSignature(
-  game: Game,
-  players: Player[],
-  currentPlayerId: string,
-  confettiSeed: string | null
+function updateViewer(
+  store: OptimisticLocalStore,
+  { gameId, playerTokenHash }: { gameId: string; playerTokenHash?: string },
+  update: (state: ReadyState) => ReadyState
 ) {
-  return [
-    game.id,
-    game.updatedAt ?? '',
-    game.gameStatus,
-    currentPlayerId,
-    confettiSeed ?? '',
-    getPlayersSignature(players),
-  ].join('::');
-}
-
-function pokerReducer(state: PokerState, action: PokerAction): PokerState {
-  switch (action.type) {
-    case 'set-auth':
-      return {
-        ...state,
-        auth: action.auth,
-        currentPlayerId: action.auth.playerId,
-      };
-    case 'set-game':
-      return { ...state, game: action.value };
-    case 'set-players':
-      return { ...state, players: action.value };
-    case 'set-vote-error':
-      return { ...state, voteError: action.value };
-    case 'set-query-error-and-stop-loading':
-      return {
-        ...state,
-        queryError: action.value,
-        loading: false,
-      };
-    case 'set-session-exit':
-      return {
-        ...state,
-        loading: false,
-        sessionExitReason: action.value,
-      };
-    case 'apply-snapshot':
-      return {
-        ...state,
-        game: action.game,
-        players: action.players,
-        confettiSeed: action.confettiSeed,
-        currentPlayerId: action.currentPlayerId,
-        loading: action.loading ?? state.loading,
-        queryError: action.clearQueryError ? null : state.queryError,
-        sessionExitReason: null,
-      };
-    default:
-      return state;
+  if (!playerTokenHash) return;
+  const args = { gameId, playerTokenHash };
+  const state = store.getQuery(api.games.getViewerGameState, args);
+  if (state?.type === 'ready') {
+    store.setQuery(api.games.getViewerGameState, args, update(state));
   }
 }
-
-type UsePokerControllerArgs = {
-  gameId: string;
-  initialSession: PokerSession;
-  translate: Translate;
-};
 
 export function usePokerController({
   gameId,
   initialSession,
+  preloadedGame,
   translate,
-}: UsePokerControllerArgs) {
-  const [state, dispatch] = useReducer(
-    pokerReducer,
-    initialSession,
-    getInitialState
+}: {
+  gameId: string;
+  initialSession: PokerSession;
+  preloadedGame: PreloadedGame;
+  translate: Translate;
+}) {
+  const state = usePreloadedQuery(preloadedGame);
+  const game = state.type === 'ready' ? state.game : null;
+  const serverPlayers = state.type === 'ready' ? state.players : null;
+  const currentPlayerId =
+    state.type === 'ready' ? state.currentPlayerId : initialSession.playerId;
+  const [pendingVote, setPendingVote] = useState<{
+    value: number;
+    emoji?: string;
+  } | null>(null);
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [hasLeft, setHasLeft] = useState(false);
+  const voteSequence = useRef(0);
+  const voteTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
   );
-
-  const authRef = useRef(state.auth);
-  const queryErrorRef = useRef<string | null>(state.queryError);
-  const pendingVoteRef = useRef<PendingVote | null>(null);
-  const voteDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  const voteRequestIdRef = useRef(0);
-  const revealRequestIdRef = useRef(0);
-  const resetRequestIdRef = useRef(0);
-  const timerRequestIdRef = useRef(0);
-  const lastGameStatusRef = useRef<Status | null>(null);
-  const playersRef = useRef<Player[] | null>(null);
-  const confettiSeedRef = useRef<string | null>(null);
-  const lastAppliedSnapshotRef = useRef<string | null>(null);
 
   const voteMutation = useMutation(api.games.vote);
-  const revealMutation = useMutation(api.games.reveal);
-  const resetMutation = useMutation(api.games.reset);
-  const updateTimerMutation = useMutation(api.games.updateTimer);
-  const setAutoRevealMutation = useMutation(api.games.setAutoReveal);
+  const revealMutation = useMutation(api.games.reveal).withOptimisticUpdate(
+    (store, args) =>
+      updateViewer(store, args, (current) => ({
+        ...current,
+        game: {
+          ...current.game,
+          gameStatus: Status.Finished,
+          timerProps: resetTimerProps(current.game.timerProps) ?? undefined,
+        },
+      }))
+  );
+  const resetMutation = useMutation(api.games.reset).withOptimisticUpdate(
+    (store, args) =>
+      updateViewer(store, args, (current) => ({
+        ...current,
+        game: {
+          ...current.game,
+          gameStatus: Status.Started,
+          timerProps: resetTimerProps(current.game.timerProps) ?? undefined,
+        },
+        players: current.players.map((player) => ({
+          ...player,
+          status: Status.NotStarted,
+          value: 0,
+          emoji: undefined,
+        })),
+      }))
+  );
+  const updateTimerMutation = useMutation(
+    api.games.updateTimer
+  ).withOptimisticUpdate((store, args) =>
+    updateViewer(store, args, (current) => ({
+      ...current,
+      game: { ...current.game, timerProps: args.timerProps ?? undefined },
+    }))
+  );
+  const setAutoRevealMutation = useMutation(
+    api.games.setAutoReveal
+  ).withOptimisticUpdate((store, args) =>
+    updateViewer(store, args, (current) => ({
+      ...current,
+      game: { ...current.game, autoReveal: args.autoReveal },
+    }))
+  );
   const removePlayerMutation = useMutation(api.games.removePlayer);
   const deleteGameMutation = useMutation(api.games.deleteGame);
 
-  useEffect(() => {
-    authRef.current = state.auth;
-  }, [state.auth]);
-
-  useEffect(() => {
-    queryErrorRef.current = state.queryError;
-  }, [state.queryError]);
-
   const clearPendingVote = useCallback(() => {
-    pendingVoteRef.current = null;
+    ++voteSequence.current;
+    clearTimeout(voteTimeout.current);
+    setPendingVote(null);
   }, []);
 
-  const applyGameState = useCallback(
-    (
-      nextGame: Game,
-      nextPlayers: Player[],
-      currentPlayerId: string,
-      options?: {
-        loading?: boolean;
-        clearQueryError?: boolean;
-      }
-    ) => {
-      const previousStatus = lastGameStatusRef.current;
-      const isTie = isTieResult(nextGame, nextPlayers);
-      let nextConfettiSeed = confettiSeedRef.current;
+  const gameStatus = game?.gameStatus;
+  const previousStatus = useRef(gameStatus);
+  useEffect(() => {
+    if (
+      !gameStatus ||
+      gameStatus === Status.Finished ||
+      (gameStatus === Status.Started &&
+        previousStatus.current !== Status.Started)
+    ) {
+      clearPendingVote();
+    }
+    previousStatus.current = gameStatus;
+  }, [clearPendingVote, gameStatus]);
 
-      if (
-        previousStatus !== null &&
-        previousStatus !== Status.Finished &&
-        nextGame.gameStatus === Status.Finished &&
-        isTie
-      ) {
-        nextConfettiSeed = `${nextGame.id}-${Date.now()}`;
-      }
-
-      if (
-        previousStatus === Status.Finished &&
-        nextGame.gameStatus !== Status.Finished
-      ) {
-        nextConfettiSeed = null;
-      }
-
-      lastGameStatusRef.current = nextGame.gameStatus;
-      const nextSnapshotSignature = getSnapshotSignature(
-        nextGame,
-        nextPlayers,
-        currentPlayerId,
-        nextConfettiSeed
-      );
-
-      if (
-        lastAppliedSnapshotRef.current === nextSnapshotSignature &&
-        !queryErrorRef.current
-      ) {
-        return;
-      }
-
-      lastAppliedSnapshotRef.current = nextSnapshotSignature;
-      playersRef.current = nextPlayers;
-      confettiSeedRef.current = nextConfettiSeed;
-
-      dispatch({
-        type: 'apply-snapshot',
-        game: nextGame,
-        players: nextPlayers,
-        currentPlayerId,
-        confettiSeed: nextConfettiSeed,
-        loading: options?.loading,
-        clearQueryError: options?.clearQueryError,
-      });
+  useEffect(
+    () => () => {
+      ++voteSequence.current;
+      clearTimeout(voteTimeout.current);
     },
     []
   );
 
-  const applyServerState = useCallback(
-    (serverGame: Game, serverPlayers: Player[], currentPlayerId: string) => {
-      let nextPlayers = serverPlayers;
-
-      if (pendingVoteRef.current && serverGame.gameStatus === Status.Started) {
-        pendingVoteRef.current = null;
-      }
-
-      const pendingVote = pendingVoteRef.current;
-      if (pendingVote) {
-        const me = nextPlayers.find((player) => player.id === currentPlayerId);
-        const synced =
-          me?.status === Status.Finished &&
-          me.value === pendingVote.value &&
-          (pendingVote.value !== -1 || me.emoji === pendingVote.emoji);
-
-        if (synced) {
-          pendingVoteRef.current = null;
-        } else {
-          nextPlayers = nextPlayers.map((player) =>
-            player.id === currentPlayerId
-              ? {
-                  ...player,
-                  value: pendingVote.value,
-                  emoji: pendingVote.emoji,
-                  status: Status.Finished,
-                }
-              : player
-          );
-        }
-      }
-
-      if (authRef.current.playerId !== currentPlayerId) {
-        dispatch({
-          type: 'set-auth',
-          auth: {
-            ...authRef.current,
-            playerId: currentPlayerId,
-          },
-        });
-      }
-
-      applyGameState(serverGame, nextPlayers, currentPlayerId, {
-        loading: false,
-        clearQueryError: true,
-      });
-
-      upsertPlayerGame({
-        id: serverGame.id,
-        name: serverGame.name,
-        createdBy: serverGame.createdBy,
-        createdById: serverGame.createdById,
-        playerId: currentPlayerId,
-        isAllowMembersToManageSession: serverGame.isAllowMembersToManageSession,
-      });
-    },
-    [applyGameState]
-  );
-
-  const gameState = useQuery(api.games.getViewerGameState, {
-    gameId,
-    playerTokenHash: state.auth.playerTokenHash,
-  });
-  const gameNotFoundMessage = translate('game.gameNotFound');
-
-  useEffect(() => {
-    if (gameState) return;
-
-    const timeout = setTimeout(() => {
-      dispatch({
-        type: 'set-query-error-and-stop-loading',
-        value: 'Failed to load game data. Please refresh the page.',
-      });
-    }, 10000);
-
-    return () => clearTimeout(timeout);
-  }, [gameState]);
-
-  useEffect(() => {
-    if (!gameState) return;
-
-    if (gameState.type === 'ready') {
-      applyServerState(
-        gameState.game,
-        gameState.players,
-        gameState.currentPlayerId
-      );
-      return;
-    }
-
-    if (gameState.type === 'not_found') {
-      dispatch({
-        type: 'set-query-error-and-stop-loading',
-        value: gameNotFoundMessage,
-      });
-      return;
-    }
-
-    dispatch({
-      type: 'set-session-exit',
-      value: gameState.reason,
-    });
-  }, [applyServerState, gameNotFoundMessage, gameState]);
-
-  useEffect(() => {
-    return () => {
-      if (voteDebounceTimeoutRef.current) {
-        clearTimeout(voteDebounceTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const onReveal = useCallback(async () => {
-    if (!state.game || !state.currentPlayerId) return;
-    if (state.game.gameStatus === Status.Finished) return;
-
-    const requestId = ++revealRequestIdRef.current;
-    const previousGame = state.game;
-    const nextTimerProps = resetTimerProps(state.game.timerProps) ?? undefined;
-    const nextGame = {
-      ...state.game,
-      gameStatus: Status.Finished,
-      timerProps: nextTimerProps,
-    };
-
-    dispatch({ type: 'set-game', value: nextGame });
-
-    try {
-      await revealMutation({
-        gameId: state.game.id,
-        adminTokenHash: state.auth.adminTokenHash,
-        callerPlayerId: state.auth.playerId,
-        playerTokenHash: state.auth.playerTokenHash,
-      });
-    } catch {
-      if (revealRequestIdRef.current !== requestId) return;
-      dispatch({ type: 'set-game', value: previousGame });
-    }
-  }, [revealMutation, state.auth, state.currentPlayerId, state.game]);
-
-  const onReset = useCallback(async () => {
-    if (!state.game || !state.players || !state.currentPlayerId) {
-      return;
-    }
-
-    const requestId = ++resetRequestIdRef.current;
-    const previousGame = state.game;
-    const previousPlayers = state.players;
-    const previousConfettiSeed = state.confettiSeed;
-
-    clearPendingVote();
-    dispatch({ type: 'set-vote-error', value: null });
-
-    const nextTimerProps = resetTimerProps(state.game.timerProps) ?? undefined;
-    const nextGame = {
-      ...state.game,
-      gameStatus: Status.Started,
-      timerProps: nextTimerProps,
-    };
-    const nextPlayers = state.players.map((player) => ({
-      ...player,
-      status: Status.NotStarted,
-      value: 0,
-    }));
-
-    playersRef.current = nextPlayers;
-    confettiSeedRef.current = null;
-    dispatch({
-      type: 'apply-snapshot',
-      game: nextGame,
-      players: nextPlayers,
-      currentPlayerId: state.currentPlayerId,
-      confettiSeed: null,
-    });
-
-    try {
-      await resetMutation({
-        gameId: state.game.id,
-        adminTokenHash: state.auth.adminTokenHash,
-        callerPlayerId: state.auth.playerId,
-        playerTokenHash: state.auth.playerTokenHash,
-      });
-    } catch {
-      if (resetRequestIdRef.current !== requestId) return;
-      playersRef.current = previousPlayers;
-      confettiSeedRef.current = previousConfettiSeed;
-      dispatch({
-        type: 'apply-snapshot',
-        game: previousGame,
-        players: previousPlayers,
-        currentPlayerId: state.currentPlayerId,
-        confettiSeed: previousConfettiSeed,
-      });
-    }
-  }, [
-    clearPendingVote,
-    resetMutation,
-    state.auth,
-    state.confettiSeed,
-    state.currentPlayerId,
-    state.game,
-    state.players,
-  ]);
-
-  const onTimerUpdate = useCallback(
-    async (timer: TimerProps) => {
-      if (!state.game || !state.currentPlayerId) return;
-
-      const requestId = ++timerRequestIdRef.current;
-      const previousTimerProps = state.game.timerProps;
-      const nextGame = {
-        ...state.game,
-        timerProps: { ...state.game.timerProps, ...timer },
-      };
-
-      dispatch({ type: 'set-game', value: nextGame });
-
-      try {
-        await updateTimerMutation({
-          gameId: state.game.id,
-          timerProps: timer,
-          adminTokenHash: state.auth.adminTokenHash,
-          callerPlayerId: state.auth.playerId,
-          playerTokenHash: state.auth.playerTokenHash,
-        });
-      } catch (error) {
-        if (timerRequestIdRef.current !== requestId) return;
-        const revertedGame = { ...state.game, timerProps: previousTimerProps };
-        dispatch({ type: 'set-game', value: revertedGame });
-        throw error instanceof Error
-          ? error
-          : new Error('Failed to update timer');
-      }
-    },
-    [state.auth, state.currentPlayerId, state.game, updateTimerMutation]
-  );
-
-  const onAutoReveal = useCallback(
-    async (value: boolean) => {
-      await setAutoRevealMutation({
-        gameId,
-        autoReveal: value,
-        adminTokenHash: state.auth.adminTokenHash,
-        callerPlayerId: state.auth.playerId,
-        playerTokenHash: state.auth.playerTokenHash,
-      });
-    },
-    [gameId, setAutoRevealMutation, state.auth]
-  );
-
-  const onRemovePlayer = useCallback(
-    async (playerId: string) => {
-      await removePlayerMutation({
-        gameId,
-        playerId,
-        adminTokenHash: state.auth.adminTokenHash,
-        callerPlayerId: state.auth.playerId,
-        playerTokenHash: state.auth.playerTokenHash,
-      });
-    },
-    [gameId, removePlayerMutation, state.auth]
-  );
-
-  const onDeleteGame = useCallback(async () => {
-    await deleteGameMutation({
-      gameId,
-      adminTokenHash: state.auth.adminTokenHash,
-      callerPlayerId: state.auth.playerId,
-      playerTokenHash: state.auth.playerTokenHash,
-    });
-  }, [deleteGameMutation, gameId, state.auth]);
-
-  const onLeaveGame = useCallback(async () => {
-    await leaveGameRequest(gameId, state.auth.playerId);
-    dispatch({ type: 'set-session-exit', value: 'left' });
-  }, [gameId, state.auth.playerId]);
-
   const onVote = useCallback(
     (value: number, emoji?: string) => {
-      if (
-        !state.game ||
-        !state.currentPlayerId ||
-        !state.players ||
-        state.game.gameStatus === Status.Finished
-      ) {
-        return;
-      }
-
-      pendingVoteRef.current = { value, emoji };
-      dispatch({ type: 'set-vote-error', value: null });
-
-      const previousPlayers = playersRef.current;
-      const nextPlayers = state.players.map((player) =>
-        player.id === state.currentPlayerId
-          ? { ...player, value, emoji, status: Status.Finished }
-          : player
-      );
-
-      playersRef.current = nextPlayers;
-      dispatch({ type: 'set-players', value: nextPlayers });
-
-      if (voteDebounceTimeoutRef.current) {
-        clearTimeout(voteDebounceTimeoutRef.current);
-      }
-
-      const requestId = ++voteRequestIdRef.current;
-      const playerId = state.currentPlayerId;
-      const playerTokenHash = state.auth.playerTokenHash;
-
-      voteDebounceTimeoutRef.current = setTimeout(() => {
-        const pendingVote = pendingVoteRef.current;
-        if (!pendingVote || !playerId) return;
-
-        voteMutation({
+      if (!gameStatus || gameStatus === Status.Finished) return;
+      const sequence = ++voteSequence.current;
+      clearTimeout(voteTimeout.current);
+      setPendingVote({ value, emoji });
+      setVoteError(null);
+      voteTimeout.current = setTimeout(() => {
+        void voteMutation({
           gameId,
-          playerId,
-          playerTokenHash,
-          value: pendingVote.value,
-          emoji: pendingVote.emoji,
-        }).catch((error) => {
-          if (voteRequestIdRef.current !== requestId) return;
-          pendingVoteRef.current = null;
-          dispatch({
-            type: 'set-vote-error',
-            value:
-              error instanceof Error
-                ? error.message
-                : translate('game.voteFailed'),
+          playerId: currentPlayerId,
+          playerTokenHash: initialSession.playerTokenHash,
+          value,
+          emoji,
+        })
+          .catch(() => {
+            if (sequence === voteSequence.current) {
+              setVoteError(translate('game.voteFailed'));
+            }
+          })
+          .finally(() => {
+            if (sequence === voteSequence.current) setPendingVote(null);
           });
-
-          if (previousPlayers) {
-            playersRef.current = previousPlayers;
-            dispatch({ type: 'set-players', value: previousPlayers });
-          }
-        });
       }, 150);
     },
     [
       gameId,
-      state.auth.playerTokenHash,
-      state.currentPlayerId,
-      state.game,
-      state.players,
+      gameStatus,
+      currentPlayerId,
+      initialSession.playerTokenHash,
       translate,
       voteMutation,
     ]
   );
 
+  // Only the unsent/in-flight local vote overlays the current subscription.
+  // A rejection exposes the latest server state, including other players' updates.
+  const players =
+    pendingVote && gameStatus !== Status.Finished
+      ? (serverPlayers?.map((player) =>
+          player.id === currentPlayerId
+            ? { ...player, ...pendingVote, status: Status.Finished }
+            : player
+        ) ?? null)
+      : serverPlayers;
+
+  const isTie =
+    game && serverPlayers ? isTieResult(game, serverPlayers) : false;
+  const previousTie = useRef(isTie);
+  const lastCelebratedAt = useRef(
+    gameStatus === Status.Finished ? game?.updatedAt : undefined
+  );
+  const [confettiSeed, setConfettiSeed] = useState<string | null>(null);
+  const updatedAt = game?.updatedAt;
+  useEffect(() => {
+    if (
+      isTie &&
+      !previousTie.current &&
+      updatedAt !== lastCelebratedAt.current
+    ) {
+      lastCelebratedAt.current = updatedAt;
+      setConfettiSeed(`${gameId}-${updatedAt}`);
+    }
+    if (gameStatus !== Status.Finished) setConfettiSeed(null);
+    previousTie.current = isTie;
+  }, [gameId, gameStatus, isTie, updatedAt]);
+
+  const { id, name, createdBy, createdById, isAllowMembersToManageSession } =
+    game ?? {};
+  useEffect(() => {
+    if (
+      !id ||
+      name === undefined ||
+      createdBy === undefined ||
+      createdById === undefined
+    )
+      return;
+    upsertPlayerGame({
+      id,
+      name,
+      createdBy,
+      createdById,
+      playerId: currentPlayerId,
+      isAllowMembersToManageSession,
+    });
+  }, [
+    id,
+    name,
+    createdBy,
+    createdById,
+    currentPlayerId,
+    isAllowMembersToManageSession,
+  ]);
+
+  const credentials = {
+    gameId,
+    callerPlayerId: currentPlayerId,
+    playerTokenHash: initialSession.playerTokenHash,
+    adminTokenHash: initialSession.adminTokenHash,
+  };
+
   return {
-    game: state.game,
-    players: state.players,
-    loading: state.loading,
-    currentPlayerId: state.currentPlayerId,
-    isAdmin: Boolean(state.auth.adminTokenHash),
-    voteError: state.voteError,
-    confettiSeed: state.confettiSeed,
-    queryError: state.queryError,
-    sessionExitReason: state.sessionExitReason,
+    game,
+    players,
+    currentPlayerId,
+    isAdmin: Boolean(initialSession.adminTokenHash),
+    voteError,
+    confettiSeed,
+    queryError:
+      state.type === 'not_found' ? translate('game.gameNotFound') : null,
+    sessionExitReason: hasLeft
+      ? ('left' as const)
+      : state.type === 'revoked'
+        ? state.reason
+        : null,
     onVote,
-    onReveal,
-    onReset,
-    onTimerUpdate,
-    onAutoReveal,
-    onDeleteGame,
-    onLeaveGame,
-    onRemovePlayer,
+    onReveal: async () => {
+      await revealMutation(credentials);
+    },
+    onReset: async () => {
+      clearPendingVote();
+      setVoteError(null);
+      await resetMutation(credentials);
+    },
+    onTimerUpdate: async (timerProps: TimerProps) => {
+      await updateTimerMutation({ ...credentials, timerProps });
+    },
+    onAutoReveal: async (autoReveal: boolean) => {
+      await setAutoRevealMutation({ ...credentials, autoReveal });
+    },
+    onRemovePlayer: async (playerId: string) => {
+      await removePlayerMutation({ ...credentials, playerId });
+    },
+    onDeleteGame: async () => {
+      await deleteGameMutation(credentials);
+    },
+    onLeaveGame: async () => {
+      await leaveGameRequest(gameId, currentPlayerId);
+      clearPendingVote();
+      setHasLeft(true);
+    },
   };
 }

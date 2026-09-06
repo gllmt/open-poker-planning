@@ -73,9 +73,7 @@ export function GameController({
   const router = useRouter();
   const { locale, t } = useI18n();
   const baseAutoReveal = game.autoReveal ?? false;
-  const [autoRevealValue, setAutoRevealValue] = useState(baseAutoReveal);
   const [autoRevealPending, setAutoRevealPending] = useState(false);
-  const [autoRevealPendingSync, setAutoRevealPendingSync] = useState(false);
 
   const isMod = isModerator(
     game.createdById,
@@ -180,38 +178,18 @@ export function GameController({
   const handleAutoReveal = useCallback(
     async (value: boolean) => {
       if (autoRevealPending) return;
-      setAutoRevealValue(value);
       setAutoRevealPending(true);
       try {
         await onAutoReveal(value);
-        setAutoRevealPendingSync(true);
       } catch {
-        setAutoRevealValue(baseAutoReveal);
-        setAutoRevealPendingSync(false);
+        sileo.info({ title: t('game.actionFailed'), position: 'top-center' });
       } finally {
         setAutoRevealPending(false);
       }
     },
-    [autoRevealPending, baseAutoReveal, onAutoReveal]
+    [autoRevealPending, onAutoReveal, t]
   );
 
-  useEffect(() => {
-    if (autoRevealPending) return;
-    if (autoRevealPendingSync) {
-      if (baseAutoReveal === autoRevealValue) {
-        setAutoRevealPendingSync(false);
-      }
-      return;
-    }
-    if (baseAutoReveal !== autoRevealValue) {
-      setAutoRevealValue(baseAutoReveal);
-    }
-  }, [
-    autoRevealPending,
-    autoRevealPendingSync,
-    autoRevealValue,
-    baseAutoReveal,
-  ]);
   const handleRemoveGame = async () => {
     await onDeleteGame();
     router.push(withLocale('/', locale));
@@ -246,7 +224,7 @@ export function GameController({
               title={t('game.autoRevealHint')}
             >
               <AutoRevealToggle
-                autoReveal={autoRevealValue}
+                autoReveal={baseAutoReveal}
                 disabled={autoRevealPending}
                 onAutoReveal={handleAutoReveal}
               />
@@ -342,9 +320,10 @@ function ControllerButton({
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const { t } = useI18n();
 
   const handleConfirmedAction = async () => {
-    if (!confirmation || isPending) return;
+    if (isPending) return;
 
     setIsPending(true);
     try {
@@ -352,7 +331,7 @@ function ControllerButton({
       setDialogOpen(false);
     } catch {
       sileo.info({
-        title: confirmation.failureMessage,
+        title: confirmation?.failureMessage ?? t('game.actionFailed'),
         position: 'top-center',
       });
     } finally {
@@ -417,7 +396,9 @@ function ControllerButton({
       <Button
         type="button"
         aria-label={label}
-        onClick={() => void onClick()}
+        onClick={() => void handleConfirmedAction()}
+        disabled={isPending}
+        aria-busy={isPending}
         className="rounded-xl hover:shadow-md active:scale-[0.95] transition-all duration-150"
         title={label}
         size="icon"

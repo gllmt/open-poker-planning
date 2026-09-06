@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { sileo } from 'sileo';
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
@@ -121,14 +122,21 @@ export function Timer({
   }, [soundOn, timerCompletedAt]);
 
   const commitTimerUpdate = useCallback(
-    (update: GameTimerProps) => onTimerUpdate(update),
-    [onTimerUpdate]
+    async (update: GameTimerProps) => {
+      try {
+        await onTimerUpdate(update);
+      } catch (error) {
+        sileo.info({ title: t('game.actionFailed'), position: 'top-center' });
+        throw error;
+      }
+    },
+    [onTimerUpdate, t]
   );
   const fireAndForgetTimerUpdate = useCallback(
     (update: GameTimerProps) => {
-      void onTimerUpdate(update).catch(() => {});
+      void commitTimerUpdate(update).catch(() => {});
     },
-    [onTimerUpdate]
+    [commitTimerUpdate]
   );
 
   const legacyMigrationRef = useRef(false);

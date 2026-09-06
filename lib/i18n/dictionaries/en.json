@@ -122,7 +122,8 @@
     "autoReveal": "Auto Reveal",
     "autoRevealHint": "Auto Reveal when all members finished voting",
     "gameNotFound": "Game not found",
-    "voteFailed": "Failed to vote"
+    "voteFailed": "Failed to vote",
+    "actionFailed": "Unable to complete this action. Please try again."
   },
   "results": {
     "title": "Results",

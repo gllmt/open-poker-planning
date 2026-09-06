@@ -44,7 +44,11 @@ export function Players({
           <PlayerCard
             key={player.id}
             gameStatus={game.gameStatus}
-            isCurrentPlayerModerator={isCurrentPlayerModerator}
+            canRemove={
+              isCurrentPlayerModerator &&
+              player.id !== currentPlayerId &&
+              player.id !== game.createdById
+            }
             player={player}
             card={
               player.value === undefined
@@ -52,7 +56,6 @@ export function Players({
                 : cardLookup.get(player.value)
             }
             revealDelayMs={Math.min(index, 8) * 65}
-            currentPlayerId={currentPlayerId}
             onRemovePlayer={onRemovePlayer}
           />
         ))}

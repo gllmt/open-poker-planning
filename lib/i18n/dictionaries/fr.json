@@ -122,7 +122,8 @@
     "autoReveal": "Voir les votes automatiquement",
     "autoRevealHint": "Voir les votes automatiquement quand tous les joueurs ont voté",
     "gameNotFound": "Session introuvable",
-    "voteFailed": "Impossible de voter."
+    "voteFailed": "Impossible de voter.",
+    "actionFailed": "Impossible d’effectuer cette action. Réessayez."
   },
   "results": {
     "title": "Résultats",

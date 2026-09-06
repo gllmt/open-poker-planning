@@ -2,17 +2,18 @@
 
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
-import { Loading } from '@/components/ui/loading';
 
 import { GameArea } from './game-area';
 import { useSessionExitRedirect } from './hooks/use-session-exit-redirect';
-import { usePokerController } from './use-poker-controller';
+import { type PreloadedGame, usePokerController } from './use-poker-controller';
 
 export function Poker({
   gameId,
   initialSession,
+  preloadedGame,
 }: {
   gameId: string;
+  preloadedGame: PreloadedGame;
   initialSession: {
     adminTokenHash?: string;
     playerId: string;
@@ -23,6 +24,7 @@ export function Poker({
   const controller = usePokerController({
     gameId,
     initialSession,
+    preloadedGame,
     translate: t,
   });
 
@@ -31,14 +33,6 @@ export function Poker({
     locale,
     reason: controller.sessionExitReason,
   });
-
-  if (controller.loading) {
-    return (
-      <div className="flex items-center justify-center p-10">
-        <Loading />
-      </div>
-    );
-  }
 
   if (controller.queryError) {
     return (
