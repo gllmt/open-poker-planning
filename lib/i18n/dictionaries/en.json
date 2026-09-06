@@ -21,15 +21,10 @@
     "loading": "Loading",
     "continue": "Continue",
     "cancel": "Cancel",
-    "save": "Save",
-    "saving": "Saving...",
-    "edit": "Edit",
     "create": "Create",
     "creating": "Creating...",
     "join": "Join",
-    "joining": "Joining...",
-    "avg": "Avg",
-    "avgWithColon": "Avg:"
+    "joining": "Joining..."
   },
   "toolbar": {
     "brand": "Open Poker Planning",
@@ -40,9 +35,7 @@
     "source": "Source on GitHub"
   },
   "theme": {
-    "toggle": "Toggle theme",
-    "light": "Light",
-    "dark": "Dark"
+    "toggle": "Toggle theme"
   },
   "createGame": {
     "title": "Create new session",
@@ -79,7 +72,6 @@
     "selectCard": "Choose card {value}",
     "selectedCard": "Card {value} selected",
     "revealedCard": "Card {value}",
-    "validated": "Vote confirmed",
     "changeVote": "Your vote is confirmed. Choose another card to change it."
   },
   "errorBoundary": {
@@ -134,11 +126,6 @@
     "mostPlayedDescription": "The most played card is…",
     "mostPlayedTie": "Several cards are tied.",
     "noRevealedVote": "No revealed vote is available."
-  },
-  "story": {
-    "label": "Story Name:",
-    "placeholder": "Enter story name or number",
-    "errorUpdateFailed": "Failed to update story"
   },
   "timer": {
     "disabled": "Timer disabled",

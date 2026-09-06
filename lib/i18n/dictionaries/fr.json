@@ -21,15 +21,10 @@
     "loading": "Chargement",
     "continue": "Continuer",
     "cancel": "Annuler",
-    "save": "Enregistrer",
-    "saving": "Enregistrement...",
-    "edit": "Modifier",
     "create": "Créer",
     "creating": "Création...",
     "join": "Rejoindre",
-    "joining": "En cours...",
-    "avg": "Moy.",
-    "avgWithColon": "Moyenne :"
+    "joining": "En cours..."
   },
   "toolbar": {
     "brand": "Open Poker Planning",
@@ -40,9 +35,7 @@
     "source": "Code source sur GitHub"
   },
   "theme": {
-    "toggle": "Changer le thème",
-    "light": "Clair",
-    "dark": "Sombre"
+    "toggle": "Changer le thème"
   },
   "createGame": {
     "title": "Créer une nouvelle session",
@@ -79,7 +72,6 @@
     "selectCard": "Choisir la carte {value}",
     "selectedCard": "Carte {value} sélectionnée",
     "revealedCard": "Carte {value}",
-    "validated": "Vote validé",
     "changeVote": "Votre vote est validé. Choisissez une autre carte pour le modifier."
   },
   "errorBoundary": {
@@ -135,18 +127,13 @@
     "mostPlayedTie": "Plusieurs cartes sont à égalité.",
     "noRevealedVote": "Aucun vote révélé n'est disponible."
   },
-  "story": {
-    "label": "Nom de la story :",
-    "placeholder": "Entrez un nom ou un numero de story",
-    "errorUpdateFailed": "Impossible de mettre à jour la story."
-  },
   "timer": {
     "disabled": "Minuteur désactivé",
     "show": "Afficher le minuteur",
     "start": "Démarrer le minuteur",
     "soundEnabled": "Son active",
     "soundDisabled": "Son désactivé",
-    "disableSound": "Désactivé le son",
+    "disableSound": "Désactiver le son",
     "enableSound": "Activer le son",
     "minutes": "Minutes",
     "seconds": "Secondes",

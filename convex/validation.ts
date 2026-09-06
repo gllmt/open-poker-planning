@@ -8,7 +8,6 @@ import { GameType } from '../types/game';
 export const LIMITS = {
   name: 120,
   personName: 80,
-  gameType: 40,
   emoji: 64,
   cards: 60,
   cardDisplayValue: 60,

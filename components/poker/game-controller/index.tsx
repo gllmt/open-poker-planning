@@ -356,7 +356,7 @@ function ControllerButton({
               <Button
                 type="button"
                 aria-label={label}
-                className="rounded-xl hover:shadow-md active:scale-[0.95] transition-all duration-150"
+                className="rounded-xl hover:shadow-md active:scale-[0.95] transition duration-150"
                 title={label}
                 size="icon"
                 variant={variant}
@@ -402,7 +402,7 @@ function ControllerButton({
         onClick={() => void handleConfirmedAction()}
         disabled={isPending}
         aria-busy={isPending}
-        className="rounded-xl hover:shadow-md active:scale-[0.95] transition-all duration-150"
+        className="rounded-xl hover:shadow-md active:scale-[0.95] transition duration-150"
         title={label}
         size="icon"
         variant={variant}

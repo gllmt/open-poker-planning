@@ -48,7 +48,7 @@ Deploying the Convex functions enables this policy for existing data at the next
 - Create, join, invite, leave, and session flows go through `app/api/**` Route Handlers, because they need HttpOnly cookie access.
 - Gameplay actions (vote, reveal, reset, timer, auto-reveal, remove player, delete game) call Convex mutations directly from the browser, authorized by token hashes.
 - Tokens are **256-bit random values stored in HttpOnly cookies**. Convex stores only **SHA-256 hashes**, which the browser presents as bearer credentials for direct mutations.
-- Realtime game state streams through a Convex `useQuery` subscription.
+- The server preloads the authorized viewer state; `usePreloadedQuery` reuses it for the initial render and subscribes to subsequent updates. Other players' votes remain masked before reveal.
 - Public Route Handlers use a bounded, in-memory rate limiter with both a global per-IP budget and endpoint-specific budgets. This protection is best-effort per server instance; use a distributed limiter before removing the private access gate.
 - If neither `x-forwarded-for` nor `x-real-ip` is set by the deployment proxy, requests share the `unknown` IP bucket and therefore the same global budget.
 
@@ -101,12 +101,15 @@ Open http://localhost:3000.
 ```bash
 pnpm dev      # develop
 pnpm lint     # Biome lint
+pnpm lints    # formatting, lint and TypeScript
 pnpm test     # Vitest
 pnpm build    # production build
 pnpm start    # run the production build
 ```
 
 ## Deploy
+
+See [maintenance notes](docs/maintenance.md) for retained legacy contracts and the checks required before narrowing the data schema.
 
 Deploy on Vercel and set the same environment variables in the project settings. Convex runs as the realtime backend. Set `CONVEX_SERVICE_SECRET` to the same random value in Vercel and in the production Convex deployment with `pnpm exec convex env set --prod CONVEX_SERVICE_SECRET`. Omitting the value makes the CLI read it interactively or from stdin instead of saving it in shell history.
 

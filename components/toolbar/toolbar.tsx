@@ -35,7 +35,7 @@ export function Toolbar() {
         <Link
           href={withLocale('/', locale)}
           className={cn(
-            'rounded-full px-3 py-2 text-sm font-medium transition-all duration-150',
+            'rounded-full px-3 py-2 text-sm font-medium transition duration-150',
             isHome
               ? 'text-foreground bg-muted/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
@@ -46,7 +46,7 @@ export function Toolbar() {
         <Link
           href={withLocale('/join', locale)}
           className={cn(
-            'rounded-full px-3 py-2 text-sm font-medium transition-all duration-150',
+            'rounded-full px-3 py-2 text-sm font-medium transition duration-150',
             isJoin
               ? 'text-foreground bg-muted/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'

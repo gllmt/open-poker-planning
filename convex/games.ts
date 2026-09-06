@@ -973,6 +973,7 @@ export const deleteGame = mutation({
   args: {
     gameId: v.string(),
     adminTokenHash: v.optional(v.string()),
+    // Older open tabs still send these fields; only the admin hash authorizes deletion.
     callerPlayerId: v.optional(v.string()),
     playerTokenHash: v.optional(v.string()),
   },
