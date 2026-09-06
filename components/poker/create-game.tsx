@@ -127,10 +127,10 @@ export function CreateGame() {
 
   useEffect(() => {
     const recent = getRecentPlayerName();
-    if (recent && !state.createdBy) {
+    if (recent) {
       dispatch({ type: 'set-created-by', value: recent });
     }
-  }, [state.createdBy]);
+  }, []);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

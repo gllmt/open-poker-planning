@@ -148,6 +148,8 @@
     "soundDisabled": "Sound disabled",
     "disableSound": "Disable sound",
     "enableSound": "Enable sound",
+    "minutes": "Minutes",
+    "seconds": "Seconds",
     "runningTime": "Running time: {minutes}m {seconds}s",
     "setTime": "Set time: {minutes}m {seconds}s",
     "total": "Total {minutes}:{seconds}",

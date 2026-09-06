@@ -148,6 +148,8 @@
     "soundDisabled": "Son désactivé",
     "disableSound": "Désactivé le son",
     "enableSound": "Activer le son",
+    "minutes": "Minutes",
+    "seconds": "Secondes",
     "runningTime": "Temps restant : {minutes}m {seconds}s",
     "setTime": "Régler le temps : {minutes}m {seconds}s",
     "total": "Total {minutes}:{seconds}",

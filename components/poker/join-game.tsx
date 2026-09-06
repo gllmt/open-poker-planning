@@ -98,10 +98,10 @@ export function JoinGame({
 
   useEffect(() => {
     const recent = getRecentPlayerName();
-    if (recent && !state.playerName) {
+    if (recent) {
       dispatch({ type: 'set-player-name', value: recent });
     }
-  }, [state.playerName]);
+  }, []);
 
   useEffect(() => {
     if (!initialInviteToken) return;
