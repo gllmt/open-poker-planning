@@ -16,8 +16,8 @@ export async function POST(
   context: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await context.params;
-  const body = (await request.json().catch(() => ({}))) as LeaveBody;
-  if (typeof body.callerPlayerId !== 'string' || body.callerPlayerId === '') {
+  const body = (await request.json().catch(() => null)) as LeaveBody | null;
+  if (typeof body?.callerPlayerId !== 'string' || body.callerPlayerId === '') {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 

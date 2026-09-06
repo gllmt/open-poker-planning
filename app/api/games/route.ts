@@ -50,7 +50,9 @@ export async function POST(request: Request) {
     typeof body?.name !== 'string' ||
     typeof body?.createdBy !== 'string' ||
     typeof body?.gameType !== 'string' ||
-    !Array.isArray(body.cards)
+    !Array.isArray(body.cards) ||
+    (body.isAllowMembersToManageSession !== undefined &&
+      typeof body.isAllowMembersToManageSession !== 'boolean')
   ) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }

@@ -127,6 +127,19 @@ async function getActivePlayersByGameId(ctx: DbReaderCtx, gameId: string) {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
+async function getAutoRevealPatch(ctx: DbReaderCtx, game: GameDoc) {
+  if (!game.autoReveal || game.gameStatus === STATUS.Finished) return {};
+  const players = await getActivePlayersByGameId(ctx, game.gameId);
+  if (!players.length || players.some((p) => p.status !== STATUS.Finished)) {
+    return {};
+  }
+  const timerProps = resetTimerProps(game.timerProps);
+  return {
+    gameStatus: STATUS.Finished,
+    ...(timerProps !== undefined ? { timerProps } : {}),
+  };
+}
+
 async function getPlayersByGameAndPlayerId(
   ctx: DbReaderCtx,
   gameId: string,
@@ -534,6 +547,7 @@ export const joinGame = mutation({
     playerName: v.string(),
     playerTokenHash: v.string(),
     joinTokenHash: v.string(),
+    existingPlayerTokenHash: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     assertServiceSecret(args.serviceSecret);
@@ -552,6 +566,19 @@ export const joinGame = mutation({
     );
     if (!hasValidInvite) {
       throw new ConvexError('INVALID_INVITE');
+    }
+
+    if (args.existingPlayerTokenHash) {
+      assertTokenHash(args.existingPlayerTokenHash);
+      const existing = await getPlayerByGameAndPlayerTokenHash(
+        ctx,
+        args.gameId,
+        args.existingPlayerTokenHash
+      );
+      if (existing && isActivePlayer(existing)) {
+        await ctx.db.patch(game._id, { updatedAt: Date.now() });
+        return { playerId: existing.playerId, reused: true };
+      }
     }
 
     await reservePlayerSlot(
@@ -576,6 +603,7 @@ export const joinGame = mutation({
     });
 
     await ctx.db.patch(game._id, { updatedAt: now });
+    return { playerId: args.playerId, reused: false };
   },
 });
 
@@ -607,7 +635,10 @@ export const leaveGame = mutation({
       emoji: null,
       updatedAt: now,
     });
-    await ctx.db.patch(game._id, { updatedAt: now });
+    await ctx.db.patch(game._id, {
+      ...(await getAutoRevealPatch(ctx, game)),
+      updatedAt: now,
+    });
   },
 });
 
@@ -652,25 +683,9 @@ export const vote = mutation({
       updatedAt: now,
     });
 
-    let nextStatus: Status = STATUS.InProgress;
-    if (game.autoReveal) {
-      const players = await getActivePlayersByGameId(ctx, args.gameId);
-      const allFinished =
-        players.length > 0 &&
-        players.every((entry) =>
-          entry._id === player._id ? true : entry.status === STATUS.Finished
-        );
-      if (allFinished) nextStatus = STATUS.Finished;
-    }
-
-    const nextTimerProps =
-      game.autoReveal && nextStatus === STATUS.Finished
-        ? resetTimerProps(game.timerProps)
-        : undefined;
-
     await ctx.db.patch(game._id, {
-      gameStatus: nextStatus,
-      ...(nextTimerProps !== undefined ? { timerProps: nextTimerProps } : {}),
+      gameStatus: STATUS.InProgress,
+      ...(await getAutoRevealPatch(ctx, game)),
       updatedAt: now,
     });
   },
@@ -882,6 +897,10 @@ export const setAutoReveal = mutation({
     const now = Date.now();
     await ctx.db.patch(game._id, {
       autoReveal: args.autoReveal,
+      ...(await getAutoRevealPatch(ctx, {
+        ...game,
+        autoReveal: args.autoReveal,
+      })),
       updatedAt: now,
     });
   },
@@ -938,7 +957,10 @@ export const removePlayer = mutation({
       )
     );
     await revokeActiveInvites(ctx, args.gameId, 'player_removed', now);
-    await ctx.db.patch(game._id, { updatedAt: now });
+    await ctx.db.patch(game._id, {
+      ...(await getAutoRevealPatch(ctx, game)),
+      updatedAt: now,
+    });
   },
 });
 

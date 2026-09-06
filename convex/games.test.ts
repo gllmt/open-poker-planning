@@ -171,6 +171,133 @@ describe('getViewerGameState', () => {
   });
 });
 
+describe('auto-reveal after membership and option changes', () => {
+  it.each(['leave', 'remove', 'enable'] as const)(
+    'reveals after %s',
+    async (trigger) => {
+      const t = await setupGame();
+      if (trigger !== 'enable') {
+        await joinPlayer(t);
+        await t.mutation(api.games.setAutoReveal, {
+          gameId: GAME_ID,
+          adminTokenHash: HASH_B,
+          autoReveal: true,
+        });
+      }
+      await t.mutation(api.games.updateTimer, {
+        gameId: GAME_ID,
+        adminTokenHash: HASH_B,
+        timerProps: { startedAt: null, totalSeconds: 300, pausedAt: 20 },
+      });
+      await t.mutation(api.games.vote, {
+        gameId: GAME_ID,
+        playerId: ALICE_ID,
+        playerTokenHash: HASH_C,
+        value: 1,
+      });
+      if (trigger === 'leave') {
+        await t.mutation(api.games.leaveGame, {
+          gameId: GAME_ID,
+          playerId: BOB_ID,
+          playerTokenHash: HASH_D,
+        });
+      } else if (trigger === 'remove') {
+        await t.mutation(api.games.removePlayer, {
+          gameId: GAME_ID,
+          playerId: BOB_ID,
+          adminTokenHash: HASH_B,
+        });
+      } else {
+        await t.mutation(api.games.setAutoReveal, {
+          gameId: GAME_ID,
+          adminTokenHash: HASH_B,
+          autoReveal: true,
+        });
+      }
+      expect(expectReady(await getViewer(t)).game).toMatchObject({
+        gameStatus: Status.Finished,
+        timerProps: { startedAt: null, pausedAt: 0 },
+      });
+    }
+  );
+
+  it('does not reveal an empty game', async () => {
+    const t = await setupGame();
+    await t.mutation(api.games.setAutoReveal, {
+      gameId: GAME_ID,
+      adminTokenHash: HASH_B,
+      autoReveal: true,
+    });
+    await t.mutation(api.games.leaveGame, {
+      gameId: GAME_ID,
+      playerId: ALICE_ID,
+      playerTokenHash: HASH_C,
+    });
+    const game = await t.run((ctx) => ctx.db.query('games').first());
+    expect(game?.gameStatus).toBe(Status.Started);
+  });
+});
+
+describe('rejoining with an existing session', () => {
+  const join = {
+    serviceSecret: SERVICE_SECRET,
+    gameId: GAME_ID,
+    playerId: CAROL_ID,
+    playerName: 'Carol',
+    playerTokenHash: HASH_E,
+    joinTokenHash: HASH_A,
+    existingPlayerTokenHash: HASH_D,
+  };
+
+  it('reuses an active player even for concurrent requests', async () => {
+    const t = await setupGame();
+    await joinPlayer(t);
+    const results = await Promise.all([
+      t.mutation(api.games.joinGame, join),
+      t.mutation(api.games.joinGame, {
+        ...join,
+        playerId: 'another-id',
+        playerTokenHash: HASH_F,
+      }),
+    ]);
+    expect(results).toEqual([
+      { playerId: BOB_ID, reused: true },
+      { playerId: BOB_ID, reused: true },
+    ]);
+    expect(expectReady(await getViewer(t)).players).toHaveLength(2);
+  });
+
+  it('still requires a valid invitation', async () => {
+    const t = await setupGame();
+    await joinPlayer(t);
+    await expectConvexError(
+      t.mutation(api.games.joinGame, { ...join, joinTokenHash: HASH_X }),
+      'INVALID_INVITE'
+    );
+  });
+
+  it('creates a fresh identity for a player who left', async () => {
+    const t = await setupGame();
+    await joinPlayer(t);
+    await t.mutation(api.games.leaveGame, {
+      gameId: GAME_ID,
+      playerId: BOB_ID,
+      playerTokenHash: HASH_D,
+    });
+    await expect(t.mutation(api.games.joinGame, join)).resolves.toEqual({
+      playerId: CAROL_ID,
+      reused: false,
+    });
+    expect(await getViewer(t, HASH_D)).toEqual({
+      type: 'revoked',
+      reason: 'left',
+    });
+    expect(expectReady(await getViewer(t, HASH_E)).currentPlayerId).toBe(
+      CAROL_ID
+    );
+  });
+});
+
 describe('server-only mutation authorization', () => {
   it('rejects game creation when the service secret is not configured', async () => {
     const configuredSecret = process.env.CONVEX_SERVICE_SECRET;
