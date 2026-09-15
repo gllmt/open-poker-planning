@@ -94,3 +94,42 @@ it('sets a new credential when the old membership cannot be reused', async () =>
   expect(response.status).toBe(201);
   expect(response.cookies.get('player')?.value).toBe('new-token');
 });
+
+it.each([
+  null,
+  undefined,
+  'legacy-result',
+  [],
+  {},
+  { playerId: 'new-player' },
+  { playerId: null, reused: false },
+  { playerId: '', reused: false },
+  { playerId: 'new-player', reused: 'false' },
+])(
+  'rejects an invalid deployed join response without setting a cookie: %j',
+  async (result) => {
+    getCookie.mockReturnValue({ value: 'existing-token' });
+    mutation.mockResolvedValue(result);
+
+    const response = await join(
+      request({ playerName: 'Bob', token: 'invite' }),
+      context
+    );
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'Failed to join' });
+    expect(response.headers.has('set-cookie')).toBe(false);
+  }
+);
+
+it('rejects a reused membership without an existing credential', async () => {
+  mutation.mockResolvedValue({ playerId: 'existing-player', reused: true });
+
+  const response = await join(
+    request({ playerName: 'Bob', token: 'invite' }),
+    context
+  );
+
+  expect(response.status).toBe(502);
+  expect(response.headers.has('set-cookie')).toBe(false);
+});

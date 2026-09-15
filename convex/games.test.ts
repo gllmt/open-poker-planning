@@ -1627,6 +1627,28 @@ describe('30-day retention', () => {
     });
   }
 
+  it('keeps expired games and their children when retention is paused', async () => {
+    const t = await setupGame();
+    await joinPlayer(t);
+    await ageGame(t, RETENTION_MS * 2);
+    vi.stubEnv('GAME_RETENTION_PAUSED', 'true');
+    try {
+      expect(await t.mutation(internal.retention.purgeInactiveGames, {})).toBe(
+        0
+      );
+      await t.run(async (ctx) => {
+        expect(await ctx.db.query('games').collect()).toHaveLength(1);
+        expect(await ctx.db.query('players').collect()).toHaveLength(2);
+        expect(await ctx.db.query('gameInvites').collect()).toHaveLength(1);
+        expect(
+          await ctx.db.system.query('_scheduled_functions').collect()
+        ).toHaveLength(0);
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('deletes a game, all memberships and invitations at the 30-day boundary', async () => {
     const t = await setupGame();
     await joinPlayer(t);

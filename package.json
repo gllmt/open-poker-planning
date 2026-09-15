@@ -5,8 +5,9 @@
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@11.5.3",
   "scripts": {
-    "dev": "next dev",
+    "dev": "convex dev --start 'next dev'",
     "build": "next build",
+    "build:vercel": "convex deploy --cmd 'pnpm build' --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL",
     "start": "next start",
     "lint": "oxlint .",
     "lint:ui": "oxlint --config .oxlintrc.json app components",

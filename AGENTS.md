@@ -10,7 +10,8 @@ Répondre en français. Respecter le périmètre demandé : audit des sources en
 
 ## Commandes
 
-- Installer : `pnpm install` ; développement Next : `pnpm dev` ; serveur de production local : `pnpm start`.
+- Installer : `pnpm install` ; développement Convex et Next synchronisé : `pnpm dev` ; serveur de production local : `pnpm start`.
+- `pnpm build` ne déploie rien. Vercel utilise `pnpm build:vercel`, qui déploie aussi Convex ; vérifier la cible et la clé de déploiement avant de l'exécuter.
 - Formatage, lint et types : `pnpm lints` ; tests : `pnpm test` ; build : `pnpm build`. `pnpm lint` exécute Oxlint ; `pnpm format` applique Oxfmt et trie les imports.
 - `pnpm lint:ui` limite Oxlint à `app/` et `components/`. `@shadcn/lint` est aussi chargé par le lint global de `pnpm lints`. Les six règles shadcn et les contrôles Oxlint fondés sur les types sont actifs. Respecter les contrats et exceptions documentés dans `docs/design-rules.md`.
 - Tests Convex : fixtures en mémoire. Vérifications interactives : instance de développement et données jetables.

@@ -14,6 +14,20 @@ type JoinBody = {
   token: string;
 };
 
+type JoinResult = { playerId: string; reused: boolean };
+
+function isJoinResult(value: unknown): value is JoinResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'playerId' in value &&
+    typeof value.playerId === 'string' &&
+    value.playerId.length > 0 &&
+    'reused' in value &&
+    typeof value.reused === 'boolean'
+  );
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ gameId: string }> }
@@ -58,7 +72,8 @@ export async function POST(
   const existingPlayerToken = cookieStore.get(
     cookieNames.playerToken(gameId)
   )?.value;
-  let joined: { playerId: string; reused: boolean };
+  // The deployed Convex functions can lag behind the local generated types.
+  let joined: unknown;
 
   try {
     joined = await fetchMutation(api.games.joinGame, {
@@ -99,6 +114,10 @@ export async function POST(
       );
     }
     return NextResponse.json({ error: 'Failed to join' }, { status: 500 });
+  }
+
+  if (!isJoinResult(joined) || (joined.reused && !existingPlayerToken)) {
+    return NextResponse.json({ error: 'Failed to join' }, { status: 502 });
   }
 
   const response = NextResponse.json(

@@ -20,9 +20,34 @@ Before a schema migration, export a representative target database to a protecte
 
 The daily cron is active once the Convex changes are deployed. It uses `games.updatedAt`, deletes eligible games and their children atomically, and chains batches of 10. Review target volumes, old row budgets and a backup before the first production deployment. Stale timer jobs are safe after deletion.
 
+For a rollout that must preserve historical games, pause deletion before deploying:
+
+```bash
+pnpm exec convex env set --prod GAME_RETENTION_PAUSED true
+```
+
+This variable belongs to Convex, not Next.js or Vercel. Each purge invocation,
+including already-scheduled batches, checks it before reading or deleting games.
+Only the exact value `true` pauses deletion; removing it or setting it to `false`
+allows the next invocation to resume the normal policy. Review and approve the
+eligible data before resuming it.
+
 An open tab alone is not activity. A gameplay, membership or invitation mutation renews the inactivity deadline. Recent-game entries use the browser's last visit; this is separate from server retention. Unknown-age legacy cache entries are kept until the next visit timestamps them.
 
 ## Verification
+
+Generated Convex types describe the local source, not the code currently deployed.
+`pnpm dev` syncs Convex before starting Next.js and watches both. Vercel uses
+`pnpm build:vercel` to deploy the backend during its build, with a deploy key scoped
+to the intended environment. After deployment, `pnpm exec convex function-spec`
+(or `--prod`) can verify the live argument and return validators. In particular,
+`games:joinGame` must accept optional `existingPlayerTokenHash` and return
+`{ playerId: string, reused: boolean }`.
+
+The join Route Handler validates that response at runtime before writing its
+session cookie. An invalid response produces a controlled 502 without replacing
+the cookie. This guard cannot undo a write already committed by an outdated
+backend; keeping deployments synchronized is the actual fix.
 
 `pnpm lints`, `pnpm test` and `pnpm build` cover formatting, lint, types, behavioral React tests, route contracts, Convex transitions and the production bundle. Convex's own config is checked with `tsc --noEmit -p convex/tsconfig.json`.
 

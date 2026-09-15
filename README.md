@@ -42,6 +42,8 @@ The browser keeps at most 20 recent entries, prunes dated entries after 30 days 
 
 Deploying the Convex functions enables this policy for existing data at the next scheduled run. Inspect the target database volumes and `updatedAt` values and export a backup before the first production deployment. Each valid game is bounded to 50 player rows and 100 invite rows; investigate legacy records exceeding those limits before enabling the purge on that database.
 
+To deploy backend fixes while keeping historical data, set `GAME_RETENTION_PAUSED=true` **on the target Convex deployment** before deploying. The cron remains registered, but every purge invocation returns without deleting data or scheduling another batch. Keep the flag set until cleanup is approved. Invitation expiry and browser history limits are unaffected by this server purge switch.
+
 ## How it works (security)
 
 - Access is **token-based**, no login required.
@@ -60,7 +62,7 @@ Analytics is optional: leave the analytics environment variables unset to disabl
 
 ```bash
 pnpm install
-pnpm exec convex dev         # long-running: generates convex/_generated and fills the Convex vars in .env.local
+pnpm exec convex dev --once  # generates convex/_generated and fills the Convex vars in .env.local
 ```
 
 For optional overrides such as analytics or the access gate, copy only the relevant commented variables from `.env.example` into `.env.local` after Convex has written its variables.
@@ -74,11 +76,15 @@ printf '%s' "$task_service_secret" | pnpm exec convex env set CONVEX_SERVICE_SEC
 unset task_service_secret
 ```
 
-Then, with `pnpm exec convex dev` still running, start Next.js in another terminal:
+Then start development:
 
 ```bash
 pnpm dev
 ```
+
+This syncs the Convex functions before starting Next.js, then keeps both running
+and watches for backend changes. Starting only `next dev` can leave the deployed
+functions behind the generated TypeScript types and break API calls.
 
 Open http://localhost:3000.
 
@@ -89,6 +95,7 @@ Open http://localhost:3000.
 | `NEXT_PUBLIC_CONVEX_URL` | yes | Convex deployment URL (public) |
 | `CONVEX_DEPLOYMENT` | yes | Convex deployment (server-only) |
 | `CONVEX_SERVICE_SECRET` | yes | Shared server secret configured in both Next.js and Convex, used to authorize create/join mutations |
+| `CONVEX_DEPLOY_KEY` | Vercel only | Convex deploy key for the target environment; server/build-only, never `NEXT_PUBLIC_*` |
 | `SITE_URL` | recommended | Absolute URL for SEO metadata and sitemap (server-only) |
 | `SITE_ACCESS_CODE` | optional | Enables the global access-code gate at `/access` (server-only) |
 | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | optional | PostHog analytics (cookieless) |
@@ -99,7 +106,7 @@ Open http://localhost:3000.
 ## Commands
 
 ```bash
-pnpm dev      # develop
+pnpm dev      # sync/watch Convex and run Next.js together
 pnpm lint     # Oxlint (including @shadcn/lint)
 pnpm lint:ui  # lint app/ and components/ only
 pnpm lints    # Oxfmt check, Oxlint and TypeScript
@@ -107,6 +114,7 @@ pnpm format   # format files and sort imports with Oxfmt
 pnpm lint:fix # apply safe Oxlint fixes
 pnpm test     # Vitest
 pnpm build    # production build
+pnpm build:vercel # build Next.js and deploy Convex together (writes to the selected backend)
 pnpm start    # run the production build
 ```
 
@@ -144,6 +152,16 @@ sorting preserves side-effect import order. VS Code uses the recommended
 See [maintenance notes](docs/maintenance.md) for retained legacy contracts and the checks required before narrowing the data schema.
 
 Deploy on Vercel and set the same environment variables in the project settings. Convex runs as the realtime backend. Set `CONVEX_SERVICE_SECRET` to the same random value in Vercel and in the production Convex deployment with `pnpm exec convex env set --prod CONVEX_SERVICE_SECRET`. Omitting the value makes the CLI read it interactively or from stdin instead of saving it in shell history.
+
+`vercel.json` uses `pnpm build:vercel`, following the [Convex Vercel deployment guide](https://docs.convex.dev/production/hosting/vercel). It builds Next.js with the target Convex URL, then deploys the Convex functions as part of the same build. A backend deployment failure prevents Vercel from publishing the new frontend. The local `pnpm build` remains a build without deployment.
+
+Before the first Vercel build with this configuration:
+
+1. Complete the production data review and backup described under **Data retention**.
+2. Create a production deploy key in the Convex dashboard and set `CONVEX_DEPLOY_KEY` in Vercel, scoped to **Production** only. Do not share that key with preview builds.
+3. If previews are enabled, configure a separate Convex preview deploy key scoped to Vercel **Preview**, with the required backend and frontend environment variables for those isolated deployments.
+
+Deploy keys belong in Vercel's environment settings, never in Git. Keep backend changes compatible with the currently published frontend and already-open tabs: this command coordinates deployment, but the two services do not switch atomically.
 
 ## License
 

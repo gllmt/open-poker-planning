@@ -553,6 +553,7 @@ export const joinGame = mutation({
     joinTokenHash: v.string(),
     existingPlayerTokenHash: v.optional(v.string()),
   },
+  returns: v.object({ playerId: v.string(), reused: v.boolean() }),
   handler: async (ctx, args) => {
     assertServiceSecret(args.serviceSecret);
     const playerName = assertText(args.playerName, LIMITS.personName);

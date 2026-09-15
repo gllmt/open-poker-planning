@@ -8,6 +8,9 @@ const BATCH_SIZE = 10;
 export const purgeInactiveGames = internalMutation({
   args: {},
   handler: async (ctx): Promise<number> => {
+    // Allow backend fixes to ship before approving cleanup of historical data.
+    if (process.env.GAME_RETENTION_PAUSED === 'true') return 0;
+
     const games = await ctx.db
       .query('games')
       .withIndex('by_updatedAt', (q) =>
