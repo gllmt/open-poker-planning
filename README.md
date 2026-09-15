@@ -155,6 +155,14 @@ Deploy on Vercel and set the same environment variables in the project settings.
 
 `vercel.json` uses `pnpm build:vercel`, following the [Convex Vercel deployment guide](https://docs.convex.dev/production/hosting/vercel). It builds Next.js with the target Convex URL, then deploys the Convex functions as part of the same build. A backend deployment failure prevents Vercel from publishing the new frontend. The local `pnpm build` remains a build without deployment.
 
+For Vercel Production, a preflight check rejects missing or non-production deploy
+keys, a key targeting a different deployment from `NEXT_PUBLIC_CONVEX_URL`, and
+missing or too-short service secrets. This runs before Convex can deploy or
+replace the URL used by the Next.js build. Use the standard `.convex.cloud` URL
+in `NEXT_PUBLIC_CONVEX_URL` for this check. After publishing, verify the URL in
+the live frontend and exercise create/invite/join with a disposable room; a
+successful Vercel build alone does not establish that the application works.
+
 Before the first Vercel build with this configuration:
 
 1. Complete the production data review and backup described under **Data retention**.

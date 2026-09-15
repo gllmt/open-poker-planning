@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "convex dev --start 'next dev'",
     "build": "next build",
-    "build:vercel": "convex deploy --cmd 'pnpm build' --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL",
+    "build:vercel": "node scripts/check-convex-deployment.mjs && convex deploy --cmd 'pnpm build' --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL",
     "start": "next start",
     "lint": "oxlint .",
     "lint:ui": "oxlint --config .oxlintrc.json app components",
