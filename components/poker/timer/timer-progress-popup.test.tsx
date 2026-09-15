@@ -9,9 +9,9 @@ import {
 } from '@testing-library/react';
 import type { ComponentProps, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TimerProgress } from './timer-progress-popup';
 import { I18nContext } from '@/lib/i18n/context';
 import dictionary from '@/lib/i18n/dictionaries/en.json';
-import { TimerProgress } from './timer-progress-popup';
 
 function wrapper({ children }: { children: ReactNode }) {
   return (
@@ -106,7 +106,9 @@ describe('timer draft', () => {
     push({ totalSeconds: 360 });
     await act(async () => first.resolve());
     expect(minutes().value).toBe('7');
-    act(() => vi.advanceTimersByTime(400));
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
     expect(update).toHaveBeenLastCalledWith(
       expect.objectContaining({ totalSeconds: 420 })
     );

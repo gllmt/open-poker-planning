@@ -1,7 +1,5 @@
 import 'server-only';
-
 import { cache } from 'react';
-
 import type { Locale } from './config';
 import type { Dictionary } from './types';
 

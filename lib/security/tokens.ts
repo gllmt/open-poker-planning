@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export function generateToken(bytes = 32): string {

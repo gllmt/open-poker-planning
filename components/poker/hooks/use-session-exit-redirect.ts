@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
-
 import { clearGameSession } from '@/lib/api/games';
 import { clearPlayerGameSession } from '@/lib/browser-storage';
 import type { Locale } from '@/lib/i18n/config';

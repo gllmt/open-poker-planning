@@ -4,7 +4,6 @@ import { usePostHog } from '@posthog/next';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useReducer } from 'react';
 import { sileo } from 'sileo';
-
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import {
@@ -177,7 +176,10 @@ export function JoinGame({
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="w-full flex justify-center">
+      <form
+        onSubmit={(event) => void handleSubmit(event)}
+        className="w-full flex justify-center"
+      >
         <Card className="w-full max-w-lg">
           <CardHeader className="text-center">
             <CardTitle>{t('joinGame.title')}</CardTitle>

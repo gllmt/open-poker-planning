@@ -1,7 +1,6 @@
 'use client';
 
 import { type ReactNode, useMemo } from 'react';
-
 import type { Locale } from '@/lib/i18n/config';
 import { I18nContext } from '@/lib/i18n/context';
 import type { Dictionary } from '@/lib/i18n/types';

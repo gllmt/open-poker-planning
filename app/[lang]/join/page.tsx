@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-
 import { JoinGame } from '@/components/poker/join-game';
 import { Loading } from '@/components/ui/loading';
 import { i18n, isLocale } from '@/lib/i18n/config';

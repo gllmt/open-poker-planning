@@ -4,7 +4,6 @@ import { Hourglass } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef } from 'react';
 import { sileo } from 'sileo';
-
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { shouldPlayTimerCompletionSound } from '@/lib/timer/completion-sound';

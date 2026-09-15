@@ -1,5 +1,5 @@
 import { CircleQuestionMark, Coffee, Spade } from 'lucide-react';
-
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import type { CardConfig } from '@/types/cards';
 
@@ -70,26 +70,20 @@ export function PlanningCard({
       <span
         className="planning-card-inner absolute inset-0 block"
         style={
-          flipDelayMs ? { transitionDelay: `${flipDelayMs}ms` } : undefined
+          { '--planning-card-flip-delay': `${flipDelayMs}ms` } as CSSProperties
         }
       >
-        <span
-          className={cn(
-            cardSurfaceClasses,
-            surfaceRadiusClasses[size],
-            'planning-card-back'
-          )}
-        >
+        <span className={cn(cardSurfaceClasses, surfaceRadiusClasses[size])}>
           <span className={cardPatternClasses} />
           <CardMedallion
             card={resolvedCard}
             concealed={!selected}
             size={size}
           />
-          <span className="absolute left-2 top-1.5 text-[7px] text-orange-50/60 md:left-3 md:top-2 md:text-[9px]">
+          <span className="absolute left-2 top-1.5 text-[7px] text-card-ornament/60 md:left-3 md:top-2 md:text-[9px]">
             ✦
           </span>
-          <span className="absolute bottom-1.5 right-2 text-[7px] text-orange-50/60 md:bottom-2 md:right-3 md:text-[9px]">
+          <span className="absolute bottom-1.5 right-2 text-[7px] text-card-ornament/60 md:bottom-2 md:right-3 md:text-[9px]">
             ✦
           </span>
           <CardSelectionBorder selected={selected} size={size} />
@@ -123,7 +117,7 @@ function CardSelectionBorder({
   return (
     <span
       className={cn(
-        'pointer-events-none absolute inset-0 z-20 border-[2px] border-orange-100/75 opacity-0 transition-opacity ease-out motion-reduce:transition-none',
+        'pointer-events-none absolute inset-0 z-20 border-[2px] border-card-selection/75 opacity-0 transition-opacity ease-out motion-reduce:transition-none',
         surfaceRadiusClasses[size],
         selected
           ? 'delay-[480ms] duration-[880ms] opacity-[0.55]'
@@ -145,7 +139,7 @@ function CardMedallion({
   return (
     <span
       className={cn(
-        'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#3d1f16]/70 shadow-[inset_0_0_0_1px_rgba(255,222,196,0.16),0_0_22px_rgba(122,52,22,0.14)]',
+        'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card-medallion/70 shadow-[inset_0_0_0_1px_rgba(255,222,196,0.16),0_0_22px_rgba(122,52,22,0.14)]',
         size === 'picker' ? 'size-12 md:size-[4.5rem]' : 'size-7'
       )}
     >
@@ -191,7 +185,7 @@ function CardValue({
   return (
     <span
       className={cn(
-        'font-semibold tracking-tight text-[#fff0df] drop-shadow-[0_0_12px_rgba(255,226,190,0.16)]',
+        'font-semibold tracking-tight text-card-value drop-shadow-[0_0_12px_rgba(255,226,190,0.16)]',
         size === 'picker' && !isLongValue && 'text-3xl md:text-5xl',
         size === 'picker' && isLongValue && 'text-base md:text-2xl',
         size === 'player' && !isLongValue && 'text-base',
@@ -218,10 +212,10 @@ function CardCorner({
   return (
     <span
       className={cn(
-        'absolute z-10 font-semibold leading-none text-orange-50/60',
+        'absolute z-10 font-semibold leading-none text-card-ornament/60',
         position === 'top' && 'left-[11%] top-[6%]',
         position === 'bottom' && 'bottom-[6%] right-[11%]',
-        size === 'picker' ? 'text-[8px] md:text-[10px]' : 'text-[6px]'
+        size === 'picker' ? 'text-[8px] md:text-caption' : 'text-[6px]'
       )}
     >
       {symbol}

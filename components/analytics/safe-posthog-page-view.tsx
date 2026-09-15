@@ -3,7 +3,6 @@
 import { usePostHog } from '@posthog/next';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-
 import { getAnalyticsPageviewUrl } from '@/lib/analytics-url';
 
 export function SafePostHogPageView() {

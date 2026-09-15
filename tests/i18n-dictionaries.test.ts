@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import en from '@/lib/i18n/dictionaries/en.json';
 import fr from '@/lib/i18n/dictionaries/fr.json';
 

@@ -1,6 +1,5 @@
 import { fetchMutation } from 'convex/nextjs';
 import { NextResponse } from 'next/server';
-
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
 import { getConvexServiceSecret } from '@/lib/security/convex-service';

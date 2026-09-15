@@ -1,7 +1,6 @@
 import { fetchQuery } from 'convex/nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-
 import { api } from '@/convex/_generated/api';
 import { cookieNames } from '@/lib/security/cookies';
 import { hashToken } from '@/lib/security/tokens';

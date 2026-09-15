@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import {
   getAnalyticsPageviewUrl,
   POSTHOG_URL_PRIVACY_OPTIONS,

@@ -1,7 +1,6 @@
 import { Clock, Layers, Link2, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-
 import { HomePage } from '@/components/poker/home-page';
 import { StructuredData } from '@/components/seo/structured-data';
 import { Loading } from '@/components/ui/loading';
@@ -38,13 +37,13 @@ export default async function Home({
   return (
     <div className="flex flex-col items-center gap-12 px-4 pb-16">
       {/* Hero glow backdrop */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/8 blur-[120px] dark:bg-primary/5" />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/8 blur-hero dark:bg-primary/5" />
 
       <section className="relative w-full max-w-5xl pt-16 md:pt-24 text-center">
-        <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
+        <p className="animate-fade-in text-xs font-semibold uppercase tracking-eyebrow text-primary/80">
           {dictionary.home.eyebrow}
         </p>
-        <h1 className="animate-fade-in-down mt-5 text-4xl font-bold tracking-tight md:text-5xl lg:text-[3.5rem] lg:leading-tight">
+        <h1 className="animate-fade-in-down mt-5 text-4xl font-bold tracking-tight md:text-5xl lg:text-hero lg:leading-tight">
           {dictionary.home.title}
         </h1>
         <p className="animate-fade-in-up stagger-2 mt-5 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">

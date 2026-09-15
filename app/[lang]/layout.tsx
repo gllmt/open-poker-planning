@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-
 import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { I18nProvider } from '@/components/i18n/provider';
 import { Toolbar } from '@/components/toolbar/toolbar';

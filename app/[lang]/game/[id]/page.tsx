@@ -2,7 +2,6 @@ import { preloadedQueryResult, preloadQuery } from 'convex/nextjs';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-
 import { Poker } from '@/components/poker/poker';
 import { PokerErrorBoundary } from '@/components/poker/poker-error-boundary';
 import { api } from '@/convex/_generated/api';
@@ -57,7 +56,7 @@ export default async function GamePage({
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10 flex items-start justify-center overflow-hidden"
       >
-        <div className="h-[420px] w-[600px] translate-y-[-10%] rounded-full bg-primary/8 blur-[120px]" />
+        <div className="h-[420px] w-[600px] translate-y-[-10%] rounded-full bg-primary/8 blur-hero" />
       </div>
       <PokerErrorBoundary
         genericErrorMessage={dictionary.errorBoundary.genericError}

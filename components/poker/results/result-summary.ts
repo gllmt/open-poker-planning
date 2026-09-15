@@ -1,9 +1,8 @@
+import { getCards } from '../card-configs';
 import type { CardConfig } from '@/types/cards';
 import { type Game, GameType } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
-
-import { getCards } from '../card-configs';
 
 type ResultSummary = {
   average: number | null;

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { createRateLimiter, getClientIp } from '@/lib/security/rate-limit';
 
 describe('createRateLimiter', () => {

@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-
+import { PlanningCard, type PlanningCardFace } from '../planning-card';
+import { getResultSummary } from './result-summary';
 import { useI18n } from '@/components/i18n/use-i18n';
 import type { CardConfig } from '@/types/cards';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
-
-import { PlanningCard, type PlanningCardFace } from '../planning-card';
-import { getResultSummary } from './result-summary';
 
 const unavailableCard: CardConfig = {
   value: -2,
@@ -40,6 +38,7 @@ export function ResultsSection({
 
   useEffect(() => {
     if (!isFinished) {
+      // oxlint-disable-next-line react/set-state-in-effect -- Reset the flip animation before scheduling the next reveal frame.
       setAreCardsRevealed(false);
       return;
     }
@@ -131,6 +130,7 @@ function ResultInsight({
       </div>
 
       <span
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- This CSS card is a composite graphic, not an image resource.
         role="img"
         aria-label={`${title} : ${accessibleValue}`}
         className="shrink-0"

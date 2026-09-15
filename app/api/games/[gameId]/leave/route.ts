@@ -1,7 +1,6 @@
 import { fetchMutation } from 'convex/nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-
 import { api } from '@/convex/_generated/api';
 import { getConvexErrorCode } from '@/lib/convex/errors';
 import { cookieNames } from '@/lib/security/cookies';

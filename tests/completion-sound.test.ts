@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { shouldPlayTimerCompletionSound } from '@/lib/timer/completion-sound';
 
 describe('shouldPlayTimerCompletionSound', () => {

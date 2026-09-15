@@ -1,6 +1,5 @@
 import { ConvexError } from 'convex/values';
 import { describe, expect, it } from 'vitest';
-
 import { getConvexErrorCode } from '@/lib/convex/errors';
 
 describe('getConvexErrorCode', () => {

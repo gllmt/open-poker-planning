@@ -1,9 +1,8 @@
-import type { Game, TimerProps } from '@/types/game';
-import type { Player } from '@/types/player';
-
 import { CardPicker } from './card-picker';
 import { GameController } from './game-controller';
 import { Players } from './players';
+import type { Game, TimerProps } from '@/types/game';
+import type { Player } from '@/types/player';
 
 export function GameArea({
   game,
@@ -26,8 +25,8 @@ export function GameArea({
   currentPlayerId: string;
   isAdmin: boolean;
   onVote: (value: number, emoji?: string) => void;
-  onReveal: () => void;
-  onReset: () => void;
+  onReveal: () => Promise<void>;
+  onReset: () => Promise<void>;
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
   onDeleteGame: () => Promise<void>;

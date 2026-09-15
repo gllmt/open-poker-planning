@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { getSiteUrl } from '@/lib/seo/site-url';
 
 type StructuredDataProps = {

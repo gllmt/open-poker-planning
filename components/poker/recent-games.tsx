@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getPlayerGamesFromCache } from '@/lib/browser-storage';
@@ -38,7 +37,7 @@ export function RecentGames() {
         <p className="mb-3 text-xs text-muted-foreground">
           {t('recentGames.retentionHint')}
         </p>
-        <div className="overflow-x-auto rounded-lg" style={{ maxHeight: 250 }}>
+        <div className="max-h-62.5 overflow-x-auto rounded-lg">
           <table className="divide-border/50 min-w-full divide-y">
             <thead className="bg-muted/30">
               <tr>

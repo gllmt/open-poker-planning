@@ -11,7 +11,8 @@ Répondre en français. Respecter le périmètre demandé : audit des sources en
 ## Commandes
 
 - Installer : `pnpm install` ; développement Next : `pnpm dev` ; serveur de production local : `pnpm start`.
-- Formatage, lint et types : `pnpm lints` ; tests : `pnpm test` ; build : `pnpm build`. `pnpm lint` ne couvre que le lint Biome.
+- Formatage, lint et types : `pnpm lints` ; tests : `pnpm test` ; build : `pnpm build`. `pnpm lint` exécute Oxlint ; `pnpm format` applique Oxfmt et trie les imports.
+- `pnpm lint:ui` limite Oxlint à `app/` et `components/`. `@shadcn/lint` est aussi chargé par le lint global de `pnpm lints`. Les six règles shadcn et les contrôles Oxlint fondés sur les types sont actifs. Respecter les contrats et exceptions documentés dans `docs/design-rules.md`.
 - Tests Convex : fixtures en mémoire. Vérifications interactives : instance de développement et données jetables.
 
 ## Invariants à préserver

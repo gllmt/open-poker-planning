@@ -3,11 +3,11 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { I18nContext } from '@/lib/i18n/context';
-import dictionary from '@/lib/i18n/dictionaries/en.json';
 import { CreateGame } from './create-game';
 import { JoinGame } from './join-game';
 import { RecentGames } from './recent-games';
+import { I18nContext } from '@/lib/i18n/context';
+import dictionary from '@/lib/i18n/dictionaries/en.json';
 
 vi.mock('@posthog/next', () => ({ usePostHog: () => null }));
 vi.mock('next/navigation', () => ({

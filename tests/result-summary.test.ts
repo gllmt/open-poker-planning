@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { getCards } from '@/components/poker/card-configs';
 import { getResultSummary } from '@/components/poker/results/result-summary';
 import { type Game, GameType } from '@/types/game';

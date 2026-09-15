@@ -3,11 +3,11 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { FunctionReturnType } from 'convex/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type PreloadedGame, usePokerController } from './use-poker-controller';
 import type { api } from '@/convex/_generated/api';
 import type { Translate } from '@/lib/i18n/types';
 import { GameType } from '@/types/game';
 import { Status } from '@/types/status';
-import { type PreloadedGame, usePokerController } from './use-poker-controller';
 
 type ViewerState = FunctionReturnType<typeof api.games.getViewerGameState>;
 type ReadyState = Extract<ViewerState, { type: 'ready' }>;
@@ -108,9 +108,13 @@ describe('usePokerController', () => {
     transport.vote.mockReturnValueOnce(request.promise);
     const { result } = renderHook(useController);
     act(() => result.current.onVote(3));
-    act(() => vi.advanceTimersByTime(50));
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
     act(() => result.current.onVote(5));
-    act(() => vi.advanceTimersByTime(150));
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
     expect(transport.vote).toHaveBeenCalledTimes(1);
     expect(transport.vote).toHaveBeenCalledWith(
       expect.objectContaining({ value: 5 })
@@ -132,9 +136,13 @@ describe('usePokerController', () => {
       .mockReturnValueOnce(second.promise);
     const { result, rerender } = renderHook(useController);
     act(() => result.current.onVote(3));
-    act(() => vi.advanceTimersByTime(150));
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
     act(() => result.current.onVote(5));
-    act(() => vi.advanceTimersByTime(150));
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
     const state = fixture();
     state.game.gameStatus = Status.InProgress;
     state.players[0] = {
@@ -160,9 +168,13 @@ describe('usePokerController', () => {
       .mockReturnValueOnce(second.promise);
     const { result } = renderHook(useController);
     act(() => result.current.onVote(3));
-    act(() => vi.advanceTimersByTime(150));
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
     act(() => result.current.onVote(5));
-    act(() => vi.advanceTimersByTime(150));
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
     await act(async () => first.reject(new Error('old failure')));
     expect(result.current.players?.[0].value).toBe(5);
     expect(result.current.voteError).toBeNull();
@@ -173,7 +185,9 @@ describe('usePokerController', () => {
     const { result } = renderHook(useController);
     act(() => result.current.onVote(3));
     await act(async () => result.current.onReset());
-    act(() => vi.advanceTimersByTime(150));
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
     expect(transport.vote).not.toHaveBeenCalled();
     expect(result.current.players?.[0].value).toBe(0);
   });
@@ -198,7 +212,9 @@ describe('usePokerController', () => {
               },
             };
       rerender();
-      act(() => vi.advanceTimersByTime(150));
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
       expect(transport.vote).not.toHaveBeenCalled();
     }
   );

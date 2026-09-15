@@ -2,7 +2,6 @@
 // Only imports 'convex/values' (plain JS, no Convex runtime) so they can be
 // unit-tested directly.
 import { ConvexError } from 'convex/values';
-
 import { GameType } from '../types/game';
 
 export const LIMITS = {

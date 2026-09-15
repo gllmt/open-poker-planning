@@ -3,7 +3,7 @@
 import { usePostHog } from '@posthog/next';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useReducer } from 'react';
-
+import { getCards, getCustomCards } from './card-configs';
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +23,6 @@ import {
 } from '@/lib/browser-storage';
 import { withLocale } from '@/lib/i18n/paths';
 import { GameType, type NewGame } from '@/types/game';
-import { getCards, getCustomCards } from './card-configs';
 
 const GAME_TYPE_OPTIONS = [
   { type: GameType.Fibonacci, labelKey: 'createGame.fibonacci' },
@@ -200,7 +199,10 @@ export function CreateGame() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex justify-center">
+    <form
+      onSubmit={(event) => void handleSubmit(event)}
+      className="w-full flex justify-center"
+    >
       <Card className="w-full max-w-xl glass-card dark:dark-glass-card">
         <CardHeader>
           <CardTitle>{t('createGame.title')}</CardTitle>
@@ -289,7 +291,7 @@ export function CreateGame() {
                     key={optionId}
                     type="text"
                     maxLength={3}
-                    className="h-8 w-12 px-2 text-center text-xs"
+                    variant="compact"
                     value={state.customOptions[index] ?? ''}
                     onChange={(event) =>
                       handleCustomOptionChange(index, event.target.value)
@@ -308,7 +310,7 @@ export function CreateGame() {
                   onChange={() => dispatch({ type: 'toggle-allow-members' })}
                 />
                 <span className="border-input peer-focus-visible:ring-ring/50 peer-focus-visible:ring-offset-background peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-checked:bg-primary peer-checked:border-primary size-4 rounded-sm border transition duration-200" />
-                <span className="text-primary-foreground pointer-events-none absolute text-[10px] font-semibold leading-none opacity-0 scale-90 transition duration-200 peer-checked:opacity-100 peer-checked:scale-100">
+                <span className="text-primary-foreground pointer-events-none absolute text-caption font-semibold leading-none opacity-0 scale-90 transition duration-200 peer-checked:opacity-100 peer-checked:scale-100">
                   ✓
                 </span>
               </span>

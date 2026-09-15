@@ -1,3 +1,4 @@
+import { RETENTION_MS } from './retention';
 import {
   isTheme,
   THEME_COOKIE_MAX_AGE_SECONDS,
@@ -6,7 +7,6 @@ import {
   type Theme,
 } from '@/lib/theme/constants';
 import type { PlayerGame } from '@/types/player';
-import { RETENTION_MS } from './retention';
 
 const PLAYER_GAMES_KEY = 'playerGames';
 const RECENT_PLAYER_NAME_KEY = 'recentPlayerName';

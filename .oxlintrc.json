@@ -1,0 +1,121 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "nextjs"],
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "warn",
+    "no-unused-vars": "warn",
+    "react/exhaustive-deps": "error",
+    "react/rules-of-hooks": "error",
+    "react/no-array-index-key": "error",
+    "react/no-children-prop": "error",
+    "jsx-a11y/click-events-have-key-events": "error",
+    "prefer-const": "error",
+    "no-unused-expressions": "error",
+    "react/set-state-in-effect": "error",
+    "react/purity": "error",
+    "jsx-a11y/prefer-tag-over-role": "error",
+    "unicorn/no-useless-fallback-in-spread": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          {
+            "pattern": "^Card$",
+            "allow": ["layout", "glass-card", "dark-glass-card"]
+          },
+          {
+            "pattern": "^CardTitle$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^FieldGroup$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^Skeleton$",
+            "allow": ["layout", "rounded-*"]
+          },
+          {
+            "pattern": "^AvatarFallback$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^Label$",
+            "allow": ["layout", "typography", "color"]
+          },
+          {
+            "pattern": "^Button$",
+            "allow": [
+              "layout",
+              "text-muted-foreground",
+              "hover:text-foreground",
+              "text-destructive",
+              "hover:text-destructive",
+              "hover:shadow-md"
+            ]
+          }
+        ]
+      }
+    ],
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "allow": [
+          "text-hero",
+          "text-error",
+          "text-caption",
+          "text-status",
+          "shadow-table",
+          "shadow-spark-primary",
+          "shadow-spark-secondary",
+          "drop-shadow-card-hover"
+        ]
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": ["layout"]
+      }
+    ],
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-unknown-classes": "error",
+    "shadcn/require-static-classes": "error"
+  },
+  "ignorePatterns": [
+    "node_modules/**",
+    ".next/**",
+    "dist/**",
+    "build/**",
+    "out/**",
+    "coverage/**",
+    "convex/_generated/**",
+    "public/**",
+    "**/*.config.*"
+  ],
+  "options": {
+    "typeAware": true
+  },
+  "overrides": [
+    {
+      "files": ["components/ui/**", "components/poker/planning-card.tsx"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off",
+        "shadcn/require-static-classes": "off"
+      }
+    }
+  ],
+  "settings": {
+    "shadcn": {
+      "note": "See docs/design-rules.md for component contracts and intentional exceptions."
+    }
+  }
+}

@@ -10,12 +10,12 @@ import {
 import type { ReactNode } from 'react';
 import { sileo } from 'sileo';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { GameController } from './game-controller';
+import { Players } from './players';
 import { I18nContext } from '@/lib/i18n/context';
 import dictionary from '@/lib/i18n/dictionaries/en.json';
 import { type Game, GameType } from '@/types/game';
 import { Status } from '@/types/status';
-import { GameController } from './game-controller';
-import { Players } from './players';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/dynamic', () => ({ default: () => () => null }));

@@ -1,7 +1,5 @@
 import 'server-only';
-
 import type { MetadataRoute } from 'next';
-
 import { i18n } from '@/lib/i18n/config';
 import { getSiteUrl } from '@/lib/seo/site-url';
 

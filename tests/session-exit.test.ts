@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { resolveJoinSession } from '@/lib/security/session-exit';
 
 describe('resolveJoinSession', () => {

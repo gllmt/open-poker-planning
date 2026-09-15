@@ -1,7 +1,6 @@
 import { Home, Search } from 'lucide-react';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-
 import { Button } from '@/components/ui/button';
 import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -15,11 +14,11 @@ export default async function NotFound() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-12 px-4 pb-16">
       {/* Hero glow backdrop */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/8 blur-[120px] dark:bg-primary/5" />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/8 blur-hero dark:bg-primary/5" />
 
       <section className="relative w-full max-w-lg text-center">
         {/* 404 big number */}
-        <p className="animate-fade-in-down text-[8rem] md:text-[10rem] font-bold leading-none tracking-tighter text-primary/15 select-none">
+        <p className="animate-fade-in-down text-9xl md:text-error font-bold leading-none tracking-tighter text-primary/15 select-none">
           404
         </p>
 
@@ -28,7 +27,7 @@ export default async function NotFound() {
           <Search className="size-7" />
         </div>
 
-        <p className="animate-fade-in stagger-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
+        <p className="animate-fade-in stagger-2 text-xs font-semibold uppercase tracking-eyebrow text-primary/80">
           {dictionary.notFound.eyebrow}
         </p>
 

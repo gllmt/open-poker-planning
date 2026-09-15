@@ -3,15 +3,13 @@
 import { CircleUserRound, X } from 'lucide-react';
 import { memo } from 'react';
 import { sileo } from 'sileo';
-
+import { PlanningCard } from './planning-card';
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import type { CardConfig } from '@/types/cards';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
-
-import { PlanningCard } from './planning-card';
 
 export const PlayerCard = memo(function PlayerCard({
   gameStatus,
@@ -55,7 +53,7 @@ export const PlayerCard = memo(function PlayerCard({
   return (
     <div
       data-vote-state={voteState}
-      className={`flex w-full items-center justify-between gap-3 rounded-xl glass-inner dark:dark-glass-inner px-3 py-2 text-card-foreground max-w-content transition duration-200 ease-out hover:bg-accent/40 dark:hover:bg-accent/20 ${cardOpacityClass}`}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl glass-inner dark:dark-glass-inner px-3 py-2 text-card-foreground transition duration-200 ease-out hover:bg-accent/40 dark:hover:bg-accent/20 ${cardOpacityClass}`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="sm" className="shrink-0">
@@ -68,7 +66,7 @@ export const PlayerCard = memo(function PlayerCard({
           <div className="truncate text-sm font-semibold" title={player.name}>
             {player.name}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          <div className="mt-0.5 truncate text-status text-muted-foreground">
             {statusLabel}
           </div>
         </div>
@@ -82,7 +80,7 @@ export const PlayerCard = memo(function PlayerCard({
             variant="outline"
             size="icon-xs"
             className="text-destructive hover:text-destructive"
-            onClick={onRemove}
+            onClick={() => void onRemove()}
           >
             <X aria-hidden="true" />
           </Button>

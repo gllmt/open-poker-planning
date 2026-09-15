@@ -2,13 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import { cookies } from 'next/headers';
 import Script from 'next/script';
-
 import { AppPostHogProvider } from '@/components/analytics/posthog-provider';
 import { SileoToaster } from '@/components/ui/sileo-toaster';
 import { i18n, isLocale, LOCALE_COOKIE_NAME } from '@/lib/i18n/config';
 import { getSiteUrl } from '@/lib/seo/site-url';
 import { isTheme, THEME_COOKIE_NAME } from '@/lib/theme/constants';
-
 import './globals.css';
 
 const notoSans = Noto_Sans({ variable: '--font-sans' });

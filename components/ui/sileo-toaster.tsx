@@ -1,7 +1,6 @@
 'use client';
 
 import 'sileo/styles.css';
-
 import { useEffect, useState } from 'react';
 import { Toaster } from 'sileo';
 

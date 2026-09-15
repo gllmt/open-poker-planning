@@ -1,11 +1,11 @@
 import { UserRound } from 'lucide-react';
 import { useMemo } from 'react';
+import { getCards } from './card-configs';
+import { PlayerCard } from './player-card';
 import { useI18n } from '@/components/i18n/use-i18n';
 import { isModerator } from '@/lib/is-moderator';
 import type { Game } from '@/types/game';
 import type { Player } from '@/types/player';
-import { getCards } from './card-configs';
-import { PlayerCard } from './player-card';
 
 export function Players({
   game,

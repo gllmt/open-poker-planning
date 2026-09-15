@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useContext } from 'react';
-
 import { I18nContext } from '@/lib/i18n/context';
 import type {
   DictionaryKey,

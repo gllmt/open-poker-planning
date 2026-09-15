@@ -12,13 +12,13 @@ import {
 } from 'lucide-react';
 import {
   type ChangeEvent,
+  type CSSProperties,
   useCallback,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
-
 import { useI18n } from '@/components/i18n/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,11 +144,11 @@ function TimerProgressView({
               inputMode="numeric"
               maxLength={4}
               pattern="[0-9]*"
-              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              variant="timer"
               onChange={() => {}}
               disabled
             />
-            <span className="pb-[0.2rem]">:</span>
+            <span className="pb-timer-separator">:</span>
             <Input
               type="text"
               value={runningSeconds.toString().padStart(2, '0')}
@@ -156,7 +156,7 @@ function TimerProgressView({
               inputMode="numeric"
               maxLength={2}
               pattern="[0-9]*"
-              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              variant="timer"
               onChange={() => {}}
               disabled
             />
@@ -173,8 +173,8 @@ function TimerProgressView({
       </div>
       <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
         <div
-          className="bg-primary h-full rounded-full transition-[width] duration-500 ease-linear"
-          style={{ width: `${percentage}%` }}
+          className="timer-progress-fill bg-primary h-full rounded-full duration-500 ease-linear"
+          style={{ '--timer-progress': `${percentage}%` } as CSSProperties}
         />
       </div>
     </div>
@@ -229,6 +229,7 @@ function TimerProgressMod({
     if (!isRunning) return;
     ++revision.current;
     cancelPendingUpdate();
+    // oxlint-disable-next-line react/set-state-in-effect -- A remote start invalidates the local draft and its pending write together.
     setDraft(null);
   }, [isRunning, cancelPendingUpdate]);
 
@@ -267,6 +268,7 @@ function TimerProgressMod({
       ? 0
       : clampTimerElapsed(pausedAt ?? 0, resolvedDraftTotal);
     commitUpdate({
+      // oxlint-disable-next-line react/purity -- startTimer is invoked by TimerControlButton onClick, never during render.
       startedAt: Date.now() - baseElapsed * 1000,
       elapsedSeconds: baseElapsed,
       pausedAt: null,
@@ -374,12 +376,12 @@ function TimerProgressMod({
               inputMode="numeric"
               maxLength={4}
               pattern="[0-9]*"
-              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              variant="timer"
               onChange={(event) => onTimeChange('minutes', event)}
               onBlur={onInputsBlur}
               disabled={isRunning}
             />
-            <span className="pb-[0.2rem]">:</span>
+            <span className="pb-timer-separator">:</span>
             <Input
               type="text"
               value={
@@ -391,7 +393,7 @@ function TimerProgressMod({
               inputMode="numeric"
               maxLength={2}
               pattern="[0-9]*"
-              className="text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              variant="timer"
               onChange={(event) => onTimeChange('seconds', event)}
               onBlur={onInputsBlur}
               disabled={isRunning}
@@ -433,8 +435,8 @@ function TimerProgressMod({
       </div>
       <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
         <div
-          className="bg-primary h-full rounded-full transition-[width] duration-500 ease-linear"
-          style={{ width: `${percentage}%` }}
+          className="timer-progress-fill bg-primary h-full rounded-full duration-500 ease-linear"
+          style={{ '--timer-progress': `${percentage}%` } as CSSProperties}
         />
       </div>
       {isMod && (
@@ -462,7 +464,7 @@ function TimerProgressMod({
                     callback={() => setTotal(10)}
                     title={t('timer.setTime', { minutes: 0, seconds: 10 })}
                   >
-                    <span className="text-[10px] font-semibold leading-none">
+                    <span className="text-caption font-semibold leading-none">
                       10s
                     </span>
                   </TimerControlButton>

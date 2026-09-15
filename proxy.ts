@@ -1,6 +1,5 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { type NextRequest, NextResponse } from 'next/server';
-
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   i18n,
   isLocale,

@@ -1,6 +1,5 @@
 import { ConvexError, v } from 'convex/values';
 import { RETENTION_MS } from '../lib/retention';
-
 import type { Game } from '../types/game';
 import type { Player } from '../types/player';
 import { Status } from '../types/status';
@@ -943,7 +942,7 @@ export const removePlayer = mutation({
     // "manage session" rights cannot evict the owner.
     const isAdmin = Boolean(
       args.adminTokenHash &&
-        timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
+      timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
     );
     if (args.playerId === game.createdById && !isAdmin) {
       throw new ConvexError('UNAUTHORIZED');
@@ -986,7 +985,7 @@ export const deleteGame = mutation({
     // not destroying the game).
     const isAdmin = Boolean(
       args.adminTokenHash &&
-        timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
+      timingSafeStringEqual(args.adminTokenHash, game.adminTokenHash)
     );
     if (!isAdmin) throw new ConvexError('UNAUTHORIZED');
 

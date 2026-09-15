@@ -1,8 +1,6 @@
 import { PostHogProvider } from '@posthog/next';
-
-import { POSTHOG_URL_PRIVACY_OPTIONS } from '@/lib/analytics-url';
-
 import { SafePostHogPageView } from './safe-posthog-page-view';
+import { POSTHOG_URL_PRIVACY_OPTIONS } from '@/lib/analytics-url';
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;

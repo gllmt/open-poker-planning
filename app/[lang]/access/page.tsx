@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { submitAccessCode } from './actions';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,8 +14,6 @@ import { Label } from '@/components/ui/label';
 import { i18n, isLocale } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { sanitizeInternalPath } from '@/lib/security/safe-redirect';
-
-import { submitAccessCode } from './actions';
 
 export const metadata: Metadata = {
   robots: {

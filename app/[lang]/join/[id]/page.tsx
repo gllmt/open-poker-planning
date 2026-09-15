@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-
 import { JoinGame } from '@/components/poker/join-game';
 import { Loading } from '@/components/ui/loading';
 import { api } from '@/convex/_generated/api';

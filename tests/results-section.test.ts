@@ -1,7 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-
 import { getCards } from '@/components/poker/card-configs';
 import { ResultsSection } from '@/components/poker/results/results-section';
 import { I18nContext } from '@/lib/i18n/context';

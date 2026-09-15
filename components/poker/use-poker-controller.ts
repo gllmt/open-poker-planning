@@ -4,7 +4,7 @@ import type { OptimisticLocalStore } from 'convex/browser';
 import { type Preloaded, useMutation, usePreloadedQuery } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
+import { isTieResult } from './hooks/use-confetti';
 import { api } from '@/convex/_generated/api';
 import { leaveGame as leaveGameRequest } from '@/lib/api/games';
 import { upsertPlayerGame } from '@/lib/browser-storage';
@@ -12,8 +12,6 @@ import type { Translate } from '@/lib/i18n/types';
 import { resetTimerProps } from '@/lib/timer/reset-timer-props';
 import type { TimerProps } from '@/types/game';
 import { Status } from '@/types/status';
-
-import { isTieResult } from './hooks/use-confetti';
 
 export type PreloadedGame = Preloaded<typeof api.games.getViewerGameState>;
 type ReadyState = Extract<
@@ -206,6 +204,7 @@ export function usePokerController({
       lastCelebratedAt.current = updatedAt;
       setConfettiSeed(`${gameId}-${updatedAt}`);
     }
+    // oxlint-disable-next-line react/set-state-in-effect -- Clear the animation when the Convex subscription starts another round.
     if (gameStatus !== Status.Finished) setConfettiSeed(null);
     previousTie.current = isTie;
   }, [gameId, gameStatus, isTie, updatedAt]);

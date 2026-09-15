@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext } from 'react';
-
 import type { Locale } from './config';
 import type { Dictionary } from './types';
 

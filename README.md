@@ -26,7 +26,7 @@ Real-time planning poker for agile teams. Create a room, share a link, and estim
 
 ## Built with
 
-Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and database), Tailwind CSS v4 with Base UI, Biome, Vitest. Deployed on Vercel.
+Next.js 16 (App Router), React 19, TypeScript, Convex (realtime backend and database), Tailwind CSS v4 with Base UI, Oxlint, Oxfmt, Vitest. Deployed on Vercel.
 
 ## Timer behavior
 
@@ -100,12 +100,44 @@ Open http://localhost:3000.
 
 ```bash
 pnpm dev      # develop
-pnpm lint     # Biome lint
-pnpm lints    # formatting, lint and TypeScript
+pnpm lint     # Oxlint (including @shadcn/lint)
+pnpm lint:ui  # lint app/ and components/ only
+pnpm lints    # Oxfmt check, Oxlint and TypeScript
+pnpm format   # format files and sort imports with Oxfmt
+pnpm lint:fix # apply safe Oxlint fixes
 pnpm test     # Vitest
 pnpm build    # production build
 pnpm start    # run the production build
 ```
+
+### Design-system lint
+
+[`@shadcn/lint`](https://github.com/shadcn-ui/lint) is registered through
+Oxlint in `.oxlintrc.json`. `pnpm lint` checks the repository, while
+`pnpm lint:ui` limits the same checks to `app/` and `components/`.
+Oxfmt handles formatting and import sorting through `.oxfmtrc.json`.
+`pnpm lints` runs the formatter check, lint and TypeScript checks in CI.
+
+All six `shadcn/*` rules are enabled as errors, with contracts for the
+existing components and theme. Oxlint also runs type-aware checks through
+`oxlint-tsgolint`, including unhandled and misused promises. See
+[design rules and exceptions](docs/design-rules.md) before adding a new
+variant, theme token or lint exception.
+
+With `@shadcn/lint` 0.1.0, its transitive `@typescript-eslint` 8.70.0
+dependencies declare TypeScript `<6.1.0`, while this project uses 7.0.2.
+`pnpm peers check` still reports this mismatch. The enabled Shadcn and native
+Oxlint type-aware rules have been exercised on this project.
+
+### Migration from Biome
+
+The rule sets are not identical: Biome-specific CSS checks, cognitive
+complexity, accumulating spreads, unused template literals and the
+route-specific literal-key check are not reproduced. Generated files,
+public assets and `*.config.*` stay out of scope. Oxfmt also leaves Markdown,
+YAML and TOML untouched, matching the previous formatting scope. Its import
+sorting preserves side-effect import order. VS Code uses the recommended
+`oxc.oxc-vscode` extension.
 
 ## Deploy
 

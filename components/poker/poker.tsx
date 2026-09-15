@@ -1,11 +1,10 @@
 'use client';
 
-import { useI18n } from '@/components/i18n/use-i18n';
-import { Button } from '@/components/ui/button';
-
 import { GameArea } from './game-area';
 import { useSessionExitRedirect } from './hooks/use-session-exit-redirect';
 import { type PreloadedGame, usePokerController } from './use-poker-controller';
+import { useI18n } from '@/components/i18n/use-i18n';
+import { Button } from '@/components/ui/button';
 
 export function Poker({
   gameId,

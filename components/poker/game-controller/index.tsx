@@ -14,7 +14,9 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sileo } from 'sileo';
-
+import { ResultsSection } from '../results/results-section';
+import { Timer } from '../timer/timer';
+import { AutoRevealToggle } from './auto-reveal-toggle';
 import { useI18n } from '@/components/i18n/use-i18n';
 import {
   AlertDialog,
@@ -36,10 +38,6 @@ import { RETENTION_MS } from '@/lib/retention';
 import type { Game, TimerProps } from '@/types/game';
 import type { Player } from '@/types/player';
 import { Status } from '@/types/status';
-
-import { ResultsSection } from '../results/results-section';
-import { Timer } from '../timer/timer';
-import { AutoRevealToggle } from './auto-reveal-toggle';
 
 const ConfettiOverlay = dynamic(
   () => import('../results/confetti-overlay').then((m) => m.ConfettiOverlay),
@@ -64,8 +62,8 @@ export function GameController({
   currentPlayerId: string;
   isAdmin: boolean;
   confettiSeed?: string | null;
-  onReveal: () => void;
-  onReset: () => void;
+  onReveal: () => Promise<void>;
+  onReset: () => Promise<void>;
   onTimerUpdate: (timer: TimerProps) => Promise<void>;
   onAutoReveal: (value: boolean) => Promise<void>;
   onDeleteGame: () => Promise<void>;
@@ -198,7 +196,7 @@ export function GameController({
     router.push(withLocale('/', locale));
   };
 
-  const timerProps = { isMod, ...(game.timerProps ?? {}) };
+  const timerProps = { isMod, ...game.timerProps };
 
   return (
     <div className="flex w-full flex-col items-center lg:w-[450px]">
@@ -229,7 +227,7 @@ export function GameController({
               <AutoRevealToggle
                 autoReveal={baseAutoReveal}
                 disabled={autoRevealPending}
-                onAutoReveal={handleAutoReveal}
+                onAutoReveal={(value) => void handleAutoReveal(value)}
               />
             </div>
           )}
@@ -356,7 +354,7 @@ function ControllerButton({
               <Button
                 type="button"
                 aria-label={label}
-                className="rounded-xl hover:shadow-md active:scale-[0.95] transition duration-150"
+                className="hover:shadow-md active:scale-95"
                 title={label}
                 size="icon"
                 variant={variant}
@@ -402,7 +400,7 @@ function ControllerButton({
         onClick={() => void handleConfirmedAction()}
         disabled={isPending}
         aria-busy={isPending}
-        className="rounded-xl hover:shadow-md active:scale-[0.95] transition duration-150"
+        className="hover:shadow-md active:scale-95"
         title={label}
         size="icon"
         variant={variant}
