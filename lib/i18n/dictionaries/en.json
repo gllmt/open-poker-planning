@@ -99,7 +99,7 @@
     "inviteNoToken": "Unable to generate a new invite link right now.",
     "inviteCopied": "Invite link copied to clipboard!",
     "invitePrompt": "Automatic copy failed. Use this invite link:",
-    "openInvite": "Open link",
+    "copyInvite": "Copy link",
     "confirmDeleteTitle": "Delete this session?",
     "confirmDelete": "This action cannot be undone. The session and all players will be deleted.",
     "confirmLeaveTitle": "Leave the game?",

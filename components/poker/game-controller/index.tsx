@@ -44,6 +44,71 @@ const ConfettiOverlay = dynamic(
   { ssr: false }
 );
 
+async function copyAndNotifyInviteLink(inviteLink: string, t: Translate) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(inviteLink);
+      sileo.action({
+        title: t('game.inviteCopied'),
+        duration: 8000,
+        button: {
+          title: t('game.copyInvite'),
+          onClick: () => void copyAndNotifyInviteLink(inviteLink, t),
+        },
+        position: 'top-center',
+      });
+      return;
+    }
+  } catch {}
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = inviteLink;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    if (ok) {
+      sileo.action({
+        title: t('game.inviteCopied'),
+        duration: 8000,
+        button: {
+          title: t('game.copyInvite'),
+          onClick: () => void copyAndNotifyInviteLink(inviteLink, t),
+        },
+        position: 'top-center',
+      });
+      return;
+    }
+  } catch {}
+
+  sileo.action({
+    title: t('game.invitePrompt'),
+    description: (
+      <span
+        className="break-all select-all"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        {inviteLink}
+      </span>
+    ),
+    duration: 20000,
+    button: {
+      title: t('game.copyInvite'),
+      onClick: () => void copyAndNotifyInviteLink(inviteLink, t),
+    },
+    position: 'top-center',
+  });
+}
+
 export function GameController({
   game,
   players,
@@ -120,60 +185,7 @@ export function GameController({
       }
     }
 
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(inviteLink);
-        sileo.action({
-          title: t('game.inviteCopied'),
-          duration: 8000,
-          button: {
-            title: t('game.openInvite'),
-            onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
-          },
-          position: 'top-center',
-        });
-        return;
-      }
-    } catch {}
-
-    try {
-      const textarea = document.createElement('textarea');
-      textarea.value = inviteLink;
-      textarea.setAttribute('readonly', '');
-      textarea.style.position = 'fixed';
-      textarea.style.top = '0';
-      textarea.style.left = '0';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      textarea.setSelectionRange(0, textarea.value.length);
-      const ok = document.execCommand('copy');
-      document.body.removeChild(textarea);
-
-      if (ok) {
-        sileo.action({
-          title: t('game.inviteCopied'),
-          duration: 8000,
-          button: {
-            title: t('game.openInvite'),
-            onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
-          },
-          position: 'top-center',
-        });
-        return;
-      }
-    } catch {}
-
-    sileo.action({
-      title: t('game.invitePrompt'),
-      duration: 10000,
-      button: {
-        title: t('game.openInvite'),
-        onClick: () => window.open(inviteLink, '_blank', 'noreferrer'),
-      },
-      position: 'top-center',
-    });
+    await copyAndNotifyInviteLink(inviteLink, t);
   };
 
   const handleAutoReveal = useCallback(

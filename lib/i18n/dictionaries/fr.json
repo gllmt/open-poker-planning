@@ -99,7 +99,7 @@
     "inviteNoToken": "Impossible de générer un nouveau lien d'invitation pour le moment.",
     "inviteCopied": "Lien d'invitation copié dans le presse-papiers !",
     "invitePrompt": "Copie automatique impossible. Utilisez ce lien d'invitation :",
-    "openInvite": "Ouvrir le lien",
+    "copyInvite": "Copier le lien",
     "confirmDeleteTitle": "Supprimer la session ?",
     "confirmDelete": "Cette action est irréversible. La session et tous les joueurs seront supprimés.",
     "confirmLeaveTitle": "Quitter la partie ?",

@@ -6,7 +6,7 @@ Répondre en français. Respecter le périmètre demandé : audit des sources en
 
 - `app/` : pages Next et Route Handlers ; `components/poker/` : interface métier ; `components/ui/` : primitives ; `lib/` : helpers ; `convex/` : données et autorisations. Ne pas modifier à la main `convex/_generated/`.
 - Installation et configuration : `README.md` ; versions : `package.json` et `mise.toml`. Compléter `.env.local` selon le README sans écraser les variables générées par Convex ni afficher les secrets.
-- Pour le timer, lire « Timer Contract » dans `CLAUDE.md`. Avant un audit ou un refactor du contrôleur, consulter `TODO.md` et les décisions de `plans/README.md`, puis vérifier leur validité sur le code actuel. Charger les plans détaillés concernés seulement.
+- Pour le timer, lire « Timer behavior » dans `README.md` et les contrats de compatibilité dans `docs/maintenance.md`. Avant un audit ou un refactor du contrôleur, consulter `TODO.md` et les décisions de `plans/README.md`, puis vérifier leur validité sur le code actuel. Charger les plans détaillés concernés seulement.
 
 ## Commandes
 
@@ -32,12 +32,6 @@ Répondre en français. Respecter le périmètre demandé : audit des sources en
 - Avant une PR de code : `pnpm lints`, `pnpm test`, `pnpm build`. Adapter les contrôles aux changements documentaires et éviter les répétitions sans nouvelle incertitude.
 - Valider les changements de synchronisation entre deux navigateurs avec Convex en développement ; signaler si ce contrôle reste à faire.
 - Terminer le travail local autorisé avec ses vérifications. Un audit n’autorise pas à lui seul commit, push ou déploiement. Rapporter le résultat, les contrôles exécutés et leurs limites ; décrire les PR par le problème et le comportement obtenu.
-
-## Serveurs de développement sur cette machine
-
-- Utiliser Portly (`portly ...`) pour démarrer, arrêter, redémarrer et inspecter les serveurs persistants. Commencer par `portly status` et réutiliser une instance saine ; inspecter un serveur non géré avant toute reprise en charge.
-- Créer un projet Portly pour un usage durable. Pour les tests, builds, génération de code et aperçus temporaires : `portly temp '<commande>' --path <dossier> --timeout 30m`, puis `portly wait <id>`.
-- Ne pas démarrer un serveur persistant directement, en arrière-plan ou avec un autre superviseur.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
