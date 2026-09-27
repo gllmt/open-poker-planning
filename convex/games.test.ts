@@ -10,10 +10,14 @@ import schema from './schema';
 import { LIMITS } from './validation';
 
 type GlobImportMeta = ImportMeta & {
-  glob: (pattern: string) => Record<string, () => Promise<unknown>>;
+  glob: (pattern: string | string[]) => Record<string, () => Promise<unknown>>;
 };
 
-const modules = (import.meta as GlobImportMeta).glob('./**/!(*.*.*)*.*s');
+const modules = (import.meta as GlobImportMeta).glob([
+  './**/*.{js,ts}',
+  '!./**/*.test.ts',
+  '!./**/*.d.ts',
+]);
 
 const GAME_ID = 'game-1';
 const ALICE_ID = 'player-alice';

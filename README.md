@@ -132,10 +132,9 @@ existing components and theme. Oxlint also runs type-aware checks through
 [design rules and exceptions](docs/design-rules.md) before adding a new
 variant, theme token or lint exception.
 
-With `@shadcn/lint` 0.1.0, its transitive `@typescript-eslint` 8.70.0
-dependencies declare TypeScript `<6.1.0`, while this project uses 7.0.2.
-`pnpm peers check` still reports this mismatch. The enabled Shadcn and native
-Oxlint type-aware rules have been exercised on this project.
+With `@shadcn/lint` 0.2.0 and TypeScript 7.0.2, `pnpm peers check` reports
+no peer dependency issues. The enabled Shadcn and native Oxlint type-aware
+rules have been exercised on this project.
 
 ### Migration from Biome
 
