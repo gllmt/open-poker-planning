@@ -55,10 +55,10 @@ export function RecentGames() {
                   key={g.id}
                   className="group transition-colors duration-150 hover:bg-primary/5 dark:hover:bg-primary/10"
                 >
-                  <td className="px-5 py-3.5 text-sm font-medium group-hover:text-primary transition-colors duration-150">
+                  <td className="px-5 py-0.5 text-sm font-medium group-hover:text-primary transition-colors duration-150">
                     <Link
                       href={withLocale(`/game/${g.id}`, locale)}
-                      className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                      className="inline-flex min-h-11 min-w-11 items-center rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
                     >
                       {g.name}
                     </Link>

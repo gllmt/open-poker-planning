@@ -88,13 +88,12 @@ export function CardPicker({
               aria-pressed={isSelected}
               disabled={isDisabled}
               className={cn(
-                'relative rounded-card-control outline-none transition-card-control duration-300 ease-out md:rounded-card-control-lg',
+                'relative rounded-card-control transition-card-control duration-300 ease-out md:rounded-card-control-lg',
                 !isDisabled && 'cursor-pointer',
                 !isDisabled &&
                   !isSelected &&
                   'hover:-translate-y-2 hover:drop-shadow-card-hover active:translate-y-0 active:scale-[0.97]',
-                !isSelected &&
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-card-focus/70',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-card-focus/70',
                 isDisabled && 'cursor-default',
                 isSelected && 'z-10 -translate-y-4'
               )}

@@ -19,7 +19,7 @@ export function Toolbar() {
       <div className="inline-flex items-center">
         <Link
           href={withLocale('/', locale)}
-          className="flex items-center gap-2 group"
+          className="flex min-h-11 min-w-11 items-center justify-center gap-2 group"
           aria-label={t('toolbar.brand')}
         >
           <Spade className="size-5 text-primary transition-transform duration-200 group-hover:scale-110" />

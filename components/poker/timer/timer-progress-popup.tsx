@@ -345,7 +345,7 @@ function TimerProgressMod({
             title={soundOn ? t('timer.disableSound') : t('timer.enableSound')}
             onClick={() => isMod && toggleSound()}
             type="button"
-            size="icon-xs"
+            size="icon-touch"
             variant="ghost"
           >
             {soundOn ? (
@@ -425,7 +425,7 @@ function TimerProgressMod({
               type="button"
               title={t('timer.closeTitle')}
               onClick={onTimerClose}
-              size="icon-xs"
+              size="icon-touch"
               variant="ghost"
             >
               <X className="size-4" aria-hidden="true" />
@@ -513,7 +513,7 @@ function TimerControlButton({
       onClick={callback}
       type="button"
       disabled={disabled}
-      size="icon-sm"
+      size="icon-touch"
       variant="outline"
     >
       {children}

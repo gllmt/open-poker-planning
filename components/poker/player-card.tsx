@@ -78,7 +78,7 @@ export const PlayerCard = memo(function PlayerCard({
             title={t('playerCard.removeTitle')}
             aria-label={t('playerCard.removeButton')}
             variant="outline"
-            size="icon-xs"
+            size="icon-touch"
             className="text-destructive hover:text-destructive"
             onClick={() => void onRemove()}
           >

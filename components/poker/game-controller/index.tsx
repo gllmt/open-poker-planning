@@ -368,7 +368,7 @@ function ControllerButton({
                 aria-label={label}
                 className="hover:shadow-md active:scale-95"
                 title={label}
-                size="icon"
+                size="icon-touch"
                 variant={variant}
               />
             }
@@ -414,7 +414,7 @@ function ControllerButton({
         aria-busy={isPending}
         className="hover:shadow-md active:scale-95"
         title={label}
-        size="icon"
+        size="icon-touch"
         variant={variant}
       >
         <span className="text-2xl">{children}</span>

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 const inputVariantClasses = {
   default: '',
   timer:
-    'text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0',
+    'text-foreground disabled:text-muted-foreground disabled:opacity-100 h-7 w-10 border-none bg-transparent p-0 text-center text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
   compact: 'h-8 w-12 px-2 text-center text-xs',
 } as const;
 
