@@ -1,3 +1,4 @@
+engineStrict: true
 blockExoticSubdeps: true
 minimumReleaseAgeExclude:
   - '@esbuild/*'
