@@ -60,6 +60,8 @@ Analytics is optional: leave the analytics environment variables unset to disabl
 
 ## Getting started
 
+Use pnpm 12.15.0, pinned in the `packageManager` field of `package.json`.
+
 ```bash
 pnpm install
 pnpm exec convex dev --once  # generates convex/_generated and fills the Convex vars in .env.local
