@@ -12,15 +12,9 @@ minimumReleaseAgeExclude:
   - '@next/swc-win32-x64-msvc@16.4.3'
   - next@16.4.3
 allowBuilds:
+  unrs-resolver: true
   core-js: true
   esbuild: true
   msw: true
   protobufjs: true
   sharp: true
-onlyBuiltDependencies:
-  - core-js
-  - esbuild
-  - msw
-  - protobufjs
-  - sharp
-  - unrs-resolver
