@@ -1400,7 +1400,8 @@ describe('updateTimer server stamping', () => {
     vi.useFakeTimers();
     vi.setSystemTime(1_800_000_000_000);
     const t = await setupGame();
-    await startTimer(t);
+    const schedule = await startTimer(t);
+    const deadline = schedule.startedAt + schedule.totalSeconds * 1000;
 
     await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
@@ -1412,9 +1413,9 @@ describe('updateTimer server stamping', () => {
       totalSeconds: 60,
       soundOn: true,
     });
-    expect(game.timerCompletedAt).toBe(1_800_000_060_000);
+    expect(game.timerCompletedAt).toBe(deadline);
     expect(expectReady(await getViewer(t)).game.timerCompletedAt).toBe(
-      1_800_000_060_000
+      deadline
     );
   });
 
@@ -1427,13 +1428,15 @@ describe('updateTimer server stamping', () => {
       autoReveal: true,
       adminTokenHash: HASH_B,
     });
-    await startTimer(t);
+    const schedule = await startTimer(t);
 
     await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
     const game = await getStoredGame(t);
     expect(game.gameStatus).toBe(Status.Finished);
-    expect(game.timerCompletedAt).toBe(1_800_000_060_000);
+    expect(game.timerCompletedAt).toBe(
+      schedule.startedAt + schedule.totalSeconds * 1000
+    );
   });
 
   it('ignores completion after the timer is paused', async () => {
@@ -1566,12 +1569,15 @@ describe('updateTimer server stamping', () => {
     });
     expect((await getStoredGame(t)).timerCompletedAt).toBeUndefined();
 
+    const deadline =
+      currentSchedule.startedAt + currentSchedule.totalSeconds * 1000;
+    vi.setSystemTime(deadline);
     await t.mutation(internal.games.completeTimer, {
       gameId: GAME_ID,
       ...currentSchedule,
     });
     const completedAt = (await getStoredGame(t)).timerCompletedAt;
-    expect(completedAt).toBe(1_800_000_010_000);
+    expect(completedAt).toBe(deadline);
 
     await t.mutation(internal.games.completeTimer, {
       gameId: GAME_ID,
@@ -1604,12 +1610,14 @@ describe('updateTimer server stamping', () => {
     });
     expect((await getStoredGame(t)).timerCompletedAt).toBeUndefined();
 
+    const deadline = staleSchedule.startedAt + 120_000;
+    vi.setSystemTime(deadline);
     await t.mutation(internal.games.completeTimer, {
       gameId: GAME_ID,
       startedAt: staleSchedule.startedAt,
       totalSeconds: 120,
     });
-    expect((await getStoredGame(t)).timerCompletedAt).toBe(1_800_000_000_000);
+    expect((await getStoredGame(t)).timerCompletedAt).toBe(deadline);
   });
 });
 
@@ -1680,9 +1688,24 @@ describe('30-day retention', () => {
 
   it('retains games until the complete 30 days have elapsed', async () => {
     const t = await setupGame();
-    await ageGame(t, RETENTION_MS - 1);
-    expect(await t.mutation(internal.retention.purgeInactiveGames, {})).toBe(0);
+    const { purged, expiresAt } = await t.run(async (ctx) => {
+      const game = await ctx.db.query('games').first();
+      if (!game) throw new Error('missing fixture');
+      const now = Date.now();
+      await ctx.db.patch(game._id, { updatedAt: now - RETENTION_MS + 1 });
+      // Nested mutations share the transaction clock in convex-test.
+      const purged = await ctx.runMutation(
+        internal.retention.purgeInactiveGames,
+        {}
+      );
+      return { purged, expiresAt: now + 1 };
+    });
+    expect(purged).toBe(0);
     expectReady(await getViewer(t));
+
+    vi.setSystemTime(expiresAt);
+    expect(await t.mutation(internal.retention.purgeInactiveGames, {})).toBe(1);
+    await expect(getViewer(t)).resolves.toEqual({ type: 'not_found' });
   });
 
   it('uses last activity, including votes, rather than creation time', async () => {

@@ -60,7 +60,7 @@ Analytics is optional: leave the analytics environment variables unset to disabl
 
 ## Getting started
 
-Use pnpm 12.15.0, pinned in the `packageManager` field of `package.json`.
+Use Node.js 26.13.0 LTS (pinned in `.nvmrc`, `mise.toml` and CI) and pnpm 12.15.0, pinned in the `packageManager` field of `package.json`.
 
 ```bash
 pnpm install
